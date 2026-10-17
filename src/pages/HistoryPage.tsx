@@ -11,8 +11,12 @@ import {
   Filter,
   AlertCircle,
   X,
+  UserCheck,
 } from 'lucide-react';
 import type { RFODocument, RFOTemplate, ActiveTab } from '../types/rfo';
+import type { UserAccount } from '../types/auth';
+import { ROLE_LABELS } from '../types/auth';
+import { authService } from '../services/authService';
 import { storageService } from '../services/storageService';
 import { RFOService } from '../services/rfoService';
 import { PDFService } from '../services/pdfService';
@@ -22,13 +26,13 @@ import {
 import { RFOPaperDocument } from '../components/RFOPaperDocument';
 import type { ToastMessage } from '../components/Toast';
 
-
 interface HistoryPageProps {
   template: RFOTemplate;
   setActiveTab: (tab: ActiveTab) => void;
   onEditRFO: (rfo: RFODocument) => void;
   onDuplicateRFO: (rfo: RFODocument) => void;
   addToast: (type: ToastMessage['type'], title: string, message?: string) => void;
+  currentUser?: UserAccount | null;
 }
 
 export const HistoryPage: React.FC<HistoryPageProps> = ({
@@ -37,11 +41,18 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   onEditRFO,
   onDuplicateRFO,
   addToast,
+  currentUser,
 }) => {
   const [rfos, setRfos] = useState<RFODocument[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterDate, setFilterDate] = useState<string>('');
+  const [filterCreator, setFilterCreator] = useState<string>('');
+
+  // Permissions based on currentUser
+  const canCreate = currentUser ? authService.hasPermission(currentUser.role, 'canCreateRFO') : true;
+  const canEdit = currentUser ? authService.hasPermission(currentUser.role, 'canEditRFO') : true;
+  const canDelete = currentUser ? authService.hasPermission(currentUser.role, 'canDeleteRFO') : false;
 
   // Modal View state
   const [selectedRFO, setSelectedRFO] = useState<RFODocument | null>(null);
@@ -65,7 +76,18 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
     }
   };
 
-  // Filtered RFOs based on search and date filter
+  // Distinct creator options from registered users and stored RFOs
+  const registeredUsers = useMemo(() => authService.getUsers(), []);
+  const creatorOptions = useMemo(() => {
+    const names = new Set<string>();
+    registeredUsers.forEach((u) => names.add(u.name));
+    rfos.forEach((r) => {
+      if (r.createdByName) names.add(r.createdByName);
+    });
+    return Array.from(names);
+  }, [rfos, registeredUsers]);
+
+  // Filtered RFOs based on search, date, and creator filter
   const filteredList = useMemo(() => {
     return rfos.filter((item) => {
       const matchesSearch =
@@ -73,16 +95,22 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.ticketNo && item.ticketNo.toLowerCase().includes(searchQuery.toLowerCase())) ||
         item.rootCause.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.actionTaken.toLowerCase().includes(searchQuery.toLowerCase());
+        item.actionTaken.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.createdByName && item.createdByName.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesDate =
         !filterDate ||
         (item.rfoDate && item.rfoDate.startsWith(filterDate)) ||
         (item.startTime && item.startTime.startsWith(filterDate));
 
-      return matchesSearch && matchesDate;
+      const matchesCreator =
+        !filterCreator ||
+        (item.createdByName && item.createdByName.toLowerCase() === filterCreator.toLowerCase()) ||
+        (item.createdBy && item.createdBy === filterCreator);
+
+      return matchesSearch && matchesDate && matchesCreator;
     });
-  }, [rfos, searchQuery, filterDate]);
+  }, [rfos, searchQuery, filterDate, filterCreator]);
 
   // Copy Plain Text
   const handleCopyText = async (item: RFODocument) => {
@@ -141,6 +169,12 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
 
   // Delete Action
   const handleDelete = async (id: string) => {
+    if (!canDelete) {
+      addToast('error', 'Akses Ditolak', 'Hanya akun Super Admin yang berhak menghapus arsip RFO.');
+      setDeleteConfirmId(null);
+      return;
+    }
+
     try {
       const success = await storageService.deleteRFO(id);
       if (success) {
@@ -151,6 +185,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         }
       }
     } catch (e) {
+      console.error(e);
       addToast('error', 'Gagal Menghapus', 'Terjadi kesalahan sistem.');
     } finally {
       setDeleteConfirmId(null);
@@ -167,7 +202,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari berdasarkan Root Cause, Action Taken, No Tiket, atau ID..."
+            placeholder="Cari berdasarkan Root Cause, Action Taken, No Tiket, Pembuat, atau ID..."
             className="w-full bg-transparent text-sm text-white focus:outline-none placeholder:text-slate-500"
           />
           {searchQuery && (
@@ -180,7 +215,35 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Creator Filter */}
+          <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-300">
+            <UserCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <select
+              value={filterCreator}
+              onChange={(e) => setFilterCreator(e.target.value)}
+              className="bg-transparent text-white focus:outline-none text-xs cursor-pointer max-w-[150px]"
+            >
+              <option value="" className="bg-slate-900 text-slate-300">
+                Semua Pembuat
+              </option>
+              {creatorOptions.map((name) => (
+                <option key={name} value={name} className="bg-slate-900 text-white">
+                  {name}
+                </option>
+              ))}
+            </select>
+            {filterCreator && (
+              <button
+                onClick={() => setFilterCreator('')}
+                className="text-slate-400 hover:text-white"
+                title="Hapus filter pembuat"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           {/* Date Filter */}
           <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-300">
             <Filter className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
@@ -201,12 +264,14 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             )}
           </div>
 
-          <button
-            onClick={() => setActiveTab('create')}
-            className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-md shadow-cyan-950"
-          >
-            + Buat RFO Baru
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => setActiveTab('create')}
+              className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition-colors shrink-0 whitespace-nowrap cursor-pointer shadow-md shadow-cyan-950"
+            >
+              + Buat RFO Baru
+            </button>
+          )}
         </div>
       </div>
 
@@ -217,6 +282,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             <thead>
               <tr className="bg-slate-800/80 border-b border-slate-700 text-slate-300 font-semibold uppercase tracking-wider">
                 <th className="py-3 px-4">ID & Tanggal</th>
+                <th className="py-3 px-4">Pembuat Dokumen</th>
                 <th className="py-3 px-4">Rentang Waktu Gangguan</th>
                 <th className="py-3 px-4">Total Durasi</th>
                 <th className="py-3 px-4">Root Cause & Action Taken</th>
@@ -226,13 +292,13 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             <tbody className="divide-y divide-slate-800 text-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-500">
+                  <td colSpan={6} className="py-12 text-center text-slate-500">
                     Memuat data arsip...
                   </td>
                 </tr>
               ) : filteredList.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-500">
+                  <td colSpan={6} className="py-12 text-center text-slate-500">
                     Tidak ada dokumen RFO yang cocok dengan pencarian atau filter.
                   </td>
                 </tr>
@@ -249,6 +315,38 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                       </div>
                       <div className="text-[11px] text-slate-400 mt-0.5">
                         {formatIndonesianDateOnly(item.rfoDate)}
+                      </div>
+                    </td>
+
+                    {/* Creator Column */}
+                    <td className="py-3.5 px-4 align-top">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
+                          {(item.createdByName || 'Staff NOC').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div
+                            className="font-semibold text-slate-200 text-xs truncate max-w-[130px]"
+                            title={item.createdByName || 'Staff NOC'}
+                          >
+                            {item.createdByName || 'Staff NOC'}
+                          </div>
+                          <div className="mt-0.5">
+                            {item.createdByRole && ROLE_LABELS[item.createdByRole] ? (
+                              <span
+                                className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                  ROLE_LABELS[item.createdByRole].badgeClass
+                                }`}
+                              >
+                                {ROLE_LABELS[item.createdByRole].label}
+                              </span>
+                            ) : (
+                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium border bg-slate-500/15 text-slate-300 border-slate-500/30">
+                                Staff NOC
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </td>
 
@@ -294,23 +392,35 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                           <Eye className="w-4 h-4 text-cyan-400" />
                         </button>
 
-                        {/* Edit */}
-                        <button
-                          onClick={() => onEditRFO(item)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                          title="Edit RFO"
-                        >
-                          <Edit3 className="w-4 h-4 text-blue-400" />
-                        </button>
+                        {/* Edit (Restricted by permission) */}
+                        {canEdit ? (
+                          <button
+                            onClick={() => onEditRFO(item)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                            title="Edit RFO"
+                          >
+                            <Edit3 className="w-4 h-4 text-blue-400" />
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="p-1.5 rounded-lg bg-slate-900 text-slate-600 opacity-40 cursor-not-allowed"
+                            title="Akses View-Only: Tidak diizinkan mengedit"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        )}
 
-                        {/* Duplicate */}
-                        <button
-                          onClick={() => onDuplicateRFO(item)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                          title="Duplikasi Dokumen"
-                        >
-                          <Copy className="w-4 h-4 text-amber-400" />
-                        </button>
+                        {/* Duplicate (Restricted by canCreate) */}
+                        {canCreate ? (
+                          <button
+                            onClick={() => onDuplicateRFO(item)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                            title="Duplikasi Dokumen"
+                          >
+                            <Copy className="w-4 h-4 text-amber-400" />
+                          </button>
+                        ) : null}
 
                         {/* Download PDF */}
                         <button
@@ -331,14 +441,24 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                           <MessageSquare className="w-4 h-4 text-emerald-500" />
                         </button>
 
-                        {/* Delete */}
-                        <button
-                          onClick={() => setDeleteConfirmId(item.id)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 transition-colors"
-                          title="Hapus RFO"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {/* Delete (Admin only) */}
+                        {canDelete ? (
+                          <button
+                            onClick={() => setDeleteConfirmId(item.id)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 transition-colors"
+                            title="Hapus RFO (Super Admin)"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="p-1.5 rounded-lg bg-slate-900 text-slate-600 opacity-30 cursor-not-allowed"
+                            title="Hanya Super Admin yang berhak menghapus arsip RFO"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -385,14 +505,31 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl my-auto">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
+            <div className="px-6 py-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="flex flex-wrap items-center gap-3">
                 <span className="font-mono text-sm font-bold text-white">
                   RFO: {selectedRFO.ticketNo || selectedRFO.id}
                 </span>
                 <span className="text-xs text-slate-400">
                   ({formatIndonesianDateOnly(selectedRFO.rfoDate)})
                 </span>
+                {/* Creator Badge in Modal */}
+                <div className="flex items-center gap-1.5 pl-3 border-l border-slate-700 text-xs text-slate-300">
+                  <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Pembuat:</span>
+                  <strong className="text-white font-semibold">
+                    {selectedRFO.createdByName || 'Staff NOC'}
+                  </strong>
+                  {selectedRFO.createdByRole && ROLE_LABELS[selectedRFO.createdByRole] && (
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                        ROLE_LABELS[selectedRFO.createdByRole].badgeClass
+                      }`}
+                    >
+                      {ROLE_LABELS[selectedRFO.createdByRole].label}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2">

@@ -42,6 +42,9 @@ const SAMPLE_RFO: RFODocument = {
   customerName: 'Pelanggan Yang Terhormat',
   createdAt: '2026-10-12T08:30:00.000Z',
   updatedAt: '2026-10-12T08:30:00.000Z',
+  createdBy: 'usr-admin-01',
+  createdByName: 'Reza Pahlawan',
+  createdByRole: 'admin',
 };
 
 class LocalStorageProvider implements IStorageProvider {

@@ -1,3 +1,5 @@
+import type { UserRole } from './auth';
+
 export interface RFODocument {
   id: string;
   rfoNumber?: string;
@@ -13,6 +15,9 @@ export interface RFODocument {
   customerName?: string;
   createdAt: string; // ISO
   updatedAt: string; // ISO
+  createdBy?: string; // User ID
+  createdByName?: string; // Full Name of author
+  createdByRole?: UserRole; // Role of author
 }
 
 export interface RFOTemplate {
@@ -69,4 +74,4 @@ export interface DurationResult {
   error?: string;
 }
 
-export type ActiveTab = 'dashboard' | 'create' | 'history' | 'templates' | 'settings';
+export type ActiveTab = 'dashboard' | 'create' | 'history' | 'templates' | 'users' | 'settings';

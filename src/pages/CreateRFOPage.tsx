@@ -27,13 +27,15 @@ import { RFOService } from '../services/rfoService';
 import { PDFService } from '../services/pdfService';
 import { storageService } from '../services/storageService';
 import type { ToastMessage } from '../components/Toast';
-
+import type { UserAccount } from '../types/auth';
+import { ROLE_LABELS } from '../types/auth';
 
 interface CreateRFOPageProps {
   template: RFOTemplate;
   addToast: (type: ToastMessage['type'], title: string, message?: string) => void;
   initialEditData?: RFODocument | null;
   onSaved?: () => void;
+  currentUser?: UserAccount | null;
 }
 
 // Common incident templates for quick NOC operations
@@ -80,6 +82,7 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
   addToast,
   initialEditData,
   onSaved,
+  currentUser,
 }) => {
   // Form State
   const [startTime, setStartTime] = useState<string>('');
@@ -213,6 +216,9 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
       ticketNo,
       createdAt: initialEditData?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      createdBy: initialEditData?.createdBy || currentUser?.id,
+      createdByName: initialEditData?.createdByName || currentUser?.name || 'Staff NOC',
+      createdByRole: initialEditData?.createdByRole || currentUser?.role || 'engineer',
     };
   }, [
     editingId,
@@ -225,6 +231,7 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
     disruptionDescription,
     ticketNo,
     initialEditData,
+    currentUser,
   ]);
 
   // Save RFO Action
@@ -419,6 +426,38 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
           >
             Batal Edit & Buat Baru
           </button>
+        </div>
+      )}
+
+      {/* Current Author / Creator Banner */}
+      {currentUser && (
+        <div className="no-print mb-5 p-3 px-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-8 h-8 rounded-xl bg-gradient-to-tr ${
+                currentUser.avatarColor || 'from-cyan-600 to-blue-600'
+              } flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0`}
+            >
+              {currentUser.name.charAt(0)}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Pembuat Dokumen:</span>
+                <strong className="text-xs text-white">{currentUser.name}</strong>
+                <span className="text-slate-400 text-xs hidden sm:inline">({currentUser.position})</span>
+              </div>
+              <p className="text-[11px] text-cyan-400/90 mt-0.5">
+                Nama Anda otomatis tersimpan ke dalam arsip History RFO saat dokumen ini disimpan.
+              </p>
+            </div>
+          </div>
+          <span
+            className={`self-start sm:self-auto text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
+              ROLE_LABELS[currentUser.role]?.badgeClass || ''
+            }`}
+          >
+            {ROLE_LABELS[currentUser.role]?.label || currentUser.role}
+          </span>
         </div>
       )}
 

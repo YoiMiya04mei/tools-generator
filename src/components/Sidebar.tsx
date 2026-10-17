@@ -5,12 +5,15 @@ import {
   FolderClock,
   Sliders,
   Settings,
+  Users,
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  Lock,
 } from 'lucide-react';
 import type { ActiveTab } from '../types/rfo';
-
+import type { UserAccount } from '../types/auth';
+import { ROLE_PERMISSIONS } from '../types/auth';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -18,6 +21,7 @@ interface SidebarProps {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
   hasDraft?: boolean;
+  currentUser?: UserAccount | null;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -26,7 +30,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   collapsed,
   setCollapsed,
   hasDraft = false,
+  currentUser,
 }) => {
+  const canCreate = currentUser ? ROLE_PERMISSIONS[currentUser.role]?.canCreateRFO : true;
+  const isAdmin = currentUser?.role === 'admin';
+
   const navItems = [
     {
       id: 'dashboard' as ActiveTab,
@@ -37,8 +45,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'create' as ActiveTab,
       label: 'Create RFO',
-      icon: <FilePlus2 className="w-5 h-5 shrink-0" />,
-      badge: hasDraft ? 'Draft' : null,
+      icon: canCreate ? (
+        <FilePlus2 className="w-5 h-5 shrink-0" />
+      ) : (
+        <Lock className="w-5 h-5 shrink-0 text-slate-500" />
+      ),
+      badge: !canCreate ? 'Viewer' : hasDraft ? 'Draft' : null,
     },
     {
       id: 'history' as ActiveTab,
@@ -50,6 +62,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'templates' as ActiveTab,
       label: 'RFO Template',
       icon: <Sliders className="w-5 h-5 shrink-0" />,
+      badge: !isAdmin ? 'Standar' : null,
+    },
+    {
+      id: 'users' as ActiveTab,
+      label: 'Kelola Akun',
+      icon: <Users className="w-5 h-5 shrink-0" />,
       badge: null,
     },
     {

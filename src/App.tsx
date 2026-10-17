@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { ActiveTab, RFODocument, RFOTemplate } from './types/rfo';
+import type { UserAccount } from './types/auth';
 import { DEFAULT_RFO_TEMPLATE } from './templates/rfoTemplate';
 import { storageService } from './services/storageService';
+import { authService } from './services/authService';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { LoginPage } from './components/LoginPage';
 import { ToastContainer } from './components/Toast';
 import type { ToastMessage } from './components/Toast';
 
@@ -12,8 +15,10 @@ import { CreateRFOPage } from './pages/CreateRFOPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { TemplatePage } from './pages/TemplatePage';
 import { SettingsPage } from './pages/SettingsPage';
+import { UsersPage } from './pages/UsersPage';
 
 export function App() {
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => authService.getCurrentUser());
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [template, setTemplate] = useState<RFOTemplate>(DEFAULT_RFO_TEMPLATE);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
@@ -56,6 +61,24 @@ export function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  // Auth Handlers
+  const handleLoginSuccess = (user: UserAccount) => {
+    setCurrentUser(user);
+    addToast('success', `Selamat Datang, ${user.name}!`, `Masuk sebagai ${user.position}.`);
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+    addToast('info', 'Berhasil Keluar', 'Sesi akun Anda telah diakhiri.');
+  };
+
+  const handleSwitchAccount = () => {
+    authService.logout();
+    setCurrentUser(null);
+    addToast('info', 'Ganti Akun', 'Silakan pilih akun atau login dengan kredensial lain.');
+  };
+
   // Edit RFO Handler
   const handleEditRFO = (rfo: RFODocument) => {
     setEditingRFO(rfo);
@@ -65,7 +88,7 @@ export function App() {
 
   // Duplicate RFO Handler
   const handleDuplicateRFO = (rfo: RFODocument) => {
-    // Clone without the original ID so it saves as a new entry
+    // Clone without the original ID so it saves as a new entry with current user as creator
     const clone: RFODocument = {
       ...rfo,
       id: '',
@@ -73,10 +96,13 @@ export function App() {
       rfoDate: new Date().toISOString().slice(0, 10),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      createdBy: currentUser?.id,
+      createdByName: currentUser?.name || 'Staff NOC',
+      createdByRole: currentUser?.role || 'engineer',
     };
     setEditingRFO(clone);
     setActiveTab('create');
-    addToast('info', 'Duplikasi RFO', 'Data disalin ke formulir baru.');
+    addToast('info', 'Duplikasi RFO', 'Data disalin ke formulir baru dengan identitas pembuat Anda.');
   };
 
   // View RFO Handler
@@ -89,6 +115,16 @@ export function App() {
     setEditingRFO(null);
     checkDraft();
   };
+
+  // If not logged in, render the Login Page
+  if (!currentUser) {
+    return (
+      <>
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
+        <LoginPage onLoginSuccess={handleLoginSuccess} />
+      </>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-100 overflow-hidden font-sans">
@@ -112,15 +148,13 @@ export function App() {
         <Sidebar
           activeTab={activeTab}
           setActiveTab={(tab) => {
-            if (tab === 'create' && activeTab !== 'create') {
-              // If intentionally clicking Create RFO from another tab, reset edit state if desired
-            }
             setActiveTab(tab);
             setMobileMenuOpen(false);
           }}
           collapsed={sidebarCollapsed}
           setCollapsed={setSidebarCollapsed}
           hasDraft={hasDraft}
+          currentUser={currentUser}
         />
       </div>
 
@@ -131,6 +165,9 @@ export function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           toggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onSwitchAccount={handleSwitchAccount}
         />
 
         {/* Dynamic Pages */}
@@ -151,6 +188,7 @@ export function App() {
               addToast={addToast}
               initialEditData={editingRFO}
               onSaved={handleRFOSaved}
+              currentUser={currentUser}
             />
           )}
 
@@ -161,6 +199,7 @@ export function App() {
               onEditRFO={handleEditRFO}
               onDuplicateRFO={handleDuplicateRFO}
               addToast={addToast}
+              currentUser={currentUser}
             />
           )}
 
@@ -168,6 +207,13 @@ export function App() {
             <TemplatePage
               template={template}
               onUpdateTemplate={(newTmpl) => setTemplate(newTmpl)}
+              addToast={addToast}
+            />
+          )}
+
+          {activeTab === 'users' && (
+            <UsersPage
+              currentUser={currentUser}
               addToast={addToast}
             />
           )}
