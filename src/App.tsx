@@ -79,6 +79,21 @@ export function App() {
     addToast('info', 'Ganti Akun', 'Silakan pilih akun atau login dengan kredensial lain.');
   };
 
+  // Guard access based on role permissions
+  useEffect(() => {
+    if (!currentUser) return;
+    const isAdmin = currentUser.role === 'admin';
+    const canCreate = authService.hasPermission(currentUser.role, 'canCreateRFO');
+
+    if ((activeTab === 'templates' || activeTab === 'users' || activeTab === 'settings') && !isAdmin) {
+      setActiveTab('dashboard');
+      addToast('error', 'Akses Ditolak', 'Halaman tersebut hanya dapat diakses dan dikelola oleh Super Admin.');
+    } else if (activeTab === 'create' && !canCreate) {
+      setActiveTab('history');
+      addToast('info', 'Akses Terbatas', 'Akun Auditor/Viewer hanya memiliki wewenang membaca arsip.');
+    }
+  }, [activeTab, currentUser]);
+
   // Edit RFO Handler
   const handleEditRFO = (rfo: RFODocument) => {
     setEditingRFO(rfo);
@@ -125,6 +140,8 @@ export function App() {
       </>
     );
   }
+
+  const isAdmin = currentUser.role === 'admin';
 
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-100 overflow-hidden font-sans">
@@ -203,22 +220,23 @@ export function App() {
             />
           )}
 
-          {activeTab === 'templates' && (
+          {activeTab === 'templates' && isAdmin && (
             <TemplatePage
               template={template}
               onUpdateTemplate={(newTmpl) => setTemplate(newTmpl)}
               addToast={addToast}
+              currentUser={currentUser}
             />
           )}
 
-          {activeTab === 'users' && (
+          {activeTab === 'users' && isAdmin && (
             <UsersPage
               currentUser={currentUser}
               addToast={addToast}
             />
           )}
 
-          {activeTab === 'settings' && (
+          {activeTab === 'settings' && isAdmin && (
             <SettingsPage
               addToast={addToast}
               onRefreshData={() => {

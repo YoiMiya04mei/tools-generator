@@ -35,12 +35,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const canCreate = currentUser ? ROLE_PERMISSIONS[currentUser.role]?.canCreateRFO : true;
   const isAdmin = currentUser?.role === 'admin';
 
-  const navItems = [
+  const allNavItems = [
     {
       id: 'dashboard' as ActiveTab,
       label: 'Dashboard',
       icon: <LayoutDashboard className="w-5 h-5 shrink-0" />,
       badge: null,
+      show: true,
     },
     {
       id: 'create' as ActiveTab,
@@ -51,32 +52,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <Lock className="w-5 h-5 shrink-0 text-slate-500" />
       ),
       badge: !canCreate ? 'Viewer' : hasDraft ? 'Draft' : null,
+      show: canCreate,
     },
     {
       id: 'history' as ActiveTab,
       label: 'RFO History',
       icon: <FolderClock className="w-5 h-5 shrink-0" />,
       badge: null,
+      show: true,
     },
     {
       id: 'templates' as ActiveTab,
-      label: 'RFO Template',
+      label: 'Kop Surat & Template',
       icon: <Sliders className="w-5 h-5 shrink-0" />,
-      badge: !isAdmin ? 'Standar' : null,
+      badge: 'Admin',
+      show: isAdmin, // HANYA Super Admin yang dapat mengakses & mengelola kop surat dan template!
     },
     {
       id: 'users' as ActiveTab,
       label: 'Kelola Akun',
       icon: <Users className="w-5 h-5 shrink-0" />,
-      badge: null,
+      badge: 'Admin',
+      show: isAdmin, // HANYA Super Admin yang dapat mengelola akun pengguna!
     },
     {
       id: 'settings' as ActiveTab,
       label: 'Settings',
       icon: <Settings className="w-5 h-5 shrink-0" />,
       badge: null,
+      show: isAdmin, // HANYA Super Admin yang dapat mengelola backup & database!
     },
   ];
+
+  const navItems = allNavItems.filter((item) => item.show);
 
   return (
     <aside

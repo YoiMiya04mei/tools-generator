@@ -13,8 +13,11 @@ import {
   CheckCircle2,
   Eye,
   Sparkles,
+  Lock,
+  ShieldAlert,
 } from 'lucide-react';
 import type { RFOTemplate } from '../types/rfo';
+import type { UserAccount } from '../types/auth';
 import { storageService } from '../services/storageService';
 import { RFOPaperDocument } from '../components/RFOPaperDocument';
 import { SignatureBlock } from '../components/SignatureBlock';
@@ -23,18 +26,20 @@ import { extractFromDocx } from '../utils/docxUtils';
 import { extractFromPdf } from '../utils/pdfUtils';
 import type { ToastMessage } from '../components/Toast';
 
-
 interface TemplatePageProps {
   template: RFOTemplate;
   onUpdateTemplate: (template: RFOTemplate) => void;
   addToast: (type: ToastMessage['type'], title: string, message?: string) => void;
+  currentUser?: UserAccount | null;
 }
 
 export const TemplatePage: React.FC<TemplatePageProps> = ({
   template,
   onUpdateTemplate,
   addToast,
+  currentUser,
 }) => {
+  const isAdmin = currentUser?.role === 'admin';
   const [formData, setFormData] = useState<RFOTemplate>({ ...template });
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isUploadingSig, setIsUploadingSig] = useState<boolean>(false);
@@ -61,6 +66,11 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   };
 
   const handleSave = async () => {
+    if (!isAdmin) {
+      addToast('error', 'Akses Ditolak', 'Hanya akun Super Admin yang diizinkan mengubah dan menyimpan template.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const saved = await storageService.saveTemplate(formData);
@@ -78,6 +88,11 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   };
 
   const handleReset = async () => {
+    if (!isAdmin) {
+      addToast('error', 'Akses Ditolak', 'Hanya akun Super Admin yang diizinkan mereset template.');
+      return;
+    }
+
     if (
       window.confirm(
         'Apakah Anda yakin ingin mengembalikan template ke konfigurasi standar PT Jembatan Data Pangrango?'
@@ -95,6 +110,11 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   };
 
   const handleSignatureUpload = async (file: File) => {
+    if (!isAdmin) {
+      addToast('error', 'Akses Ditolak', 'Hanya akun Super Admin yang diizinkan mengunggah tanda tangan.');
+      return;
+    }
+
     setIsUploadingSig(true);
     try {
       const dataUrl = await processImageFile(file, 600, 300);
@@ -113,6 +133,11 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   };
 
   const handleStampUpload = async (file: File) => {
+    if (!isAdmin) {
+      addToast('error', 'Akses Ditolak', 'Hanya akun Super Admin yang diizinkan mengunggah cap stempel.');
+      return;
+    }
+
     setIsUploadingStamp(true);
     try {
       const dataUrl = await processImageFile(file, 500, 300);
@@ -131,6 +156,11 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   };
 
   const handleRemoveSignature = () => {
+    if (!isAdmin) {
+      addToast('error', 'Akses Ditolak', 'Hanya akun Super Admin yang diizinkan mereset tanda tangan.');
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, signatureImageUrl: '' }));
     addToast(
       'info',
@@ -140,6 +170,11 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   };
 
   const handleRemoveStamp = () => {
+    if (!isAdmin) {
+      addToast('error', 'Akses Ditolak', 'Hanya akun Super Admin yang diizinkan mereset cap stempel.');
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, stampImageUrl: '' }));
     addToast(
       'info',
@@ -149,6 +184,11 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   };
 
   const handleHeaderImageUpload = async (file: File) => {
+    if (!isAdmin) {
+      addToast('error', 'Akses Ditolak', 'Hanya akun Super Admin yang diizinkan mengunggah kop surat.');
+      return;
+    }
+
     setIsUploadingHeader(true);
     try {
       const isPdf =
@@ -258,6 +298,11 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   };
 
   const handleRemoveHeaderImage = () => {
+    if (!isAdmin) {
+      addToast('error', 'Akses Ditolak', 'Hanya akun Super Admin yang diizinkan mereset kop surat.');
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       headerImageUrl: '',
@@ -288,7 +333,13 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleReset}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition-colors"
+            disabled={!isAdmin}
+            className={`px-3.5 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors ${
+              !isAdmin
+                ? 'bg-slate-900 text-slate-600 opacity-40 cursor-not-allowed'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer'
+            }`}
+            title={!isAdmin ? 'Hanya Super Admin yang berhak mereset template' : 'Reset ke standar'}
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset Default</span>
@@ -296,18 +347,36 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
 
           <button
             onClick={handleSave}
-            disabled={isSaving}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-xs flex items-center gap-2 shadow-md shadow-cyan-950 transition-all cursor-pointer"
+            disabled={!isAdmin || isSaving}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${
+              !isAdmin
+                ? 'bg-slate-800 text-slate-500 opacity-40 cursor-not-allowed'
+                : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-md shadow-cyan-950 cursor-pointer'
+            }`}
+            title={!isAdmin ? 'Hanya Super Admin yang berhak menyimpan perubahan template' : 'Simpan template'}
           >
-            <Save className="w-4 h-4" />
+            {isAdmin ? <Save className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
             <span>{isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
           </button>
         </div>
       </div>
 
+      {/* Non-Admin Warning Banner */}
+      {!isAdmin && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center gap-3 text-amber-200 shadow-md">
+          <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
+          <div>
+            <h4 className="font-bold text-white text-sm">Mode Hanya-Lihat (Read-Only)</h4>
+            <p className="text-xs text-amber-200/90 mt-0.5">
+              Anda masuk sebagai <strong>{currentUser?.name || 'Staf'}</strong> ({currentUser?.role}). Pengelolaan format Kop Surat, tanda tangan pejabat, dan template RFO resmi hanya dapat diubah dan disimpan oleh <strong>Super Admin</strong>.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* Left Column: Form Settings (6 cols) */}
-        <div className="xl:col-span-6 space-y-5">
+        <fieldset disabled={!isAdmin} className="xl:col-span-6 space-y-5 border-none p-0 m-0">
           {/* Company Letterhead */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
             <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-2.5">
@@ -834,7 +903,7 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </fieldset>
 
         {/* Right Column: Live Document Preview using current form data (6 cols) */}
         <div className="xl:col-span-6 flex flex-col items-center">

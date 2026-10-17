@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { authService, DEFAULT_USERS } from '../services/authService';
 import type { UserAccount } from '../types/auth';
-import { ROLE_LABELS } from '../types/auth';
 
 interface LoginPageProps {
   onLoginSuccess: (user: UserAccount) => void;
@@ -117,7 +116,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Username Akun
+                Nama Pengguna / Akun
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -127,7 +126,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Contoh: admin, noc, atau cs"
+                  placeholder="Masukkan nama akun Anda"
                   className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all placeholder:text-slate-600"
                 />
               </div>
@@ -168,7 +167,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </button>
           </form>
 
-          {/* Quick Login / Akun Terdaftar */}
+          {/* Quick Login / Akun Terdaftar (Tanpa menampilkan username & role akses) */}
           <div className="border-t border-slate-800/80 pt-5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
@@ -182,45 +181,34 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {registeredUsers.map((user) => {
-                const badge = ROLE_LABELS[user.role];
                 return (
                   <button
                     key={user.id}
                     type="button"
                     onClick={() => handleQuickLogin(user)}
-                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800/70 border border-slate-800 hover:border-cyan-500/50 text-left transition-all group flex flex-col justify-between cursor-pointer space-y-1.5"
+                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/50 text-left transition-all group flex items-center justify-between cursor-pointer"
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`w-7 h-7 rounded-lg bg-gradient-to-tr ${
-                            user.avatarColor || 'from-cyan-600 to-blue-600'
-                          } flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-                        >
-                          {user.name.charAt(0)}
-                        </div>
-                        <div className="overflow-hidden">
-                          <p className="text-xs font-bold text-white group-hover:text-cyan-300 truncate">
-                            {user.name}
-                          </p>
-                          <p className="text-[10px] text-slate-400 truncate">
-                            @{user.username}
-                          </p>
-                        </div>
-                      </div>
-                      <span
-                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase shrink-0 ${badge.badgeClass}`}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className={`w-8 h-8 rounded-xl bg-gradient-to-tr ${
+                          user.avatarColor || 'from-cyan-600 to-blue-600'
+                        } flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0`}
                       >
-                        {badge.label}
-                      </span>
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white group-hover:text-cyan-300 truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400 truncate">
+                          {user.position}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="text-[10px] text-slate-400 pt-0.5 border-t border-slate-800/60 flex items-center justify-between">
-                      <span className="truncate">{user.position}</span>
-                      <span className="text-cyan-400 font-semibold group-hover:underline text-[9px] shrink-0">
-                        Masuk →
-                      </span>
-                    </div>
+                    <span className="text-cyan-400 group-hover:text-cyan-300 group-hover:translate-x-0.5 transition-all text-xs font-semibold shrink-0 ml-2">
+                      Masuk →
+                    </span>
                   </button>
                 );
               })}
