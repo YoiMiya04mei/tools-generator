@@ -308,11 +308,11 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* Left Column: Form Settings (6 cols) */}
         <div className="xl:col-span-6 space-y-5">
-          {/* Company Identity */}
+          {/* Company Letterhead */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
             <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-2.5">
               <Building className="w-4 h-4 text-cyan-400" />
-              Identitas Perusahaan (Header Kop Surat)
+              Kop Surat Resmi Perusahaan
             </h3>
 
             {/* Upload Kop Surat Resmi (Support PDF, Word, Image) */}
@@ -416,101 +416,6 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
                 )}
               </div>
             </div>
-
-            <div className="border-t border-slate-800 pt-3">
-              <span className="text-[11px] font-semibold text-slate-400 block mb-2">
-                Informasi Teks Perusahaan {formData.headerImageUrl ? '(Cadangan jika gambar kop dihapus)' : ''}:
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Nama Perusahaan
-              </label>
-              <input
-                type="text"
-                value={formData.companyName}
-                onChange={(e) =>
-                  setFormData({ ...formData, companyName: e.target.value })
-                }
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Alamat Kantor
-              </label>
-              <textarea
-                rows={2}
-                value={formData.companyAddress}
-                onChange={(e) =>
-                  setFormData({ ...formData, companyAddress: e.target.value })
-                }
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Nomor Telepon CS
-                </label>
-                <input
-                  type="text"
-                  value={formData.companyPhone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, companyPhone: e.target.value })
-                  }
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Email CS
-                </label>
-                <input
-                  type="email"
-                  value={formData.companyEmail}
-                  onChange={(e) =>
-                    setFormData({ ...formData, companyEmail: e.target.value })
-                  }
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Website Perusahaan
-                </label>
-                <input
-                  type="text"
-                  value={formData.companyWebsite || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, companyWebsite: e.target.value })
-                  }
-                  placeholder="Sukabuminetwork.net"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Kota Asal Surat
-                </label>
-                <input
-                  type="text"
-                  value={formData.letterLocation}
-                  onChange={(e) =>
-                    setFormData({ ...formData, letterLocation: e.target.value })
-                  }
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-              </div>
-            </div>
           </div>
 
           {/* Letter Salutation and Text */}
@@ -519,6 +424,24 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
               <FileText className="w-4 h-4 text-cyan-400" />
               Redaksi & Kalimat Resmi
             </h3>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Kota Asal Surat
+              </label>
+              <input
+                type="text"
+                value={formData.letterLocation}
+                onChange={(e) =>
+                  setFormData({ ...formData, letterLocation: e.target.value })
+                }
+                placeholder="Sukabumi"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Format tampilan pada surat: <strong className="text-cyan-400 font-normal">{formData.letterLocation || 'Sukabumi'}, [Tanggal Surat]</strong>
+              </span>
+            </div>
 
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1">
