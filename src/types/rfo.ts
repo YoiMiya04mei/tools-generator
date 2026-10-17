@@ -44,6 +44,7 @@ export interface RFOTemplate {
   watermarkText?: string;
   showFooter?: boolean;
   showTopCornerWave?: boolean;
+  headerSpacerHeight?: number; // Spacer in mm between letterhead and date/body text
 }
 
 export interface RFODraft {

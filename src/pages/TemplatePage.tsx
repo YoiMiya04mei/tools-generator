@@ -416,6 +416,64 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
                 )}
               </div>
             </div>
+
+            {/* Setting Jarak Garis Kop Surat ke Tanggal/Teks */}
+            <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                  Jarak Garis Kop ke Tanggal & Kalimat Surat
+                </span>
+                <span className="text-[11px] font-mono text-cyan-300 font-bold bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded">
+                  {formData.headerSpacerHeight ?? 4} mm
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-normal">
+                Atur posisi agar tanggal dan kalimat surat berada pas di bawah garis kop surat:
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      headerSpacerHeight: Math.max(0, (prev.headerSpacerHeight ?? 4) - 2),
+                    }))
+                  }
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-white font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Naikkan tanggal lebih dekat ke garis"
+                >
+                  <span>⬆ Lebih Naik (Rapat)</span>
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="30"
+                  step="1"
+                  value={formData.headerSpacerHeight ?? 4}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      headerSpacerHeight: Number(e.target.value),
+                    }))
+                  }
+                  className="flex-1 accent-cyan-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      headerSpacerHeight: Math.min(30, (prev.headerSpacerHeight ?? 4) + 2),
+                    }))
+                  }
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-white font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Turunkan tanggal lebih jauh dari garis"
+                >
+                  <span>⬇ Lebih Turun</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Letter Salutation and Text */}

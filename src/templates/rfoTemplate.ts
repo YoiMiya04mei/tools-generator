@@ -34,5 +34,6 @@ export const DEFAULT_RFO_TEMPLATE: RFOTemplate = {
   watermarkText: 'PT. JEMBATAN DATA PANGRANGO',
   showFooter: true,
   showTopCornerWave: true,
+  headerSpacerHeight: 6,
 };
 

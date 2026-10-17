@@ -8,13 +8,25 @@ interface CompanyHeaderProps {
 export const CompanyHeader: React.FC<CompanyHeaderProps> = ({ template }) => {
   // If user uploaded a full A4 letterhead background (PDF or full-page scan)
   if (template.letterheadBackgroundUrl) {
-    return <div className="company-header-spacer w-full h-[40mm] shrink-0" />;
+    const spacerHeight = template.headerSpacerHeight !== undefined ? template.headerSpacerHeight : 4;
+    return (
+      <div
+        className="company-header-spacer w-full shrink-0 transition-all"
+        style={{ height: `${spacerHeight}mm` }}
+      />
+    );
   }
 
   // If user uploaded a full letterhead banner image
   if (template.headerImageUrl) {
+    const offsetY = template.headerSpacerHeight !== undefined ? template.headerSpacerHeight - 4 : 0;
     return (
-      <div className="company-header w-full pb-0 mb-0 select-none">
+      <div
+        className="company-header w-full pb-0 mb-0 select-none overflow-hidden transition-all"
+        style={{
+          marginBottom: offsetY !== 0 ? `${offsetY}mm` : undefined,
+        }}
+      >
         <img
           src={template.headerImageUrl}
           alt="Kop Surat Perusahaan"
