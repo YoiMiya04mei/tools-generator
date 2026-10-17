@@ -185,6 +185,7 @@ export function App() {
           currentUser={currentUser}
           onLogout={handleLogout}
           onSwitchAccount={handleSwitchAccount}
+          onUserUpdated={(updated) => setCurrentUser(updated)}
         />
 
         {/* Dynamic Pages */}
@@ -233,6 +234,7 @@ export function App() {
             <UsersPage
               currentUser={currentUser}
               addToast={addToast}
+              onCurrentUserUpdated={(updated) => setCurrentUser(updated)}
             />
           )}
 

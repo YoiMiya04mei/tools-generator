@@ -55,8 +55,9 @@ class AuthService {
     this.initDefaultUsers();
   }
 
-  private initDefaultUsers(): void {
+  initDefaultUsers(): void {
     try {
+      if (typeof localStorage === 'undefined') return;
       const existing = localStorage.getItem(STORAGE_KEYS.USERS);
       if (!existing) {
         localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEFAULT_USERS));
@@ -184,6 +185,72 @@ class AuthService {
     }
 
     return { success: true, user: newUser };
+  }
+
+  updateUser(
+    userId: string,
+    data: {
+      username?: string;
+      name?: string;
+      role?: UserRole;
+      position?: string;
+      password?: string;
+    }
+  ): { success: boolean; user?: UserAccount; error?: string } {
+    const users = this.getUsers();
+    const targetIndex = users.findIndex((u) => u.id === userId);
+
+    if (targetIndex === -1) {
+      return { success: false, error: 'Pengguna tidak ditemukan.' };
+    }
+
+    const currentTarget = users[targetIndex];
+
+    // Check username uniqueness if changed
+    if (data.username !== undefined) {
+      const cleanUsername = data.username.trim().toLowerCase();
+      if (!cleanUsername) {
+        return { success: false, error: 'Username tidak boleh kosong.' };
+      }
+
+      const duplicate = users.some(
+        (u) => u.id !== userId && u.username.toLowerCase() === cleanUsername
+      );
+      if (duplicate) {
+        return { success: false, error: `Username "${cleanUsername}" sudah digunakan oleh akun lain.` };
+      }
+    }
+
+    if (data.name !== undefined && !data.name.trim()) {
+      return { success: false, error: 'Nama Lengkap tidak boleh kosong.' };
+    }
+
+    const updatedUser: UserAccount = {
+      ...currentTarget,
+      ...(data.name !== undefined ? { name: data.name.trim() } : {}),
+      ...(data.username !== undefined ? { username: data.username.trim().toLowerCase() } : {}),
+      ...(data.role !== undefined ? { role: data.role } : {}),
+      ...(data.position !== undefined ? { position: data.position.trim() } : {}),
+      ...(data.password !== undefined && data.password.trim() ? { password: data.password.trim() } : {}),
+    };
+
+    const newUsers = [...users];
+    newUsers[targetIndex] = updatedUser;
+
+    try {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(newUsers));
+
+      // If updating currently logged in user, update session as well
+      const currentSession = this.getCurrentUser();
+      if (currentSession && currentSession.id === userId) {
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(updatedUser));
+      }
+
+      return { success: true, user: updatedUser };
+    } catch (e) {
+      console.error(e);
+      return { success: false, error: 'Gagal memperbarui data pengguna ke storage.' };
+    }
   }
 
   deleteUser(userId: string): { success: boolean; error?: string } {

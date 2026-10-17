@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Clock, Menu, LogOut, ChevronDown, User } from 'lucide-react';
+import {
+  PlusCircle,
+  Clock,
+  Menu,
+  LogOut,
+  ChevronDown,
+  User,
+  KeyRound,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+} from 'lucide-react';
 import type { ActiveTab } from '../types/rfo';
 import type { UserAccount } from '../types/auth';
 import { ROLE_LABELS, ROLE_PERMISSIONS } from '../types/auth';
+import { authService } from '../services/authService';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -11,6 +24,7 @@ interface HeaderProps {
   currentUser?: UserAccount | null;
   onLogout?: () => void;
   onSwitchAccount?: () => void;
+  onUserUpdated?: (user: UserAccount) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,9 +34,18 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onLogout,
   onSwitchAccount,
+  onUserUpdated,
 }) => {
   const [timeStr, setTimeStr] = useState<string>('');
   const [profileOpen, setProfileOpen] = useState<boolean>(false);
+
+  // Self Edit Profile states
+  const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
+  const [selfName, setSelfName] = useState<string>('');
+  const [selfUsername, setSelfUsername] = useState<string>('');
+  const [selfPassword, setSelfPassword] = useState<string>('');
+  const [showSelfPassword, setShowSelfPassword] = useState<boolean>(false);
+  const [selfError, setSelfError] = useState<string>('');
 
   useEffect(() => {
     const updateTime = () => {
@@ -175,7 +198,22 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-1 pt-1">
+                    <button
+                      onClick={() => {
+                        setProfileOpen(false);
+                        setSelfName(currentUser.name);
+                        setSelfUsername(currentUser.username);
+                        setSelfPassword('');
+                        setShowSelfPassword(false);
+                        setSelfError('');
+                        setEditModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <KeyRound className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Ubah Username & Password</span>
+                    </button>
+
                     {onSwitchAccount && (
                       <button
                         onClick={() => {
@@ -184,7 +222,7 @@ export const Header: React.FC<HeaderProps> = ({
                         }}
                         className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                       >
-                        <User className="w-3.5 h-3.5 text-cyan-400" />
+                        <User className="w-3.5 h-3.5 text-blue-400" />
                         <span>Ganti Akun (Switch Account)</span>
                       </button>
                     )}
@@ -202,12 +240,161 @@ export const Header: React.FC<HeaderProps> = ({
                       </button>
                     )}
                   </div>
-                </div>
               </>
             )}
           </div>
         )}
       </div>
+
+      {/* Modal Self Edit Username & Password */}
+      {editModalOpen && currentUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-5 animate-scale-up">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Ubah Username & Password Anda
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Perbarui nama akun login dan kata sandi Anda
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {selfError && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-2 text-xs text-red-300">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>{selfError}</span>
+              </div>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSelfError('');
+
+                if (!selfUsername.trim()) {
+                  setSelfError('Username tidak boleh kosong.');
+                  return;
+                }
+                if (!selfName.trim()) {
+                  setSelfError('Nama Lengkap tidak boleh kosong.');
+                  return;
+                }
+
+                const res = authService.updateUser(currentUser.id, {
+                  name: selfName,
+                  username: selfUsername,
+                  ...(selfPassword.trim() ? { password: selfPassword.trim() } : {}),
+                });
+
+                if (res.success && res.user) {
+                  if (onUserUpdated) onUserUpdated(res.user);
+                  setEditModalOpen(false);
+                } else {
+                  setSelfError(res.error || 'Gagal mengubah data.');
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Nama Lengkap Pembuat RFO
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={selfName}
+                    onChange={(e) => setSelfName(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Username (Untuk Login)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
+                    @
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={selfUsername}
+                    onChange={(e) => setSelfUsername(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  Username unik untuk masuk ke sistem portal RFO.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Password Baru (Opsional)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showSelfPassword ? 'text' : 'password'}
+                    value={selfPassword}
+                    onChange={(e) => setSelfPassword(e.target.value)}
+                    placeholder="Kosongkan jika tidak ingin mengubah password"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-10 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSelfPassword(!showSelfPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    {showSelfPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  Kosongkan jika tetap ingin memakai kata sandi yang sekarang.
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditModalOpen(false)}
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-cyan-950 transition-all cursor-pointer"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  <span>Simpan Perubahan</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

@@ -9,6 +9,12 @@ import {
   UserCheck,
   AlertCircle,
   Info,
+  Edit3,
+  KeyRound,
+  Eye,
+  EyeOff,
+  Lock,
+  User,
 } from 'lucide-react';
 import { authService } from '../services/authService';
 import type { UserAccount, UserRole } from '../types/auth';
@@ -19,17 +25,19 @@ interface UsersPageProps {
   currentUser: UserAccount;
   addToast: (type: ToastMessage['type'], title: string, message?: string) => void;
   onUserChanged?: () => void;
+  onCurrentUserUpdated?: (user: UserAccount) => void;
 }
 
 export const UsersPage: React.FC<UsersPageProps> = ({
   currentUser,
   addToast,
   onUserChanged,
+  onCurrentUserUpdated,
 }) => {
   const [userList, setUserList] = useState<UserAccount[]>(authService.getUsers());
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
 
-  // Form states
+  // Add Form states
   const [newName, setNewName] = useState<string>('');
   const [newUsername, setNewUsername] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('password123');
@@ -37,12 +45,76 @@ export const UsersPage: React.FC<UsersPageProps> = ({
   const [newRole, setNewRole] = useState<UserRole>('engineer');
   const [formError, setFormError] = useState<string>('');
 
+  // Edit Form states
+  const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
+  const [editName, setEditName] = useState<string>('');
+  const [editUsername, setEditUsername] = useState<string>('');
+  const [editPassword, setEditPassword] = useState<string>('');
+  const [editPosition, setEditPosition] = useState<string>('');
+  const [editRole, setEditRole] = useState<UserRole>('engineer');
+  const [showEditPassword, setShowEditPassword] = useState<boolean>(false);
+  const [editError, setEditError] = useState<string>('');
+
   const isAdmin = currentUser.role === 'admin';
 
   const refreshUsers = () => {
     const list = authService.getUsers();
     setUserList(list);
     if (onUserChanged) onUserChanged();
+  };
+
+  const handleOpenEdit = (user: UserAccount) => {
+    setEditingUser(user);
+    setEditName(user.name);
+    setEditUsername(user.username);
+    setEditPassword('');
+    setEditPosition(user.position);
+    setEditRole(user.role);
+    setShowEditPassword(false);
+    setEditError('');
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError('');
+
+    if (!editingUser) return;
+
+    if (!editUsername.trim()) {
+      setEditError('Username tidak boleh kosong.');
+      return;
+    }
+    if (!editName.trim()) {
+      setEditError('Nama Lengkap tidak boleh kosong.');
+      return;
+    }
+
+    const res = authService.updateUser(editingUser.id, {
+      name: editName,
+      username: editUsername,
+      role: editRole,
+      position: editPosition,
+      ...(editPassword.trim() ? { password: editPassword.trim() } : {}),
+    });
+
+    if (res.success && res.user) {
+      addToast(
+        'success',
+        'Data Pengguna Diperbarui',
+        `Akun @${res.user.username} (${res.user.name}) berhasil diperbarui.${
+          editPassword.trim() ? ' Password baru telah aktif.' : ''
+        }`
+      );
+
+      if (res.user.id === currentUser.id && onCurrentUserUpdated) {
+        onCurrentUserUpdated(res.user);
+      }
+
+      setEditingUser(null);
+      refreshUsers();
+    } else {
+      setEditError(res.error || 'Gagal memperbarui akun.');
+    }
   };
 
   const handleCreateUser = (e: React.FormEvent) => {
@@ -266,20 +338,27 @@ export const UsersPage: React.FC<UsersPageProps> = ({
                     </td>
 
                     <td className="py-3.5 px-4 text-center">
-                      {isAdmin && !isCurrent ? (
+                      <div className="flex items-center justify-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => handleDeleteUser(user)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
-                          title="Hapus akun ini"
+                          onClick={() => handleOpenEdit(user)}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-400 transition-colors cursor-pointer"
+                          title="Edit Username, Password, atau Data Akun"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Edit3 className="w-4 h-4 text-cyan-400" />
                         </button>
-                      ) : (
-                        <span className="text-[11px] text-slate-500 italic">
-                          {isCurrent ? 'Akun Aktif' : '-'}
-                        </span>
-                      )}
+
+                        {isAdmin && !isCurrent ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(user)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+                            title="Hapus akun ini"
+                          >
+                            <Trash2 className="w-4 h-4 text-rose-400" />
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -409,6 +488,173 @@ export const UsersPage: React.FC<UsersPageProps> = ({
                 >
                   <UserPlus className="w-4 h-4" />
                   <span>Simpan Akun Baru</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit User & Password */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-5 animate-scale-up">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Edit Pengguna & Password
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Ubah username, password, dan identitas akun
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingUser(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {editError && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-2 text-xs text-red-300">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Nama Lengkap Pembuat RFO
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Contoh: Budi Santoso"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Username (Untuk Login)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
+                    @
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={editUsername}
+                    onChange={(e) => setEditUsername(e.target.value)}
+                    placeholder="Contoh: budi_noc"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  Username unik tanpa spasi untuk masuk ke portal sistem.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Password Baru (Opsional)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showEditPassword ? 'text' : 'password'}
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    placeholder="Kosongkan jika tidak ingin mengubah password"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-10 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  Ketik kata sandi baru untuk mengganti password akun ini.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Jabatan / Posisi Resmi
+                </label>
+                <input
+                  type="text"
+                  value={editPosition}
+                  onChange={(e) => setEditPosition(e.target.value)}
+                  placeholder="Contoh: NOC Tier 2 Engineer"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Hak Akses (Role)
+                </label>
+                <select
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value as UserRole)}
+                  disabled={editingUser.id === currentUser.id && currentUser.role === 'admin'}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-semibold disabled:opacity-60"
+                >
+                  <option value="engineer">NOC Engineer (Dapat Buat & Kelola RFO)</option>
+                  <option value="staff">Customer Support (Dapat Buat RFO Layanan CS)</option>
+                  <option value="admin">Super Admin (Akses Penuh Seluruh Modul)</option>
+                  <option value="viewer">Auditor / Viewer (Hanya Melihat & Unduh)</option>
+                </select>
+                {editingUser.id === currentUser.id && currentUser.role === 'admin' ? (
+                  <span className="text-[10px] text-amber-400/80 mt-1 block">
+                    Role akun Anda sendiri dikunci sebagai Super Admin demi keamanan sistem.
+                  </span>
+                ) : (
+                  <div className="mt-2 p-2 rounded-lg bg-slate-950/70 border border-slate-800 text-[11px] text-slate-400">
+                    <div className="flex items-center gap-1 font-semibold text-cyan-300 mb-0.5">
+                      <Info className="w-3.5 h-3.5" />
+                      <span>{ROLE_LABELS[editRole].label}</span>
+                    </div>
+                    <span>{ROLE_LABELS[editRole].desc}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-cyan-950 transition-all cursor-pointer"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  <span>Simpan Perubahan</span>
                 </button>
               </div>
             </form>
