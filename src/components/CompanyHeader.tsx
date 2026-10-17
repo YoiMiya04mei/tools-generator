@@ -14,7 +14,7 @@ export const CompanyHeader: React.FC<CompanyHeaderProps> = ({ template }) => {
   // If user uploaded a full letterhead banner image
   if (template.headerImageUrl) {
     return (
-      <div className="company-header w-full pb-2 mb-1 select-none">
+      <div className="company-header w-full pb-0 mb-0 select-none">
         <img
           src={template.headerImageUrl}
           alt="Kop Surat Perusahaan"
@@ -26,7 +26,7 @@ export const CompanyHeader: React.FC<CompanyHeaderProps> = ({ template }) => {
   }
 
   return (
-    <div className="company-header w-full pb-3 select-none">
+    <div className="company-header w-full pb-0 select-none">
       <div className="flex items-center gap-4">
         {/* Company Logo: Custom uploaded or JDP Vector */}
         <div className="flex items-center gap-3 shrink-0">
@@ -116,7 +116,7 @@ export const CompanyHeader: React.FC<CompanyHeaderProps> = ({ template }) => {
       </div>
 
       {/* Official Header Double Divider Bar (Thick line over Thin line) */}
-      <div className="mt-3">
+      <div className="mt-2">
         <div className="w-full h-[2.5px] bg-slate-900"></div>
         <div className="w-full h-[1px] bg-slate-900 mt-[2px]"></div>
       </div>

@@ -7,8 +7,8 @@ interface SignatureBlockProps {
 
 export const SignatureBlock: React.FC<SignatureBlockProps> = ({ template }) => {
   return (
-    <div className="signature-block mt-4 break-inside-avoid">
-      <p className="text-[14px] text-slate-800 mb-1">
+    <div className="signature-block mt-2 break-inside-avoid">
+      <p className="text-[13.5px] text-slate-800 mb-1">
         {template.signOff || 'Hormat Kami,'}
       </p>
 

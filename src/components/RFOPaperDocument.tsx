@@ -151,12 +151,12 @@ export const RFOPaperDocument: React.FC<RFOPaperDocumentProps> = ({
         <CompanyHeader template={template} />
 
         {/* 2. Date Right Aligned */}
-        <div className="text-right text-[14px] text-slate-800 my-4">
+        <div className="text-right text-[13.5px] text-slate-800 mt-2 mb-2.5">
           {letterDate}
         </div>
 
       {/* 3. Salutation & Opening Paragraph */}
-      <div className="mb-4 text-[13.5px] leading-relaxed text-slate-900 space-y-3">
+      <div className="mb-3 text-[13px] leading-relaxed text-slate-900 space-y-1.5">
         <p>{template.salutation || 'Pelanggan Yang Terhormat,'}</p>
         <p>
           {template.openingGreeting ||
@@ -169,7 +169,7 @@ export const RFOPaperDocument: React.FC<RFOPaperDocumentProps> = ({
       </div>
 
       {/* 4. Table of Outage Information (Exact structure from reference document) */}
-      <div className="my-4 overflow-hidden">
+      <div className="mb-3 overflow-hidden">
         <table className="w-full border-collapse border border-slate-900 text-[13px]">
           <thead>
             <tr className="bg-slate-50">
@@ -235,19 +235,19 @@ export const RFOPaperDocument: React.FC<RFOPaperDocumentProps> = ({
       </div>
 
       {/* 5. Follow-up description & Customer Care closing */}
-      <div className="mt-4 text-[13.5px] leading-relaxed text-slate-900 space-y-3">
+      <div className="mb-3 text-[13px] leading-relaxed text-slate-900 space-y-2">
         <p className="whitespace-pre-line">{descriptionText}</p>
 
-        <p className="pt-1">
+        <p>
           {template.closingContact ||
             'Kami mengucapkan terima kasih atas kesabaran dan pengertian Bapak/Ibu. Apabila masih terdapat kendala layanan, jangan ragu untuk menghubungi Customer Service kami di:'}
         </p>
 
-        <p className="font-bold text-slate-900 text-[14px]">
+        <p className="font-bold text-slate-900 text-[13.5px]">
           {template.contactPhone || '+62 895-3182-5259'}
         </p>
 
-        <div className="pt-2 space-y-1">
+        <div className="space-y-0.5">
           {template.closingRemarks.split('\n').map((line, idx) => (
             <p key={idx}>{line}</p>
           ))}
