@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Save,
-  FileDown,
-  Printer,
   Copy,
   MessageSquare,
   Clock,
@@ -24,11 +22,9 @@ import {
   toDateInputString,
 } from '../utils/dateFormatter';
 import { RFOService } from '../services/rfoService';
-import { PDFService } from '../services/pdfService';
 import { storageService } from '../services/storageService';
 import type { ToastMessage } from '../components/Toast';
 import type { UserAccount } from '../types/auth';
-import { ROLE_LABELS } from '../types/auth';
 
 interface CreateRFOPageProps {
   template: RFOTemplate;
@@ -101,7 +97,6 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
   const [cachedDraft, setCachedDraft] = useState<RFODraft | null>(null);
 
   // UI state
-  const [isExportingPDF, setIsExportingPDF] = useState<boolean>(false);
   const [previewZoom, setPreviewZoom] = useState<number>(90);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -269,60 +264,6 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
     }
   };
 
-  // Generate & Export PDF
-  const handleGeneratePDF = async () => {
-    const validation = RFOService.validate({
-      startTime,
-      endTime,
-      rootCause,
-      actionTaken,
-    });
-
-    if (!validation.isValid) {
-      setValidationErrors(validation.errors);
-      addToast('error', 'Validasi Gagal', 'Lengkapi form sebelum mengunduh PDF.');
-      return;
-    }
-
-    setIsExportingPDF(true);
-    addToast('info', 'Membuat PDF...', 'Sedang merender layout dokumen A4.');
-
-    try {
-      // Auto save first if not saved yet
-      await storageService.saveRFO(currentRFO);
-
-      const filename = await PDFService.exportToPDF({
-        elementId: 'rfo-paper-doc',
-        rfoDate: currentRFO.rfoDate,
-        rootCause: currentRFO.rootCause,
-      });
-
-      addToast('success', 'PDF Berhasil Dibuat', `File diunduh sebagai: ${filename}`);
-    } catch (error) {
-      console.error(error);
-      addToast('error', 'Gagal Membuat PDF', 'Terjadi kesalahan saat memproses ekspor PDF.');
-    } finally {
-      setIsExportingPDF(false);
-    }
-  };
-
-  // Print RFO
-  const handlePrint = () => {
-    const validation = RFOService.validate({
-      startTime,
-      endTime,
-      rootCause,
-      actionTaken,
-    });
-
-    if (!validation.isValid) {
-      setValidationErrors(validation.errors);
-      addToast('error', 'Validasi Gagal', 'Perbaiki isian form sebelum mencetak.');
-      return;
-    }
-
-    PDFService.printDocument();
-  };
 
   // Copy Plain Text
   const handleCopyText = async () => {
@@ -376,100 +317,98 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
   };
 
   return (
-    <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
-      {/* Draft Notification Banner */}
-      {hasUnfinishedDraft && !editingId && (
-        <div className="no-print mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-semibold text-amber-200 text-sm">
-                Terdapat draft RFO yang belum selesai.
-              </p>
-              <p className="text-xs text-amber-300/80 mt-0.5">
-                Sistem menyimpan progres terakhir Anda secara otomatis.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <button
-              onClick={handleRestoreDraft}
-              className="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs transition-colors shadow-sm"
-            >
-              Lanjutkan Draft
-            </button>
-            <button
-              onClick={handleDiscardDraft}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors"
-            >
-              Hapus Draft
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Editing notice if in edit mode */}
-      {editingId && (
-        <div className="no-print mb-6 p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-cyan-300 text-sm">
-            <FileText className="w-4 h-4" />
-            <span>Sedang mengedit dokumen tersimpan: <strong>{editingId}</strong></span>
-          </div>
-          <button
-            onClick={() => {
-              setEditingId(null);
-              handleResetForm();
-            }}
-            className="text-xs text-slate-400 hover:text-white underline"
-          >
-            Batal Edit & Buat Baru
-          </button>
-        </div>
-      )}
-
-      {/* Current Author / Creator Banner */}
-      {currentUser && (
-        <div className="no-print mb-5 p-3 px-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-8 h-8 rounded-xl bg-gradient-to-tr ${
-                currentUser.avatarColor || 'from-cyan-600 to-blue-600'
-              } flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0`}
-            >
-              {currentUser.name.charAt(0)}
-            </div>
+    <div className="flex-1 flex flex-col xl:flex-row min-h-0 overflow-y-auto xl:overflow-hidden bg-slate-50">
+      {/* LEFT COLUMN: Input Form (Exact layout matching Surat Tugas & Berita Acara) */}
+      <div className="w-full xl:w-[48%] flex flex-col border-r border-slate-200 bg-white p-4 lg:p-6 overflow-y-auto">
+        <div className="space-y-6 max-w-2xl mx-auto w-full">
+          {/* Header Title with quick badge & Reset button */}
+          <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400">Pembuat Dokumen:</span>
-                <strong className="text-xs text-white">{currentUser.name}</strong>
-                <span className="text-slate-400 text-xs hidden sm:inline">({currentUser.position})</span>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  {editingId ? 'Edit Mode' : 'Form Generator'}
+                </span>
+                <span className="text-xs text-slate-400">• Standar PT JDP</span>
               </div>
-              <p className="text-[11px] text-cyan-400/90 mt-0.5">
-                Nama Anda otomatis tersimpan ke dalam arsip History RFO saat dokumen ini disimpan.
+              <h1 className="text-xl font-bold text-slate-900 mt-1">
+                {editingId ? 'Edit Dokumen RFO' : 'Buat Dokumen RFO Baru'}
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Reason for Outage - Laporan insiden gangguan jaringan resmi
               </p>
             </div>
-          </div>
-          <span
-            className={`self-start sm:self-auto text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
-              ROLE_LABELS[currentUser.role]?.badgeClass || ''
-            }`}
-          >
-            {ROLE_LABELS[currentUser.role]?.label || currentUser.role}
-          </span>
-        </div>
-      )}
 
-      {/* Main Grid: Left Form, Right Live A4 Preview */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Form & Controls (5 Cols on XL) */}
-        <div className="no-print xl:col-span-5 space-y-6">
+            <button
+              type="button"
+              onClick={handleResetForm}
+              className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs font-medium"
+              title="Reset Formulir"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset</span>
+            </button>
+          </div>
+
+          {/* Draft Notification Banner */}
+          {hasUnfinishedDraft && !editingId && (
+            <div className="no-print mb-4 p-4 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-amber-100 text-amber-700">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-amber-900 text-sm">
+                    Terdapat draft RFO yang belum selesai.
+                  </p>
+                  <p className="text-xs text-amber-800/80 mt-0.5">
+                    Sistem menyimpan progres terakhir Anda secara otomatis.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button
+                  type="button"
+                  onClick={handleRestoreDraft}
+                  className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors shadow-xs cursor-pointer"
+                >
+                  Lanjutkan Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDiscardDraft}
+                  className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs transition-colors cursor-pointer shadow-xs"
+                >
+                  Hapus Draft
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Editing notice if in edit mode */}
+          {editingId && (
+            <div className="no-print mb-4 p-3.5 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-blue-800 text-sm">
+                <FileText className="w-4 h-4 text-blue-600" />
+                <span>Sedang mengedit dokumen tersimpan: <strong>{editingId}</strong></span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingId(null);
+                  handleResetForm();
+                }}
+                className="text-xs text-blue-700 hover:text-blue-900 underline font-medium cursor-pointer"
+              >
+                Batal Edit & Buat Baru
+              </button>
+            </div>
+          )}
+
           {/* Quick Incident Templates Bar */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-xs">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                 Quick Presets NOC (Incident Common)
               </span>
             </div>
@@ -478,7 +417,7 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
                 <button
                   key={idx}
                   onClick={() => applyTemplate(tmpl)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-slate-300 text-[11px] font-medium transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-medium transition-colors shadow-xs cursor-pointer"
                 >
                   {tmpl.name}
                 </button>
@@ -487,20 +426,20 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
           </div>
 
           {/* Core Input Form Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-5">
-            <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Clock className="w-4 h-4 text-cyan-400" />
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5">
+            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-600" />
                 Data Insiden & Waktu Gangguan
               </h3>
-              <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/50">
+              <span className="text-[11px] font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                 WIB Timezone
               </span>
             </div>
 
             {/* Date of Letter / Report */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 Tanggal Dokumen RFO
               </label>
@@ -508,7 +447,7 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
                 type="date"
                 value={rfoDate}
                 onChange={(e) => setRfoDate(e.target.value)}
-                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-mono shadow-xs"
               />
             </div>
 
@@ -516,24 +455,24 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Start Time */}
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                  Waktu Mulai <span className="text-rose-400">*</span>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Waktu Mulai <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="datetime-local"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className={`w-full bg-slate-800/90 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 font-mono ${
+                  className={`w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 font-mono shadow-xs ${
                     validationErrors.startTime
-                      ? 'border-rose-500 focus:ring-rose-500'
-                      : 'border-slate-700 focus:ring-cyan-500'
+                      ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-500'
+                      : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-600'
                   }`}
                 />
-                <p className="text-[11px] text-slate-400 mt-1 truncate">
+                <p className="text-[11px] text-slate-500 mt-1 truncate">
                   {startTime ? formatIndonesianDateTime(startTime) : 'Pilih waktu mulai'}
                 </p>
                 {validationErrors.startTime && (
-                  <p className="text-[11px] text-rose-400 mt-0.5">
+                  <p className="text-[11px] text-rose-500 mt-0.5 font-medium">
                     {validationErrors.startTime}
                   </p>
                 )}
@@ -541,24 +480,24 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
 
               {/* End Time */}
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                  Waktu Selesai <span className="text-rose-400">*</span>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Waktu Selesai <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="datetime-local"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className={`w-full bg-slate-800/90 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 font-mono ${
+                  className={`w-full bg-white border rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 font-mono shadow-xs ${
                     validationErrors.endTime || !durationResult.isValid
-                      ? 'border-rose-500 focus:ring-rose-500'
-                      : 'border-slate-700 focus:ring-cyan-500'
+                      ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-500'
+                      : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-600'
                   }`}
                 />
-                <p className="text-[11px] text-slate-400 mt-1 truncate">
+                <p className="text-[11px] text-slate-500 mt-1 truncate">
                   {endTime ? formatIndonesianDateTime(endTime) : 'Pilih waktu selesai'}
                 </p>
                 {validationErrors.endTime && (
-                  <p className="text-[11px] text-rose-400 mt-0.5">
+                  <p className="text-[11px] text-rose-500 mt-0.5 font-medium">
                     {validationErrors.endTime}
                   </p>
                 )}
@@ -569,20 +508,20 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
             <div
               className={`p-3.5 rounded-xl border transition-all ${
                 durationResult.isValid
-                  ? 'bg-slate-800/80 border-cyan-500/40 text-cyan-200'
-                  : 'bg-rose-950/30 border-rose-500/50 text-rose-200'
+                  ? 'bg-blue-50/70 border-blue-200 text-blue-900'
+                  : 'bg-rose-50 border-rose-200 text-rose-900'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium flex items-center gap-1.5 text-slate-300">
-                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="text-xs font-medium flex items-center gap-1.5 text-slate-700">
+                  <Clock className="w-3.5 h-3.5 text-blue-600" />
                   Total Durasi Gangguan:
                 </span>
                 <span
-                  className={`text-sm font-bold font-mono px-2.5 py-0.5 rounded ${
+                  className={`text-sm font-bold font-mono px-2.5 py-0.5 rounded shadow-xs ${
                     durationResult.isValid
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-rose-600 text-white'
                   }`}
                 >
                   {durationResult.isValid
@@ -591,7 +530,7 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
                 </span>
               </div>
               {!durationResult.isValid && durationResult.error && (
-                <div className="flex items-center gap-1.5 mt-2 text-xs text-rose-400 font-medium">
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-rose-600 font-medium">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{durationResult.error}</span>
                 </div>
@@ -601,10 +540,10 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
             {/* Root Cause Textarea */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-slate-300">
-                  Root Cause <span className="text-rose-400">*</span>
+                <label className="text-xs font-semibold text-slate-700">
+                  Root Cause <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-[11px] text-slate-500">
+                <span className="text-[11px] text-slate-400">
                   {rootCause.length} karakter
                 </span>
               </div>
@@ -613,14 +552,14 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
                 value={rootCause}
                 onChange={(e) => setRootCause(e.target.value)}
                 placeholder="Contoh: Lonjakan traffic sesaat (microburst) pada interface uplink MPLS di sisi NEX DC yang menyebabkan packet drop."
-                className={`w-full bg-slate-800/90 border rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 resize-y placeholder:text-slate-500 ${
+                className={`w-full bg-white border rounded-xl p-3 text-sm text-slate-900 focus:outline-none focus:ring-2 resize-y placeholder:text-slate-400 shadow-xs ${
                   validationErrors.rootCause
-                    ? 'border-rose-500 focus:ring-rose-500'
-                    : 'border-slate-700 focus:ring-cyan-500'
+                    ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-500'
+                    : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-600'
                 }`}
               />
               {validationErrors.rootCause && (
-                <p className="text-[11px] text-rose-400 mt-1">
+                <p className="text-[11px] text-rose-500 mt-1 font-medium">
                   {validationErrors.rootCause}
                 </p>
               )}
@@ -629,10 +568,10 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
             {/* Action Taken Textarea */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-slate-300">
-                  Action Taken <span className="text-rose-400">*</span>
+                <label className="text-xs font-semibold text-slate-700">
+                  Action Taken <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-[11px] text-slate-500">
+                <span className="text-[11px] text-slate-400">
                   {actionTaken.length} karakter
                 </span>
               </div>
@@ -641,14 +580,14 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
                 value={actionTaken}
                 onChange={(e) => setActionTaken(e.target.value)}
                 placeholder="Contoh: Penggantian interface dan reconfigure service."
-                className={`w-full bg-slate-800/90 border rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 resize-y placeholder:text-slate-500 ${
+                className={`w-full bg-white border rounded-xl p-3 text-sm text-slate-900 focus:outline-none focus:ring-2 resize-y placeholder:text-slate-400 shadow-xs ${
                   validationErrors.actionTaken
-                    ? 'border-rose-500 focus:ring-rose-500'
-                    : 'border-slate-700 focus:ring-cyan-500'
+                    ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-500'
+                    : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-600'
                 }`}
               />
               {validationErrors.actionTaken && (
-                <p className="text-[11px] text-rose-400 mt-1">
+                <p className="text-[11px] text-rose-500 mt-1 font-medium">
                   {validationErrors.actionTaken}
                 </p>
               )}
@@ -657,8 +596,8 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
             {/* Optional Disruption Description */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-slate-300">
-                  Deskripsi Gangguan <span className="text-slate-500 font-normal">(Opsional)</span>
+                <label className="text-xs font-semibold text-slate-700">
+                  Deskripsi Gangguan <span className="text-slate-400 font-normal">(Opsional)</span>
                 </label>
               </div>
               <textarea
@@ -666,7 +605,7 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
                 value={disruptionDescription}
                 onChange={(e) => setDisruptionDescription(e.target.value)}
                 placeholder="Kosongkan untuk menggunakan kalimat default resmi perusahaan..."
-                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y placeholder:text-slate-500"
+                className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 resize-y placeholder:text-slate-400 shadow-xs"
               />
               <p className="text-[11px] text-slate-500 mt-1">
                 Jika dikosongkan, sistem memakai default:{' '}
@@ -676,146 +615,104 @@ export const CreateRFOPage: React.FC<CreateRFOPageProps> = ({
 
             {/* Optional Ticket Number for NOC tracking */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 No. Tiket / Referensi Insiden{' '}
-                <span className="text-slate-500 font-normal">(Opsional)</span>
+                <span className="text-slate-400 font-normal">(Opsional)</span>
               </label>
               <input
                 type="text"
                 value={ticketNo}
                 onChange={(e) => setTicketNo(e.target.value)}
                 placeholder="Contoh: INC-20261011-889"
-                className="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-mono shadow-xs"
               />
             </div>
           </div>
-
-          {/* Action Buttons Panel (Save, PDF, Print, Copy Text, Copy WA) */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              {/* Save RFO */}
-              <button
-                onClick={handleSaveRFO}
-                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-sm shadow-md shadow-cyan-950 transition-all cursor-pointer active:scale-95"
-              >
-                <Save className="w-4 h-4" />
-                <span>{editingId ? 'Update RFO' : 'Simpan RFO'}</span>
-              </button>
-
-              {/* Generate PDF */}
-              <button
-                onClick={handleGeneratePDF}
-                disabled={isExportingPDF}
-                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-sm shadow-md shadow-emerald-950 transition-all cursor-pointer active:scale-95"
-              >
-                <FileDown className="w-4 h-4" />
-                <span>{isExportingPDF ? 'Merender...' : 'Generate PDF'}</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {/* Print */}
-              <button
-                onClick={handlePrint}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium transition-all"
-                title="Cetak dokumen format A4"
-              >
-                <Printer className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Print</span>
-              </button>
-
-              {/* Copy Plain Text */}
-              <button
-                onClick={handleCopyText}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium transition-all"
-                title="Salin teks untuk Email / Ticketing"
-              >
-                <Copy className="w-3.5 h-3.5 text-blue-400" />
-                <span>Copy Text</span>
-              </button>
-
-              {/* Copy WhatsApp */}
-              <button
-                onClick={handleCopyWhatsApp}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-emerald-900/40 border border-slate-700 hover:border-emerald-500/40 text-emerald-300 text-xs font-medium transition-all"
-                title="Salin format ringkas untuk WhatsApp"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-                <span>WhatsApp</span>
-              </button>
-            </div>
-
-            <div className="pt-2 border-t border-slate-800/80 flex justify-end">
-              <button
-                onClick={handleResetForm}
-                className="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1 transition-colors"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Reset / Bersihkan Form</span>
-              </button>
-            </div>
-          </div>
         </div>
+      </div>
 
-        {/* Right Column: Live A4 Paper Preview (7 Cols on XL) */}
-        <div className="xl:col-span-7 flex flex-col items-center">
-          {/* Preview Toolbar */}
-          <div className="no-print w-full max-w-[210mm] mb-3 flex items-center justify-between bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-xl backdrop-blur-md">
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs font-semibold text-slate-300">
-                Live A4 Preview
-              </span>
-              <span className="text-[10px] text-slate-500 hidden sm:inline">
-                (Standard PT Jembatan Data Pangrango)
-              </span>
-            </div>
+      {/* RIGHT COLUMN: Interactive Live A4 Preview & Action Bar */}
+      <div className="w-full xl:w-[52%] flex flex-col h-full min-h-0 bg-slate-100/70 overflow-hidden">
+        {/* Top Floating Action Bar */}
+        <div className="no-print p-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-2.5 z-10 shrink-0 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <Eye className="w-4 h-4 text-blue-600" />
+              <span>Live A4 Preview</span>
+            </span>
 
             {/* Zoom Controls */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg ml-2">
               <button
-                onClick={() => setPreviewZoom(Math.max(60, previewZoom - 10))}
-                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs"
+                type="button"
+                onClick={() => setPreviewZoom((z) => Math.max(50, z - 10))}
+                className="p-1 hover:text-slate-900 text-slate-500 cursor-pointer hover:bg-slate-200/50 rounded-l-lg transition-colors"
                 title="Perkecil"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
-              <span className="text-xs text-slate-400 font-mono w-12 text-center">
+              <span className="text-[11px] font-mono px-2 text-slate-700 font-semibold">
                 {previewZoom}%
               </span>
               <button
-                onClick={() => setPreviewZoom(Math.min(120, previewZoom + 10))}
-                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs"
+                type="button"
+                onClick={() => setPreviewZoom((z) => Math.min(130, z + 10))}
+                className="p-1 hover:text-slate-900 text-slate-500 cursor-pointer hover:bg-slate-200/50 rounded-r-lg transition-colors"
                 title="Perbesar"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
-              <button
-                onClick={() => setPreviewZoom(90)}
-                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px]"
-                title="Reset zoom"
-              >
-                Fit
-              </button>
             </div>
           </div>
 
-          {/* Paper Container with scale wrapper */}
-          <div className="w-full flex justify-center overflow-x-auto pb-8">
-            <div
-              style={{
-                transform: `scale(${previewZoom / 100})`,
-                transformOrigin: 'top center',
-                transition: 'transform 0.15s ease-out',
-              }}
-              className="shadow-2xl shadow-black/80 rounded-sm"
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCopyWhatsApp}
+              className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              title="Salin Teks Format WhatsApp"
             >
-              <RFOPaperDocument
-                id="rfo-paper-doc"
-                rfo={currentRFO}
-                template={template}
-              />
-            </div>
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCopyText}
+              className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              title="Salin Teks Biasa"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Salin</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSaveRFO}
+              className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{editingId ? 'Simpan Perubahan' : 'Simpan RFO'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Paper Container Scroll Area */}
+        <div className="flex-1 overflow-auto p-4 lg:p-8 flex items-start justify-center bg-slate-100/70">
+          <div
+            style={{
+              transform: `scale(${previewZoom / 100})`,
+              transformOrigin: 'top center',
+              transition: 'transform 0.15s ease-out',
+            }}
+            className="shadow-lg shadow-slate-300/60 rounded-sm shrink-0 mb-12"
+          >
+            <RFOPaperDocument
+              id="rfo-paper-doc"
+              rfo={currentRFO}
+              template={template}
+            />
           </div>
         </div>
       </div>

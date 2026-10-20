@@ -11,25 +11,41 @@ import { ToastContainer } from './components/Toast';
 import type { ToastMessage } from './components/Toast';
 
 import { DashboardPage } from './pages/DashboardPage';
-import { CreateRFOPage } from './pages/CreateRFOPage';
+import { CreateUnifiedDocumentPage } from './pages/CreateUnifiedDocumentPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { TemplatePage } from './pages/TemplatePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { UsersPage } from './pages/UsersPage';
+import type { SuratTugasDocument, SuratTugasTemplate } from './types/suratTugas';
+import { DEFAULT_SURAT_TUGAS_TEMPLATE } from './types/suratTugas';
+import { suratTugasStorage } from './services/suratTugasStorage';
+import type { BeritaAcaraDocument, BeritaAcaraTemplate } from './types/beritaAcara';
+import { DEFAULT_BERITA_ACARA_TEMPLATE } from './types/beritaAcara';
+import { beritaAcaraStorage } from './services/beritaAcaraStorage';
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => authService.getCurrentUser());
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [template, setTemplate] = useState<RFOTemplate>(DEFAULT_RFO_TEMPLATE);
+  const [suratTugasTemplate, setSuratTugasTemplate] = useState<SuratTugasTemplate>(
+    DEFAULT_SURAT_TUGAS_TEMPLATE
+  );
+  const [beritaAcaraTemplate, setBeritaAcaraTemplate] = useState<BeritaAcaraTemplate>(
+    DEFAULT_BERITA_ACARA_TEMPLATE
+  );
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [editingRFO, setEditingRFO] = useState<RFODocument | null>(null);
+  const [editingSuratTugas, setEditingSuratTugas] = useState<SuratTugasDocument | null>(null);
+  const [editingBeritaAcara, setEditingBeritaAcara] = useState<BeritaAcaraDocument | null>(null);
   const [hasDraft, setHasDraft] = useState<boolean>(false);
 
   // Initialize template and check draft on startup
   useEffect(() => {
     loadTemplate();
+    loadSuratTugasTemplate();
+    loadBeritaAcaraTemplate();
     checkDraft();
   }, []);
 
@@ -39,6 +55,24 @@ export function App() {
       setTemplate(t);
     } catch (e) {
       console.warn('Template load fallback:', e);
+    }
+  };
+
+  const loadSuratTugasTemplate = async () => {
+    try {
+      const stTmpl = await suratTugasStorage.getTemplate();
+      setSuratTugasTemplate(stTmpl);
+    } catch (e) {
+      console.warn('Surat Tugas template load fallback:', e);
+    }
+  };
+
+  const loadBeritaAcaraTemplate = async () => {
+    try {
+      const baTmpl = await beritaAcaraStorage.getTemplate();
+      setBeritaAcaraTemplate(baTmpl);
+    } catch (e) {
+      console.warn('Berita Acara template load fallback:', e);
     }
   };
 
@@ -85,10 +119,17 @@ export function App() {
     const isAdmin = currentUser.role === 'admin';
     const canCreate = authService.hasPermission(currentUser.role, 'canCreateRFO');
 
-    if ((activeTab === 'templates' || activeTab === 'users' || activeTab === 'settings') && !isAdmin) {
+    if (
+      (activeTab === 'templates' ||
+        activeTab === 'templates-st' ||
+        activeTab === 'templates-ba' ||
+        activeTab === 'users' ||
+        activeTab === 'settings') &&
+      !isAdmin
+    ) {
       setActiveTab('dashboard');
       addToast('error', 'Akses Ditolak', 'Halaman tersebut hanya dapat diakses dan dikelola oleh Super Admin.');
-    } else if (activeTab === 'create' && !canCreate) {
+    } else if ((activeTab === 'create' || activeTab === 'create-st' || activeTab === 'create-ba') && !canCreate) {
       setActiveTab('history');
       addToast('info', 'Akses Terbatas', 'Akun Auditor/Viewer hanya memiliki wewenang membaca arsip.');
     }
@@ -129,6 +170,71 @@ export function App() {
   const handleRFOSaved = () => {
     setEditingRFO(null);
     checkDraft();
+    setActiveTab('history');
+  };
+
+  // Surat Tugas Handlers
+  const handleEditSuratTugas = (doc: SuratTugasDocument) => {
+    setEditingSuratTugas(doc);
+    setActiveTab('create-st');
+    addToast('info', 'Mode Edit Surat Tugas', `Memuat surat ${doc.letterNumber} ke form.`);
+  };
+
+  const handleDuplicateSuratTugas = async (doc: SuratTugasDocument) => {
+    const nextSeq = await suratTugasStorage.getNextSequenceNumber();
+    const today = new Date().toISOString().slice(0, 10);
+    const clone: SuratTugasDocument = {
+      ...doc,
+      id: '',
+      sequenceNumber: nextSeq,
+      createdDate: today,
+      letterNumber: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: currentUser?.id,
+      createdByName: currentUser?.name || 'Staff NOC',
+      createdByRole: currentUser?.role || 'engineer',
+    };
+    setEditingSuratTugas(clone);
+    setActiveTab('create-st');
+    addToast('info', 'Duplikasi Surat Tugas', `Surat disalin dengan nomor urut berikutnya (${nextSeq}).`);
+  };
+
+  const handleSuratTugasSaved = () => {
+    setEditingSuratTugas(null);
+    setActiveTab('history');
+  };
+
+  // Berita Acara Handlers
+  const handleEditBeritaAcara = (doc: BeritaAcaraDocument) => {
+    setEditingBeritaAcara(doc);
+    setActiveTab('create-ba');
+    addToast('info', 'Mode Edit Berita Acara', `Memuat dokumen ${doc.letterNumber} ke form.`);
+  };
+
+  const handleDuplicateBeritaAcara = async (doc: BeritaAcaraDocument) => {
+    const nextSeq = await beritaAcaraStorage.getNextSequenceNumber();
+    const today = new Date().toISOString().slice(0, 10);
+    const clone: BeritaAcaraDocument = {
+      ...doc,
+      id: '',
+      sequenceNumber: nextSeq,
+      createdDate: today,
+      letterNumber: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: currentUser?.id,
+      createdByName: currentUser?.name || 'Staff NOC',
+      createdByRole: currentUser?.role || 'engineer',
+    };
+    setEditingBeritaAcara(clone);
+    setActiveTab('create-ba');
+    addToast('info', 'Duplikasi Berita Acara', `Berita Acara disalin dengan nomor urut berikutnya (${nextSeq}).`);
+  };
+
+  const handleBeritaAcaraSaved = () => {
+    setEditingBeritaAcara(null);
+    setActiveTab('history');
   };
 
   // If not logged in, render the Login Page
@@ -144,14 +250,14 @@ export function App() {
   const isAdmin = currentUser.role === 'admin';
 
   return (
-    <div className="flex h-screen w-full bg-slate-950 text-slate-100 overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans">
       {/* Toast Notification Layer */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
       {/* Mobile Drawer Overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden no-print"
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden no-print"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
@@ -189,44 +295,81 @@ export function App() {
         />
 
         {/* Dynamic Pages */}
-        <main className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-slate-950">
+        <main className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-slate-50">
           {activeTab === 'dashboard' && (
             <DashboardPage
               template={template}
+              suratTugasTemplate={suratTugasTemplate}
+              beritaAcaraTemplate={beritaAcaraTemplate}
               setActiveTab={setActiveTab}
               onEditRFO={handleEditRFO}
               onViewRFO={handleViewRFO}
+              onEditSuratTugas={handleEditSuratTugas}
+              onEditBeritaAcara={handleEditBeritaAcara}
               addToast={addToast}
-            />
-          )}
-
-          {activeTab === 'create' && (
-            <CreateRFOPage
-              template={template}
-              addToast={addToast}
-              initialEditData={editingRFO}
-              onSaved={handleRFOSaved}
               currentUser={currentUser}
             />
           )}
 
-          {activeTab === 'history' && (
+          {(activeTab === 'create' || activeTab === 'create-st' || activeTab === 'create-ba') && (
+            <CreateUnifiedDocumentPage
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              template={template}
+              editingRFO={editingRFO}
+              onRFOSaved={handleRFOSaved}
+              suratTugasTemplate={suratTugasTemplate}
+              editingSuratTugas={editingSuratTugas}
+              onSuratTugasSaved={handleSuratTugasSaved}
+              beritaAcaraTemplate={beritaAcaraTemplate}
+              editingBeritaAcara={editingBeritaAcara}
+              onBeritaAcaraSaved={handleBeritaAcaraSaved}
+              addToast={addToast}
+              currentUser={currentUser}
+            />
+          )}
+
+          {(activeTab === 'history' || activeTab === 'history-st' || activeTab === 'history-ba') && (
             <HistoryPage
               template={template}
+              suratTugasTemplate={suratTugasTemplate}
+              beritaAcaraTemplate={beritaAcaraTemplate}
               setActiveTab={setActiveTab}
               onEditRFO={handleEditRFO}
               onDuplicateRFO={handleDuplicateRFO}
+              onEditSuratTugas={handleEditSuratTugas}
+              onDuplicateSuratTugas={handleDuplicateSuratTugas}
+              onEditBeritaAcara={handleEditBeritaAcara}
+              onDuplicateBeritaAcara={handleDuplicateBeritaAcara}
               addToast={addToast}
               currentUser={currentUser}
+              initialTypeFilter={
+                activeTab === 'history-st'
+                  ? 'surat-tugas'
+                  : activeTab === 'history-ba'
+                  ? 'berita-acara'
+                  : 'all'
+              }
             />
           )}
 
-          {activeTab === 'templates' && isAdmin && (
+          {(activeTab === 'templates' || activeTab === 'templates-st' || activeTab === 'templates-ba') && isAdmin && (
             <TemplatePage
               template={template}
               onUpdateTemplate={(newTmpl) => setTemplate(newTmpl)}
+              suratTugasTemplate={suratTugasTemplate}
+              onUpdateSuratTugasTemplate={(newStTmpl) => setSuratTugasTemplate(newStTmpl)}
+              beritaAcaraTemplate={beritaAcaraTemplate}
+              onUpdateBeritaAcaraTemplate={(newBaTmpl) => setBeritaAcaraTemplate(newBaTmpl)}
               addToast={addToast}
               currentUser={currentUser}
+              initialSubTab={
+                activeTab === 'templates-ba'
+                  ? 'berita-acara'
+                  : activeTab === 'templates-st'
+                  ? 'surat-tugas'
+                  : 'rfo'
+              }
             />
           )}
 

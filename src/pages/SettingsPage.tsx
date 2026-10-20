@@ -102,31 +102,31 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   return (
-    <div className="flex-1 p-4 lg:p-6 space-y-6 overflow-y-auto max-w-5xl">
+    <div className="flex-1 p-4 lg:p-6 space-y-6 overflow-y-auto max-w-5xl bg-slate-50">
       {/* Top Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
-        <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <Settings className="w-5 h-5 text-cyan-400" />
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+          <Settings className="w-5 h-5 text-blue-600" />
           Pengaturan Sistem & Kesiapan Backend
         </h2>
-        <p className="text-xs text-slate-400 mt-1">
+        <p className="text-xs text-slate-500 mt-1">
           Arsitektur modular siap integrasi ke PostgreSQL/MySQL REST API dan Multi-role Access.
         </p>
       </div>
 
       {/* Role Simulation */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-sm font-bold text-white">Simulasi Role Pengguna</h3>
+            <Shield className="w-4 h-4 text-blue-600" />
+            <h3 className="text-sm font-bold text-slate-900">Simulasi Role Pengguna</h3>
           </div>
-          <span className="text-xs font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
+          <span className="text-xs font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-semibold">
             Current: {activeRole}
           </span>
         </div>
 
-        <p className="text-xs text-slate-300">
+        <p className="text-xs text-slate-600 leading-relaxed">
           Aplikasi dirancang dengan isolasi hak akses antara tim NOC (teknis/insiden), Customer Service (distribusi pelanggan), dan Administrator (konfigurasi template).
         </p>
 
@@ -138,17 +138,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 setActiveRole(role);
                 addToast('info', 'Role Diubah', `Beralih ke mode profil ${role}.`);
               }}
-              className={`p-3.5 rounded-xl border text-left transition-all ${
+              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                 activeRole === role
-                  ? 'bg-cyan-500/10 border-cyan-500 text-white font-semibold'
-                  : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:text-slate-200'
+                  ? 'bg-blue-50 border-blue-600 text-blue-900 font-semibold ring-2 ring-blue-500/20'
+                  : 'bg-slate-50 hover:bg-slate-100/80 border-slate-200 text-slate-700'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-bold">{role}</span>
-                {activeRole === role && <CheckCircle2 className="w-4 h-4 text-cyan-400" />}
+                {activeRole === role && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500">
                 {role === 'NOC' && 'Akses penuh input gangguan & durasi insiden.'}
                 {role === 'Customer Service' && 'Akses copy text, kirim WhatsApp, & cetak PDF.'}
                 {role === 'Admin' && 'Akses ubah template kop surat & kelola database.'}
@@ -159,50 +159,50 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </div>
 
       {/* Future Backend & Architecture Readiness */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
-            <Server className="w-4 h-4 text-blue-400" />
-            <h3 className="text-sm font-bold text-white">Backend & Database Abstraction</h3>
+            <Server className="w-4 h-4 text-blue-600" />
+            <h3 className="text-sm font-bold text-slate-900">Backend & Database Abstraction</h3>
           </div>
-          <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
+          <span className="text-xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-semibold">
             Storage: IStorageProvider (Decoupled)
           </span>
         </div>
 
-        <p className="text-xs text-slate-300 leading-relaxed">
-          Seluruh interaksi data menggunakan abstraction layer <code>storageService.ts</code>. Untuk menghubungkan ke backend PostgreSQL atau MySQL, cukup buat implementasi <code>ApiStorageProvider</code> tanpa perlu memodifikasi komponen antarmuka.
+        <p className="text-xs text-slate-600 leading-relaxed">
+          Seluruh interaksi data menggunakan abstraction layer <code className="text-blue-700 font-mono bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 font-semibold">storageService.ts</code>. Untuk menghubungkan ke backend PostgreSQL atau MySQL, cukup buat implementasi <code className="text-blue-700 font-mono bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 font-semibold">ApiStorageProvider</code> tanpa perlu memodifikasi komponen antarmuka.
         </p>
 
-        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 space-y-1">
-          <div className="text-slate-500">// REST API Endpoints Contract Ready:</div>
-          <div><span className="text-emerald-400 font-bold">GET</span>    /api/v1/rfos                 <span className="text-slate-500">// List & search history</span></div>
-          <div><span className="text-blue-400 font-bold">POST</span>   /api/v1/rfos                 <span className="text-slate-500">// Save new RFO</span></div>
-          <div><span className="text-amber-400 font-bold">PUT</span>    /api/v1/rfos/:id             <span className="text-slate-500">// Update existing RFO</span></div>
-          <div><span className="text-rose-400 font-bold">DELETE</span> /api/v1/rfos/:id             <span className="text-slate-500">// Delete archive</span></div>
-          <div><span className="text-emerald-400 font-bold">GET</span>    /api/v1/template             <span className="text-slate-500">// Fetch company template</span></div>
-          <div><span className="text-blue-400 font-bold">POST</span>   /api/v1/template             <span className="text-slate-500">// Update template</span></div>
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono text-[11px] text-slate-700 space-y-1 shadow-inner">
+          <div className="text-slate-400 font-medium">// REST API Endpoints Contract Ready:</div>
+          <div><span className="text-emerald-600 font-bold">GET</span>    /api/v1/rfos                 <span className="text-slate-400">// List & search history</span></div>
+          <div><span className="text-blue-600 font-bold">POST</span>   /api/v1/rfos                 <span className="text-slate-400">// Save new RFO</span></div>
+          <div><span className="text-amber-600 font-bold">PUT</span>    /api/v1/rfos/:id             <span className="text-slate-400">// Update existing RFO</span></div>
+          <div><span className="text-rose-600 font-bold">DELETE</span> /api/v1/rfos/:id             <span className="text-slate-400">// Delete archive</span></div>
+          <div><span className="text-emerald-600 font-bold">GET</span>    /api/v1/template             <span className="text-slate-400">// Fetch company template</span></div>
+          <div><span className="text-blue-600 font-bold">POST</span>   /api/v1/template             <span className="text-slate-400">// Update template</span></div>
         </div>
       </div>
 
       {/* Backup & Data Management */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-          <Database className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-sm font-bold text-white">Manajemen Data & Backup</h3>
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+          <Database className="w-4 h-4 text-emerald-600" />
+          <h3 className="text-sm font-bold text-slate-900">Manajemen Data & Backup</h3>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handleExportBackup}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-300 shadow-xs transition-colors cursor-pointer"
           >
-            <Download className="w-4 h-4 text-cyan-400" />
+            <Download className="w-4 h-4 text-blue-600" />
             <span>Ekspor Backup JSON</span>
           </button>
 
-          <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors cursor-pointer">
-            <Upload className="w-4 h-4 text-emerald-400" />
+          <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-300 shadow-xs transition-colors cursor-pointer">
+            <Upload className="w-4 h-4 text-emerald-600" />
             <span>Impor Data Backup</span>
             <input
               type="file"
@@ -214,7 +214,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
           <button
             onClick={handleClearAll}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 text-xs font-semibold border border-rose-800/40 transition-colors ml-auto"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-xs transition-colors ml-auto cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
             <span>Bersihkan Semua Data Lokal</span>

@@ -43,6 +43,32 @@ export function formatIndonesianDateTime(input: string | Date | null | undefined
 }
 
 /**
+ * Format document creation timestamp for history cards and metadata:
+ * Example: "19 Oktober 2026, 18:32 WIB"
+ */
+export function formatCreationTimestamp(input: string | Date | null | undefined): string {
+  if (!input) return '-';
+  const d = new Date(input);
+  if (isNaN(d.getTime())) return '-';
+
+  const tanggal = d.getDate();
+  const bulan = NAMA_BULAN[d.getMonth()];
+  const tahun = d.getFullYear();
+
+  const hasTime =
+    input instanceof Date ||
+    (typeof input === 'string' && (input.includes('T') || input.includes(':')));
+
+  if (hasTime) {
+    const jam = String(d.getHours()).padStart(2, '0');
+    const menit = String(d.getMinutes()).padStart(2, '0');
+    return `${tanggal} ${bulan} ${tahun}, ${jam}:${menit} WIB`;
+  }
+
+  return `${tanggal} ${bulan} ${tahun}`;
+}
+
+/**
  * Format date only in Indonesian:
  * Example: "12 Oktober 2026"
  */

@@ -7,10 +7,9 @@ import {
   EyeOff,
   LogIn,
   Clock,
-  Sparkles,
   AlertCircle,
 } from 'lucide-react';
-import { authService, DEFAULT_USERS } from '../services/authService';
+import { authService } from '../services/authService';
 import type { UserAccount } from '../types/auth';
 
 interface LoginPageProps {
@@ -23,8 +22,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-
-  const registeredUsers = authService.getUsers() || DEFAULT_USERS;
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,75 +44,65 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }, 250);
   };
 
-  const handleQuickLogin = (user: UserAccount) => {
-    setUsername(user.username);
-    setPassword(user.password || 'password123');
-    setError('');
-    const loggedIn = authService.quickLogin(user.id);
-    if (loggedIn) {
-      onLoginSuccess(loggedIn);
-    }
-  };
-
   return (
-    <div className="min-h-screen w-full bg-slate-950 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen w-full bg-slate-50 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans select-none">
       {/* Background Ambience & Grid */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-900/20 via-slate-950 to-slate-950 pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b12_1px,transparent_1px),linear-gradient(to_bottom,#1e293b12_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-slate-50 to-slate-50 pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a08_1px,transparent_1px),linear-gradient(to_bottom,#0f172a08_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
       {/* Decorative Glow Orbs */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-xl space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 shadow-xl shadow-cyan-950 border border-cyan-400/30 p-2.5 mx-auto">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-xl shadow-blue-500/20 border border-blue-400/30 p-2.5 mx-auto">
             <svg className="w-full h-full" viewBox="0 0 140 100" fill="none">
               <path d="M38 18L10 50L38 82L48 72L28 50L48 28L38 18Z" fill="#ffffff" />
-              <path d="M50 28L32 50L50 72L58 64L46 50L58 36L50 28Z" fill="#38bdf8" />
+              <path d="M50 28L32 50L50 72L58 64L46 50L58 36L50 28Z" fill="#93c5fd" />
             </svg>
           </div>
 
           <div>
-            <h1 className="text-2xl font-extrabold text-white tracking-wide">
-              PT JEMBATAN DATA PANGRANGO
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-wide">
+              GENERATOR TOOLS
             </h1>
-            <p className="text-xs font-semibold text-cyan-400 uppercase tracking-widest mt-0.5">
-              NOC & Customer Support Portal • RFO Generator
+            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-0.5">
+              PT Jembatan Data Pangrango • Document Portal
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-2 bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-full text-[11px] text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 bg-white border border-slate-200 px-3 py-1 rounded-full text-[11px] text-slate-600 shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Sistem Otentikasi & Hak Akses Aktif (RBAC)</span>
           </div>
         </div>
 
         {/* Login Box */}
-        <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/60 space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Lock className="w-4 h-4 text-cyan-400" />
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-blue-600" />
                 Masuk ke Akun Anda
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Nama pembuat RFO akan otomatis tersimpan sesuai akun login
+              <p className="text-xs text-slate-500 mt-0.5">
+                Nama pembuat dokumen akan otomatis tersimpan sesuai akun login
               </p>
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-2.5 text-xs text-red-300 animate-shake">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-center gap-2.5 text-xs text-rose-700 animate-shake">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">
                 Nama Pengguna / Akun
               </label>
               <div className="relative">
@@ -127,13 +114,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Masukkan nama akun Anda"
-                  className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all placeholder:text-slate-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all placeholder:text-slate-400 shadow-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -145,12 +132,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
-                  className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all placeholder:text-slate-600"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all placeholder:text-slate-400 shadow-xs"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -160,71 +147,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-cyan-950 transition-all cursor-pointer active:scale-98 disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition-all cursor-pointer active:scale-98 disabled:opacity-50"
             >
               <LogIn className="w-4 h-4" />
-              <span>{loading ? 'Memverifikasi...' : 'Masuk ke Portal RFO'}</span>
+              <span>{loading ? 'Memverifikasi...' : 'Masuk ke GENERATOR TOOLS'}</span>
             </button>
           </form>
-
-          {/* Quick Login / Akun Terdaftar (Tanpa menampilkan username & role akses) */}
-          <div className="border-t border-slate-800/80 pt-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                Pilih Cepat Akun Terdaftar (1-Klik Masuk)
-              </span>
-              <span className="text-[10px] text-slate-500 font-mono">
-                {registeredUsers.length} Akun
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {registeredUsers.map((user) => {
-                return (
-                  <button
-                    key={user.id}
-                    type="button"
-                    onClick={() => handleQuickLogin(user)}
-                    className="p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/50 text-left transition-all group flex items-center justify-between cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={`w-8 h-8 rounded-xl bg-gradient-to-tr ${
-                          user.avatarColor || 'from-cyan-600 to-blue-600'
-                        } flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0`}
-                      >
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-white group-hover:text-cyan-300 truncate">
-                          {user.name}
-                        </p>
-                        <p className="text-[10px] text-slate-400 truncate">
-                          {user.position}
-                        </p>
-                      </div>
-                    </div>
-
-                    <span className="text-cyan-400 group-hover:text-cyan-300 group-hover:translate-x-0.5 transition-all text-xs font-semibold shrink-0 ml-2">
-                      Masuk →
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         {/* Footer info */}
         <div className="text-center text-[11px] text-slate-500 flex items-center justify-center gap-3">
           <span className="flex items-center gap-1">
-            <Shield className="w-3.5 h-3.5 text-cyan-500" />
+            <Shield className="w-3.5 h-3.5 text-blue-600" />
             Keamanan Tingkat Sesi Lokal
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5 text-cyan-500" />
+            <Clock className="w-3.5 h-3.5 text-blue-600" />
             WIB (UTC+7)
           </span>
         </div>

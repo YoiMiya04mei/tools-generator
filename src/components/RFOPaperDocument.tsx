@@ -63,6 +63,16 @@ export const RFOPaperDocument: React.FC<RFOPaperDocumentProps> = ({
           : {}),
       }}
     >
+      {/* Full-bleed letterhead background (real img tag ensures 100% reliable print & PDF) */}
+      {template.letterheadBackgroundUrl && (
+        <img
+          src={template.letterheadBackgroundUrl}
+          alt="Kop Surat"
+          crossOrigin="anonymous"
+          className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none z-0"
+        />
+      )}
+
       {/* 0. Top-Right Corner Organic Decorative Wave (Only active for default template) */}
       {!hasCustomKop && template.showTopCornerWave !== false && (
         <div

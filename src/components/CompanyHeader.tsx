@@ -128,7 +128,12 @@ export const CompanyHeader: React.FC<CompanyHeaderProps> = ({ template }) => {
       </div>
 
       {/* Official Header Double Divider Bar (Thick line over Thin line) */}
-      <div className="mt-2">
+      <div
+        className="mt-2 transition-all duration-150"
+        style={{
+          marginBottom: template.headerSpacerHeight !== undefined ? `${template.headerSpacerHeight}mm` : undefined,
+        }}
+      >
         <div className="w-full h-[2.5px] bg-slate-900"></div>
         <div className="w-full h-[1px] bg-slate-900 mt-[2px]"></div>
       </div>

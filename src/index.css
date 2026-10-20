@@ -9,14 +9,16 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #0f172a;
-    color: #f8fafc;
+    background-color: #f8fafc;
+    color: #0f172a;
   }
 }
 
-/* Official RFO Letter Typography - Calibri */
+/* Official Letter Typography - Calibri */
 .rfo-document-container,
-.rfo-document-container * {
+.rfo-document-container *,
+.surat-tugas-container,
+.surat-tugas-container * {
   font-family: 'Calibri', 'Carlito', 'Candara', 'Segoe UI', Arial, sans-serif !important;
 }
 
@@ -24,17 +26,50 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 15mm 15mm 15mm 15mm;
+    margin: 0;
   }
 
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html,
   body {
-    background: white !important;
-    color: black !important;
+    background: #ffffff !important;
+    color: #000000 !important;
     padding: 0 !important;
     margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
   }
 
-  .no-print {
+  #root,
+  #root > div,
+  main,
+  main > div {
+    background: transparent !important;
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Reset layout constraints so multi-page documents print properly */
+  body * {
+    overflow: visible !important;
+  }
+
+  .no-print,
+  nav,
+  header,
+  aside,
+  #header,
+  #sidebar {
     display: none !important;
   }
 
@@ -42,15 +77,99 @@
     display: block !important;
   }
 
-  .rfo-document-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-shadow: none !important;
-    border: none !important;
+  /* Unwrap modal dialogs so they render as clean direct A4 paper sheets */
+  .print-modal-backdrop {
+    position: static !important;
+    inset: auto !important;
+    z-index: auto !important;
+    display: block !important;
+    background: transparent !important;
     padding: 0 !important;
     margin: 0 !important;
-    page-break-after: avoid;
-    page-break-inside: avoid;
+    overflow: visible !important;
+    backdrop-filter: none !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .print-modal-container {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .print-modal-body {
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+
+  .print-modal-doc-wrapper {
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    transform: none !important;
+  }
+
+  /* Official Paper Document Containers */
+  .rfo-document-container,
+  .surat-tugas-container,
+  .berita-acara-container,
+  .berita-acara-single-page,
+  .berita-acara-page {
+    width: 210mm !important;
+    max-width: 210mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    background-color: #ffffff !important;
+    color: #1a1a1a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .rfo-document-container,
+  .surat-tugas-container {
+    height: 296mm !important;
+    max-height: 296mm !important;
+    min-height: 296mm !important;
+    overflow: hidden !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-after: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .berita-acara-single-page,
+  .berita-acara-page {
+    height: 296mm !important;
+    max-height: 296mm !important;
+    min-height: 296mm !important;
+    overflow: hidden !important;
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+    break-after: page !important;
+    break-inside: avoid !important;
+  }
+
+  .berita-acara-single-page:last-child,
+  .berita-acara-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 }
 
@@ -60,12 +179,12 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(241, 245, 249, 0.8);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.4);
+  background: rgba(148, 163, 184, 0.5);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.6);
+  background: rgba(100, 116, 139, 0.7);
 }

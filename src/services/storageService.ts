@@ -1,5 +1,6 @@
 import type { RFODocument, RFOTemplate, RFODraft } from '../types/rfo';
 import { DEFAULT_RFO_TEMPLATE } from '../templates/rfoTemplate';
+import { indexedDbStorage } from './indexedDbStorage';
 
 export interface IStorageProvider {
   // RFO CRUD
@@ -52,28 +53,27 @@ class LocalStorageProvider implements IStorageProvider {
     this.initDefaultData();
   }
 
-  private initDefaultData() {
+  private async initDefaultData() {
     try {
-      const existing = localStorage.getItem(STORAGE_KEYS.RFOS);
-      if (!existing) {
-        localStorage.setItem(STORAGE_KEYS.RFOS, JSON.stringify([SAMPLE_RFO]));
+      const existing = await indexedDbStorage.getItem<RFODocument[]>(STORAGE_KEYS.RFOS);
+      if (!existing || existing.length === 0) {
+        await indexedDbStorage.setItem(STORAGE_KEYS.RFOS, [SAMPLE_RFO]);
       }
-      const existingTemplate = localStorage.getItem(STORAGE_KEYS.TEMPLATE);
+      const existingTemplate = await indexedDbStorage.getItem<RFOTemplate>(STORAGE_KEYS.TEMPLATE);
       if (!existingTemplate) {
-        localStorage.setItem(STORAGE_KEYS.TEMPLATE, JSON.stringify(DEFAULT_RFO_TEMPLATE));
+        await indexedDbStorage.setItem(STORAGE_KEYS.TEMPLATE, DEFAULT_RFO_TEMPLATE);
       }
     } catch (e) {
-      console.warn('LocalStorage initialization notice:', e);
+      console.warn('StorageService initialization notice:', e);
     }
   }
 
   async getAllRFOs(): Promise<RFODocument[]> {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.RFOS);
-      if (!data) return [];
-      const parsed = JSON.parse(data) as RFODocument[];
+      const data = await indexedDbStorage.getItem<RFODocument[]>(STORAGE_KEYS.RFOS);
+      if (!data || data.length === 0) return [SAMPLE_RFO];
       // Sort newest created first
-      return parsed.sort(
+      return data.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
     } catch (e) {
@@ -110,7 +110,7 @@ class LocalStorageProvider implements IStorageProvider {
       ];
     }
 
-    localStorage.setItem(STORAGE_KEYS.RFOS, JSON.stringify(updatedList));
+    await indexedDbStorage.setItem(STORAGE_KEYS.RFOS, updatedList);
     return rfo;
   }
 
@@ -128,7 +128,7 @@ class LocalStorageProvider implements IStorageProvider {
     };
 
     list[index] = updated;
-    localStorage.setItem(STORAGE_KEYS.RFOS, JSON.stringify(list));
+    await indexedDbStorage.setItem(STORAGE_KEYS.RFOS, list);
     return updated;
   }
 
@@ -136,35 +136,33 @@ class LocalStorageProvider implements IStorageProvider {
     const list = await this.getAllRFOs();
     const filtered = list.filter((item) => item.id !== id);
     if (filtered.length === list.length) return false;
-    localStorage.setItem(STORAGE_KEYS.RFOS, JSON.stringify(filtered));
+    await indexedDbStorage.setItem(STORAGE_KEYS.RFOS, filtered);
     return true;
   }
 
   async getTemplate(): Promise<RFOTemplate> {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.TEMPLATE);
+      const data = await indexedDbStorage.getItem<RFOTemplate>(STORAGE_KEYS.TEMPLATE);
       if (!data) return DEFAULT_RFO_TEMPLATE;
-      return { ...DEFAULT_RFO_TEMPLATE, ...JSON.parse(data) };
+      return { ...DEFAULT_RFO_TEMPLATE, ...data };
     } catch {
       return DEFAULT_RFO_TEMPLATE;
     }
   }
 
   async saveTemplate(template: RFOTemplate): Promise<RFOTemplate> {
-    localStorage.setItem(STORAGE_KEYS.TEMPLATE, JSON.stringify(template));
+    await indexedDbStorage.setItem(STORAGE_KEYS.TEMPLATE, template);
     return template;
   }
 
   async resetTemplate(): Promise<RFOTemplate> {
-    localStorage.setItem(STORAGE_KEYS.TEMPLATE, JSON.stringify(DEFAULT_RFO_TEMPLATE));
+    await indexedDbStorage.setItem(STORAGE_KEYS.TEMPLATE, DEFAULT_RFO_TEMPLATE);
     return DEFAULT_RFO_TEMPLATE;
   }
 
   async getDraft(): Promise<RFODraft | null> {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.DRAFT);
-      if (!data) return null;
-      return JSON.parse(data);
+      return await indexedDbStorage.getItem<RFODraft>(STORAGE_KEYS.DRAFT);
     } catch {
       return null;
     }
@@ -172,7 +170,7 @@ class LocalStorageProvider implements IStorageProvider {
 
   async saveDraft(draft: RFODraft): Promise<void> {
     try {
-      localStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(draft));
+      await indexedDbStorage.setItem(STORAGE_KEYS.DRAFT, draft);
     } catch (e) {
       console.warn('Failed to save draft:', e);
     }
@@ -180,12 +178,11 @@ class LocalStorageProvider implements IStorageProvider {
 
   async clearDraft(): Promise<void> {
     try {
-      localStorage.removeItem(STORAGE_KEYS.DRAFT);
+      await indexedDbStorage.removeItem(STORAGE_KEYS.DRAFT);
     } catch (e) {
       console.warn('Failed to clear draft:', e);
     }
   }
 }
 
-// Export singleton instance. Can be swapped with ApiStorageProvider in fullstack mode.
-export const storageService: IStorageProvider = new LocalStorageProvider();
+export const storageService = new LocalStorageProvider();

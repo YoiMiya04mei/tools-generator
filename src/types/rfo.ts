@@ -74,4 +74,16 @@ export interface DurationResult {
   error?: string;
 }
 
-export type ActiveTab = 'dashboard' | 'create' | 'history' | 'templates' | 'users' | 'settings';
+export type ActiveTab =
+  | 'dashboard'
+  | 'create'
+  | 'history'
+  | 'create-st'
+  | 'history-st'
+  | 'templates-st'
+  | 'create-ba'
+  | 'history-ba'
+  | 'templates-ba'
+  | 'templates'
+  | 'users'
+  | 'settings';

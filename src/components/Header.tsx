@@ -73,24 +73,48 @@ export const Header: React.FC<HeaderProps> = ({
 
   const titles: Record<ActiveTab, { title: string; subtitle: string }> = {
     dashboard: {
-      title: 'NOC Incident Dashboard',
-      subtitle: 'Ringkasan operasional gangguan & status dokumen RFO',
+      title: 'GENERATOR TOOLS Dashboard',
+      subtitle: 'Pusat ringkasan operasional & manajemen dokumen (Surat Tugas, Berita Acara, & RFO)',
     },
     create: {
-      title: 'Automatic RFO Generator',
-      subtitle: 'Buat dokumen Reason For Outage profesional dengan kalkulasi otomatis',
+      title: 'Penerbitan Dokumen & Surat',
+      subtitle: 'Pilih jenis dokumen (Surat Tugas, Berita Acara, atau RFO) untuk membuat surat baru',
     },
     history: {
-      title: 'RFO Archive & History',
-      subtitle: 'Kelola, cari, cetak, dan duplikasi arsip gangguan tersimpan',
+      title: 'Arsip & Riwayat Dokumen',
+      subtitle: 'Pusat arsip terpadu untuk dokumen Surat Tugas Visit, Berita Acara, dan RFO',
+    },
+    'create-st': {
+      title: 'Penerbitan Dokumen & Surat',
+      subtitle: 'Pilih jenis dokumen (Surat Tugas, Berita Acara, atau RFO) untuk membuat surat baru',
+    },
+    'history-st': {
+      title: 'Arsip & Riwayat Dokumen',
+      subtitle: 'Pusat arsip terpadu untuk dokumen Surat Tugas Visit, Berita Acara, dan RFO',
+    },
+    'templates-st': {
+      title: 'Template Surat Tugas Configuration',
+      subtitle: 'Pengaturan kop surat, penandatangan, TTD, dan cap stempel Surat Tugas',
+    },
+    'create-ba': {
+      title: 'Penerbitan Dokumen & Surat',
+      subtitle: 'Pilih jenis dokumen (Surat Tugas, Berita Acara, atau RFO) untuk membuat surat baru',
+    },
+    'history-ba': {
+      title: 'Arsip & Riwayat Dokumen',
+      subtitle: 'Pusat arsip terpadu untuk dokumen Surat Tugas Visit, Berita Acara, dan RFO',
+    },
+    'templates-ba': {
+      title: 'Template Berita Acara Configuration',
+      subtitle: 'Pengaturan kop surat, penandatangan, tanda tangan, dan stempel Berita Acara',
     },
     templates: {
-      title: 'RFO Template Configuration',
+      title: 'Template RFO Configuration',
       subtitle: 'Pengaturan kop surat perusahaan, kontak darurat, dan penandatangan',
     },
     users: {
       title: 'User Management & Access Control',
-      subtitle: 'Kelola akun anggota terdaftar dan hak akses pembuatan RFO',
+      subtitle: 'Kelola akun anggota terdaftar dan hak akses penerbitan dokumen',
     },
     settings: {
       title: 'System & Architecture Settings',
@@ -103,21 +127,21 @@ export const Header: React.FC<HeaderProps> = ({
   const userBadge = currentUser ? ROLE_LABELS[currentUser.role] : null;
 
   return (
-    <header className="no-print h-20 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 flex items-center justify-between shrink-0 z-10 sticky top-0">
+    <header className="no-print h-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-10 sticky top-0 shadow-xs">
       <div className="flex items-center gap-4">
         {toggleMobileMenu && (
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
+            className="md:hidden p-2 rounded-lg bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
         )}
         <div>
-          <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
             {current.title}
           </h2>
-          <p className="text-xs text-slate-400 hidden sm:block">
+          <p className="text-xs text-slate-500 hidden sm:block">
             {current.subtitle}
           </p>
         </div>
@@ -125,19 +149,19 @@ export const Header: React.FC<HeaderProps> = ({
 
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Live WIB Clock */}
-        <div className="hidden xl:flex items-center gap-2 bg-slate-800/80 border border-slate-700/60 px-3.5 py-1.5 rounded-lg text-xs font-mono text-cyan-300 shadow-inner">
-          <Clock className="w-3.5 h-3.5 text-cyan-400" />
+        <div className="hidden xl:flex items-center gap-2 bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-lg text-xs font-mono text-slate-700 shadow-xs">
+          <Clock className="w-3.5 h-3.5 text-blue-600" />
           <span>{timeStr || 'Memuat waktu WIB...'}</span>
         </div>
 
         {/* Quick Create Action Button (if allowed by role) */}
-        {activeTab !== 'create' && canCreate && (
+        {!['create', 'create-st', 'create-ba'].includes(activeTab) && canCreate && (
           <button
             onClick={() => setActiveTab('create')}
-            className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-cyan-950 transition-all duration-200 cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all duration-200 cursor-pointer active:scale-95"
           >
             <PlusCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">+ Create RFO</span>
+            <span className="hidden sm:inline">+ Buat Surat</span>
           </button>
         )}
 
@@ -146,24 +170,24 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setProfileOpen(!profileOpen)}
-              className="flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/80 border border-slate-700/80 transition-all cursor-pointer text-left"
+              className="flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all cursor-pointer text-left"
             >
               <div
                 className={`w-8 h-8 rounded-lg bg-gradient-to-tr ${
-                  currentUser.avatarColor || 'from-cyan-600 to-blue-600'
-                } flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0`}
+                  currentUser.avatarColor || 'from-blue-600 to-indigo-600'
+                } flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0`}
               >
                 {currentUser.name.charAt(0)}
               </div>
 
               <div className="hidden sm:flex flex-col overflow-hidden max-w-[130px]">
-                <span className="text-xs font-bold text-white truncate leading-tight">
+                <span className="text-xs font-bold text-slate-900 truncate leading-tight">
                   {currentUser.name}
                 </span>
                 <div className="flex items-center gap-1 mt-0.5">
                   <span
                     className={`text-[9px] font-bold px-1.5 py-0.2 rounded border uppercase leading-tight ${
-                      userBadge?.badgeClass || 'bg-slate-700 text-slate-300'
+                      userBadge?.badgeClass || 'bg-slate-100 text-slate-700 border-slate-200'
                     }`}
                   >
                     {userBadge?.label || currentUser.role}
@@ -181,16 +205,16 @@ export const Header: React.FC<HeaderProps> = ({
                   className="fixed inset-0 z-30"
                   onClick={() => setProfileOpen(false)}
                 />
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-3 z-40 space-y-2 animate-scale-up">
-                  <div className="p-2 bg-slate-950/60 rounded-xl border border-slate-800 space-y-1">
-                    <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-                    <p className="text-[11px] text-slate-400 font-mono truncate">
+                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-slate-200 shadow-xl p-3 z-40 space-y-2 animate-scale-up">
+                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                    <p className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</p>
+                    <p className="text-[11px] text-slate-500 font-mono truncate">
                       @{currentUser.username} • {currentUser.position}
                     </p>
                     <div className="pt-1">
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
-                          userBadge?.badgeClass || ''
+                          userBadge?.badgeClass || 'bg-slate-100 text-slate-700 border-slate-200'
                         }`}
                       >
                         {userBadge?.label}
@@ -198,48 +222,48 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                   </div>
 
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      setSelfName(currentUser.name);
+                      setSelfUsername(currentUser.username);
+                      setSelfPassword('');
+                      setShowSelfPassword(false);
+                      setSelfError('');
+                      setEditModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Ubah Username & Password</span>
+                  </button>
+
+                  {onSwitchAccount && (
                     <button
                       onClick={() => {
                         setProfileOpen(false);
-                        setSelfName(currentUser.name);
-                        setSelfUsername(currentUser.username);
-                        setSelfPassword('');
-                        setShowSelfPassword(false);
-                        setSelfError('');
-                        setEditModalOpen(true);
+                        onSwitchAccount();
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                     >
-                      <KeyRound className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Ubah Username & Password</span>
+                      <User className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Ganti Akun (Switch Account)</span>
                     </button>
+                  )}
 
-                    {onSwitchAccount && (
-                      <button
-                        onClick={() => {
-                          setProfileOpen(false);
-                          onSwitchAccount();
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <User className="w-3.5 h-3.5 text-blue-400" />
-                        <span>Ganti Akun (Switch Account)</span>
-                      </button>
-                    )}
-
-                    {onLogout && (
-                      <button
-                        onClick={() => {
-                          setProfileOpen(false);
-                          onLogout();
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <LogOut className="w-3.5 h-3.5 text-red-400" />
-                        <span>Keluar (Logout)</span>
-                      </button>
-                    )}
-                  </div>
+                  {onLogout && (
+                    <button
+                      onClick={() => {
+                        setProfileOpen(false);
+                        onLogout();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                      <span>Keluar (Logout)</span>
+                    </button>
+                  )}
+                </div>
               </>
             )}
           </div>
@@ -248,33 +272,33 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Modal Self Edit Username & Password */}
       {editModalOpen && currentUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-5 animate-scale-up">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-5 animate-scale-up">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-600">
                   <KeyRound className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">
+                  <h3 className="text-base font-bold text-slate-900">
                     Ubah Username & Password Anda
                   </h3>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-500">
                     Perbarui nama akun login dan kata sandi Anda
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setEditModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
               >
                 ✕
               </button>
             </div>
 
             {selfError && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-2 text-xs text-red-300">
-                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-center gap-2 text-xs text-rose-700">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{selfError}</span>
               </div>
             )}
@@ -309,11 +333,11 @@ export const Header: React.FC<HeaderProps> = ({
               className="space-y-4"
             >
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Nama Lengkap Pembuat RFO
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <User className="w-4 h-4" />
                   </div>
                   <input
@@ -321,17 +345,17 @@ export const Header: React.FC<HeaderProps> = ({
                     required
                     value={selfName}
                     onChange={(e) => setSelfName(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 shadow-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Username (Untuk Login)
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs font-mono">
                     @
                   </div>
                   <input
@@ -339,20 +363,20 @@ export const Header: React.FC<HeaderProps> = ({
                     required
                     value={selfUsername}
                     onChange={(e) => setSelfUsername(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-mono shadow-xs"
                   />
                 </div>
                 <span className="text-[10px] text-slate-500 mt-1 block">
-                  Username unik untuk masuk ke sistem portal RFO.
+                  Username unik untuk masuk ke sistem GENERATOR TOOLS.
                 </span>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Password Baru (Opsional)
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
@@ -360,12 +384,12 @@ export const Header: React.FC<HeaderProps> = ({
                     value={selfPassword}
                     onChange={(e) => setSelfPassword(e.target.value)}
                     placeholder="Kosongkan jika tidak ingin mengubah password"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-10 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-10 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 shadow-xs placeholder:text-slate-400"
                   />
                   <button
                     type="button"
                     onClick={() => setShowSelfPassword(!showSelfPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
                   >
                     {showSelfPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -375,17 +399,17 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setEditModalOpen(false)}
-                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-cyan-950 transition-all cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                 >
                   <KeyRound className="w-4 h-4" />
                   <span>Simpan Perubahan</span>
