@@ -1,5 +1,6 @@
 import type { UserAccount, UserRole, RolePermissions } from '../types/auth';
 import { ROLE_PERMISSIONS } from '../types/auth';
+import { indexedDbStorage } from './indexedDbStorage';
 
 const STORAGE_KEYS = {
   USERS: 'jdp_rfo_users_v1',
@@ -62,6 +63,14 @@ class AuthService {
       if (!existing) {
         localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEFAULT_USERS));
       }
+      // Sinkronisasi data user dari Database MySQL di server
+      indexedDbStorage.getItem<UserAccount[]>(STORAGE_KEYS.USERS).then((serverUsers) => {
+        if (serverUsers && serverUsers.length > 0) {
+          localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(serverUsers));
+        } else {
+          indexedDbStorage.setItem(STORAGE_KEYS.USERS, DEFAULT_USERS).catch(() => {});
+        }
+      }).catch(() => {});
     } catch (e) {
       console.warn('AuthService storage initialization warning:', e);
     }
@@ -180,6 +189,7 @@ class AuthService {
     const updated = [...users, newUser];
     try {
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(updated));
+      indexedDbStorage.setItem(STORAGE_KEYS.USERS, updated).catch(() => {});
     } catch (e) {
       return { success: false, error: 'Gagal menyimpan ke storage browser.' };
     }
@@ -239,6 +249,7 @@ class AuthService {
 
     try {
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(newUsers));
+      indexedDbStorage.setItem(STORAGE_KEYS.USERS, newUsers).catch(() => {});
 
       // If updating currently logged in user, update session as well
       const currentSession = this.getCurrentUser();
@@ -268,6 +279,7 @@ class AuthService {
 
     try {
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(updated));
+      indexedDbStorage.setItem(STORAGE_KEYS.USERS, updated).catch(() => {});
       return { success: true };
     } catch (e) {
       return { success: false, error: 'Gagal memperbarui data user.' };
