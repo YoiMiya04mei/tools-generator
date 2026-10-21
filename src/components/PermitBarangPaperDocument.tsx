@@ -83,13 +83,14 @@ export const PermitBarangPaperDocument: React.FC<PermitBarangPaperDocumentProps>
       : defaultSpacer;
 
   // Pagination calculation:
-  // Standard template (up to 5 devices with standard text) fits comfortably on 1 single A4 sheet (~205mm / 297mm).
-  // When there are more devices or long custom text, paginate cleanly to Page 2 (Lembar Baru) below Kop Surat.
+  // Focus: 1 single page as long as content fits and signature doesn't touch the bottom footer.
+  // Up to 10 devices comfortably fit on 1 page before requiring Page 2.
   const allDevices = doc.devices || [];
   const isMultiPage = isPermitBarangMultiPage(doc);
 
-  const page1Devices = isMultiPage ? allDevices.slice(0, 4) : allDevices;
-  const page2Devices = isMultiPage ? allDevices.slice(4) : [];
+  const page1MaxDevices = 8;
+  const page1Devices = isMultiPage ? allDevices.slice(0, page1MaxDevices) : allDevices;
+  const page2Devices = isMultiPage ? allDevices.slice(page1MaxDevices) : [];
 
   const showPage1 = previewPageFilter === 'all' || previewPageFilter === 1;
   const showPage2 = isMultiPage && (previewPageFilter === 'all' || previewPageFilter === 2);
@@ -576,11 +577,6 @@ export const PermitBarangPaperDocument: React.FC<PermitBarangPaperDocumentProps>
                   ) : (
                     <span className="text-slate-400 italic">Belum ada perangkat ditambahkan</span>
                   )}
-                  {isMultiPage && (
-                    <p className="text-[11px] text-blue-700 italic font-medium pt-1">
-                      ... (Rincian perangkat selebihnya dilanjutkan pada Halaman 2)
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
@@ -591,13 +587,6 @@ export const PermitBarangPaperDocument: React.FC<PermitBarangPaperDocumentProps>
                 {renderClosingParagraphs()}
                 {renderSignature()}
               </>
-            )}
-
-            {/* Multi-page footer indicator */}
-            {isMultiPage && (
-              <div className="mt-auto pt-2 border-t border-slate-200 text-right text-[11px] text-slate-400 font-mono">
-                Halaman 1 dari 2
-              </div>
             )}
           </div>
         </div>
@@ -645,16 +634,6 @@ export const PermitBarangPaperDocument: React.FC<PermitBarangPaperDocumentProps>
             {/* Header Kop Surat on Page 2 (Guarantees safe clearance below the Kop Surat) */}
             {renderHeader(2)}
 
-            {/* Sub-header Banner on Page 2 */}
-            <div className="flex items-center justify-between border-b border-slate-300 pb-1 mb-2.5">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-slate-800">
-                Lanjutan: Rincian Perangkat &amp; Pengesahan Permit
-              </span>
-              <span className="text-[11px] font-mono text-slate-500">
-                Halaman 2 dari 2
-              </span>
-            </div>
-
             {/* Continuation of devices */}
             {page2Devices.length > 0 && (
               <div className="ml-5 my-2 text-[12px] space-y-1">
@@ -684,10 +663,6 @@ export const PermitBarangPaperDocument: React.FC<PermitBarangPaperDocumentProps>
 
             {/* Tanda Tangan Block */}
             {renderSignature()}
-
-            <div className="mt-auto pt-2 border-t border-slate-200 text-right text-[11px] text-slate-400 font-mono">
-              Halaman 2 dari 2
-            </div>
           </div>
         </div>
       )}

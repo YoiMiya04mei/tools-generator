@@ -189,29 +189,42 @@ export function generatePermitBarangFileName(
 }
 
 /**
- * Determines whether a Permit Barang document needs a second sheet (Page 2)
- * Default template content (4 devices, standard text) fits comfortably on 1 A4 sheet (~205mm / 297mm).
- * When additional content (devices > 5, long custom text, etc.) is entered,
- * it safely activates Page 2 (lembar baru) positioned cleanly below the Kop Surat.
+ * Determines whether a Permit Barang document needs a second sheet (Page 2).
+ * Priority: Maintain 1 single page as much as possible until the signature block
+ * ("Direktur") would collide with the bottom footer format.
+ * Page 1 can comfortably hold up to 10 device rows / variable lines before hitting the bottom footer.
+ * Only when content exceeds this threshold does it advance to Page 2.
  */
 export function isPermitBarangMultiPage(doc?: Partial<PermitBarangDocument> | null): boolean {
   if (!doc) return false;
   const devices = doc.devices || [];
-  const openingLen = doc.openingText?.trim().length || 0;
-  const closingLen = doc.closingText?.trim().length || 0;
-  const openingLineCount = doc.openingText ? doc.openingText.split('\n').filter(Boolean).length : 2;
-  const closingLineCount = doc.closingText ? doc.closingText.split('\n').filter(Boolean).length : 2;
 
-  const deviceLinesWeight = devices.reduce(
-    (acc, d) => acc + (d.name && d.name.length > 40 ? 2 : 1),
+  // Count device rows (standard device = 1 row; long name > 50 chars = 2 rows)
+  const deviceLines = devices.reduce(
+    (acc, d) => acc + (d.name && d.name.length > 50 ? 2 : 1),
     0
   );
 
-  return (
-    devices.length > 5 ||
-    deviceLinesWeight > 5 ||
-    openingLineCount > 3 ||
-    closingLineCount > 3 ||
-    openingLen + closingLen > 350
+  // Extra text lines beyond standard template
+  const openingText = doc.openingText?.trim() || '';
+  const closingText = doc.closingText?.trim() || '';
+
+  const extraOpeningLines = openingText
+    ? Math.max(0, openingText.split('\n').filter(Boolean).length - 2)
+    : 0;
+  const extraClosingLines = closingText
+    ? Math.max(0, closingText.split('\n').filter(Boolean).length - 2)
+    : 0;
+
+  // Extra text length beyond normal template (character-based safety)
+  const extraCharLines = Math.max(
+    0,
+    Math.floor((Math.max(0, openingText.length - 240) + Math.max(0, closingText.length - 220)) / 90)
   );
+
+  const totalVariableLines =
+    deviceLines + extraOpeningLines + extraClosingLines + extraCharLines;
+
+  // Fits on 1 page as long as total variable lines don't exceed 10
+  return totalVariableLines > 10;
 }

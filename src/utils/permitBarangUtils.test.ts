@@ -96,31 +96,30 @@ describe('permitBarangUtils', () => {
     };
     expect(isPermitBarangMultiPage(defaultDoc)).toBe(false);
 
-    // 5 short devices -> still single page
-    const fiveDevicesDoc: Partial<PermitBarangDocument> = {
+    // Up to 10 short devices -> still single page
+    const tenDevicesDoc: Partial<PermitBarangDocument> = {
       ...defaultDoc,
-      devices: [
-        ...(defaultDoc.devices || []),
-        { id: '5', name: 'Patch Cord Fiber Optic LC-LC' },
-      ],
+      devices: Array.from({ length: 10 }, (_, i) => ({
+        id: String(i + 1),
+        name: `Perangkat ${i + 1}`,
+      })),
     };
-    expect(isPermitBarangMultiPage(fiveDevicesDoc)).toBe(false);
+    expect(isPermitBarangMultiPage(tenDevicesDoc)).toBe(false);
 
-    // 6 or more devices -> cleanly triggers page 2 (lembar baru)
-    const sixDevicesDoc: Partial<PermitBarangDocument> = {
-      ...fiveDevicesDoc,
-      devices: [
-        ...(fiveDevicesDoc.devices || []),
-        { id: '6', name: 'SFP+ 10G Transceiver Module' },
-      ],
+    // 11 or more devices -> cleanly triggers page 2 (lembar baru)
+    const elevenDevicesDoc: Partial<PermitBarangDocument> = {
+      ...defaultDoc,
+      devices: Array.from({ length: 11 }, (_, i) => ({
+        id: String(i + 1),
+        name: `Perangkat ${i + 1}`,
+      })),
     };
-    expect(isPermitBarangMultiPage(sixDevicesDoc)).toBe(true);
+    expect(isPermitBarangMultiPage(elevenDevicesDoc)).toBe(true);
 
     // Document with long custom paragraphs -> triggers page 2
     const longTextDoc: Partial<PermitBarangDocument> = {
       ...defaultDoc,
-      openingText: 'A'.repeat(250),
-      closingText: 'B'.repeat(200),
+      openingText: Array(10).fill('Baris permohonan tambahan').join('\n'),
     };
     expect(isPermitBarangMultiPage(longTextDoc)).toBe(true);
   });
