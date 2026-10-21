@@ -263,29 +263,64 @@ docker compose exec -T db mariadb -u root -p$(grep DB_ROOT_PASSWORD .env | cut -
 
 ---
 
-## Langkah 8: Pasang Domain & SSL HTTPS Gratis (Certbot)
+## Langkah 8: Pasang Subdomain / Domain & SSL HTTPS Gratis (Let's Encrypt Certbot)
 
-Jika Anda ingin mengakses aplikasi menggunakan nama domain (contoh: `https://tools.namaperusahaan.com`):
+Panduan ini menggunakan arsitektur reverse proxy:
+**Browser (HTTPS Port 443)** ➡️ **Nginx Host VPS (Let's Encrypt)** ➡️ **Container Docker Aplikasi (Port 3000)**.
 
-1. Arahkan **A Record** dari domain Anda ke `IP_VPS_ANDA`.
-2. Di dalam file `.env`, ubah port host menjadi `APP_PORT=3000`.
-3. Restart container:
+Contoh subdomain di bawah menggunakan: `generator.jembatandata.com` (silakan sesuaikan dengan subdomain/domain Anda).
+
+### 8.1 Atur A Record di DNS Provider (IDCloudHost / Niagahoster / dll)
+1. Buka dashboard DNS provider tempat Anda mengelola domain.
+2. Tambahkan **A Record**:
+   - **Type:** `A`
+   - **Name:** `generator` (nama subdomain)
+   - **Target / IPv4:** `IP_VPS_ANDA`
+   - **TTL:** `3600` (atau otomatis)
+3. Tunggu hingga DNS resolve. Anda dapat memverifikasinya dari terminal:
+   ```bash
+   ping generator.jembatandata.com
+   ```
+   *(Pastikan IP yang merespons adalah IP VPS Anda)*.
+
+---
+
+### 8.2 Ubah Port Docker Aplikasi ke Port Internal (3000)
+Agar port 80 dan 443 di VPS dapat dikelola oleh Nginx host dan Certbot:
+1. Buka file `.env` di folder proyek VPS:
+   ```bash
+   cd ~/tools-app
+   nano .env
+   ```
+2. Pastikan atau ubah baris `APP_PORT`:
+   ```env
+   APP_PORT=3000
+   ```
+3. Terapkan pembaruan port container:
    ```bash
    docker compose up -d
    ```
-4. Pasang Nginx di sistem host Ubuntu dan Certbot:
-   ```bash
-   sudo apt install -y nginx certbot python3-certbot-nginx
-   ```
-5. Buat file reverse proxy di `/etc/nginx/sites-available/tools`:
+
+---
+
+### 8.3 Install Nginx dan Certbot di Host VPS Ubuntu
+```bash
+sudo apt update
+sudo apt install -y nginx certbot python3-certbot-nginx
+```
+
+---
+
+### 8.4 Buat Konfigurasi Reverse Proxy Nginx
+1. Buat file konfigurasi di `/etc/nginx/sites-available/tools`:
    ```bash
    sudo nano /etc/nginx/sites-available/tools
    ```
-   Isi konfigurasi berikut:
+2. Isi konfigurasi berikut:
    ```nginx
    server {
        listen 80;
-       server_name tools.namaperusahaan.com;
+       server_name generator.jembatandata.com;
        client_max_body_size 50M;
 
        location / {
@@ -300,14 +335,70 @@ Jika Anda ingin mengakses aplikasi menggunakan nama domain (contoh: `https://too
        }
    }
    ```
-6. Aktifkan dan request sertifikat SSL:
+   *(Simpan dengan `Ctrl + O` ➡️ `Enter` ➡️ `Ctrl + X`)*.
+
+3. Aktifkan konfigurasi (gunakan flag `-sf` untuk menimpa link lama jika sudah ada):
    ```bash
-   sudo ln -s /etc/nginx/sites-available/tools /etc/nginx/sites-enabled/
-   sudo nginx -t
-   sudo systemctl reload nginx
-   sudo certbot --nginx -d tools.namaperusahaan.com
+   sudo ln -sf /etc/nginx/sites-available/tools /etc/nginx/sites-enabled/
    ```
-Aplikasi Anda kini sudah aktif dengan HTTPS (`https://tools.namaperusahaan.com`).
+4. Uji sintaks konfigurasi Nginx:
+   ```bash
+   sudo nginx -t
+   ```
+   *(Harus menghasilkan: `syntax is ok` dan `test is successful`)*.
+
+---
+
+### 8.5 Buka Firewall & Jalankan Service Nginx
+Pastikan port 80 dan 443 terbuka di firewall dan service Nginx berjalan:
+```bash
+# Izinkan trafik HTTP & HTTPS
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+# Aktifkan Nginx agar auto-start saat reboot
+sudo systemctl enable nginx
+sudo systemctl restart nginx
+```
+
+---
+
+### 8.6 Terbitkan Sertifikat SSL Gratis dengan Certbot
+Jalankan perintah berikut:
+```bash
+sudo certbot --nginx -d generator.jembatandata.com
+```
+
+Saat prompt muncul:
+1. **Email:** Masukkan email Anda (untuk pemberitahuan masa berlaku sertifikat).
+2. **Terms of Service:** Ketik `Y` lalu `Enter`.
+3. **Share email:** Ketik `N`.
+4. **Redirect HTTP to HTTPS:** Pilih opsi redirect (jika ditanyakan) agar semua trafik HTTP otomatis dialihkan ke HTTPS.
+
+Setelah selesai, Anda akan menerima pesan:
+```text
+Successfully received certificate.
+Successfully deployed certificate for generator.jembatandata.com to /etc/nginx/sites-enabled/tools
+Congratulations! You have successfully enabled HTTPS on https://generator.jembatandata.com
+```
+
+---
+
+### 8.7 Verifikasi Auto-Renewal (Perpanjangan Otomatis)
+Certbot secara otomatis membuat timer di latar belakang untuk memperpanjang sertifikat setiap 60–90 hari. Uji mekanisme auto-renewal dengan:
+```bash
+sudo certbot renew --dry-run
+```
+Jika muncul pesan `Congratulations, all simulated renewals succeeded`, maka SSL Anda akan **aktif dan diperpanjang otomatis selamanya secara gratis**.
+
+---
+
+### (Opsional) Metode Alternatif: Cloudflare Free SSL
+Jika Anda lebih memilih tanpa Nginx host dan ingin proteksi DDoS / CDN gratis:
+1. Daftarkan domain utama di [Cloudflare](https://dash.cloudflare.com/) (paket Free).
+2. Ganti Nameserver di penyedia domain (IDCloudHost) ke Nameserver Cloudflare.
+3. Di tab DNS Cloudflare, buat `A Record` untuk subdomain (`generator`) mengarah ke IP VPS dengan status **Proxied (Awan Oranye 🟠)**.
+4. Di menu **SSL/TLS**, pilih mode **Flexible** dan aktifkan **Always Use HTTPS**. Container Docker dapat tetap berjalan di port 80 tanpa instalasi Nginx di host VPS.
 
 ---
 
