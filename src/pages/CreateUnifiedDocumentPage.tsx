@@ -1,8 +1,9 @@
 import React from 'react';
-import { AlertCircle, ClipboardList, FileText, UserCheck, Clock } from 'lucide-react';
+import { AlertCircle, ClipboardList, FileText, UserCheck, Clock, PackageCheck } from 'lucide-react';
 import type { ActiveTab, RFODocument, RFOTemplate } from '../types/rfo';
 import type { SuratTugasDocument, SuratTugasTemplate } from '../types/suratTugas';
 import type { BeritaAcaraDocument, BeritaAcaraTemplate } from '../types/beritaAcara';
+import type { PermitBarangDocument, PermitBarangTemplate } from '../types/permitBarang';
 import type { UserAccount } from '../types/auth';
 import type { ToastMessage } from '../components/Toast';
 import { formatIndonesianDateOnly } from '../utils/dateFormatter';
@@ -10,9 +11,10 @@ import { formatIndonesianDateOnly } from '../utils/dateFormatter';
 import { CreateRFOPage } from './CreateRFOPage';
 import { CreateSuratTugasPage } from './CreateSuratTugasPage';
 import { CreateBeritaAcaraPage } from './CreateBeritaAcaraPage';
+import { CreatePermitBarangPage } from './CreatePermitBarangPage';
 
 interface CreateUnifiedDocumentPageProps {
-  activeTab: 'create' | 'create-st' | 'create-ba';
+  activeTab: 'create' | 'create-st' | 'create-ba' | 'create-pm';
   setActiveTab: (tab: ActiveTab) => void;
   // RFO Props
   template: RFOTemplate;
@@ -26,6 +28,10 @@ interface CreateUnifiedDocumentPageProps {
   beritaAcaraTemplate: BeritaAcaraTemplate;
   editingBeritaAcara: BeritaAcaraDocument | null;
   onBeritaAcaraSaved: () => void;
+  // Permit Barang Props
+  permitBarangTemplate?: PermitBarangTemplate;
+  editingPermitBarang?: PermitBarangDocument | null;
+  onPermitBarangSaved?: () => void;
   // Common
   addToast: (type: ToastMessage['type'], title: string, message?: string) => void;
   currentUser: UserAccount | null;
@@ -43,6 +49,9 @@ export const CreateUnifiedDocumentPage: React.FC<CreateUnifiedDocumentPageProps>
   beritaAcaraTemplate,
   editingBeritaAcara,
   onBeritaAcaraSaved,
+  permitBarangTemplate,
+  editingPermitBarang,
+  onPermitBarangSaved,
   addToast,
   currentUser,
 }) => {
@@ -99,6 +108,21 @@ export const CreateUnifiedDocumentPage: React.FC<CreateUnifiedDocumentPageProps>
               <span className="sm:hidden">Berita Acara</span>
               <span className="hidden sm:inline">Berita Acara Visit</span>
             </button>
+
+            {/* 4. Permit Barang Switcher */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('create-pm')}
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 ${
+                activeTab === 'create-pm'
+                  ? 'bg-white text-blue-700 border border-slate-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+            >
+              <PackageCheck className={`w-3.5 h-3.5 ${activeTab === 'create-pm' ? 'text-blue-600' : 'text-slate-400'}`} />
+              <span className="sm:hidden">Permit Barang</span>
+              <span className="hidden sm:inline">Permit Masuk & Keluar</span>
+            </button>
           </div>
         </div>
 
@@ -115,7 +139,7 @@ export const CreateUnifiedDocumentPage: React.FC<CreateUnifiedDocumentPageProps>
         </div>
       </div>
 
-      {/* Main Generator Body (unmodified original pages) */}
+      {/* Main Generator Body */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {activeTab === 'create' && (
           <CreateRFOPage
@@ -145,6 +169,17 @@ export const CreateUnifiedDocumentPage: React.FC<CreateUnifiedDocumentPageProps>
             addToast={addToast}
             initialEditData={editingBeritaAcara}
             onSaved={onBeritaAcaraSaved}
+            currentUser={currentUser}
+          />
+        )}
+
+        {activeTab === 'create-pm' && (
+          <CreatePermitBarangPage
+            template={template}
+            permitBarangTemplate={permitBarangTemplate}
+            addToast={addToast}
+            initialEditData={editingPermitBarang}
+            onSaved={onPermitBarangSaved}
             currentUser={currentUser}
           />
         )}

@@ -112,6 +112,18 @@ export const Header: React.FC<HeaderProps> = ({
       title: 'Template RFO Configuration',
       subtitle: 'Pengaturan kop surat perusahaan, kontak darurat, dan penandatangan',
     },
+    'create-pm': {
+      title: 'Penerbitan Surat Permit Masuk & Keluar Barang',
+      subtitle: 'Formulir izin masuk & keluar perangkat dengan spesifikasi unit terperinci',
+    },
+    'history-pm': {
+      title: 'Arsip Surat Permit Barang',
+      subtitle: 'Pusat arsip terpadu untuk dokumen Surat Permit Masuk & Keluar Barang',
+    },
+    'templates-pm': {
+      title: 'Template Permit Barang Configuration',
+      subtitle: 'Pengaturan kop surat, penerima default, penandatangan, TTD, dan cap stempel',
+    },
     users: {
       title: 'User Management & Access Control',
       subtitle: 'Kelola akun anggota terdaftar dan hak akses penerbitan dokumen',

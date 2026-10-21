@@ -84,6 +84,9 @@ export type ActiveTab =
   | 'create-ba'
   | 'history-ba'
   | 'templates-ba'
+  | 'create-pm'
+  | 'history-pm'
+  | 'templates-pm'
   | 'templates'
   | 'users'
   | 'settings';

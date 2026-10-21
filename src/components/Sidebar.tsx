@@ -14,6 +14,7 @@ import {
   FileText,
   ChevronDown,
   X,
+  PackageCheck,
 } from 'lucide-react';
 import type { ActiveTab } from '../types/rfo';
 import type { UserAccount } from '../types/auth';
@@ -41,7 +42,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const canCreate = currentUser ? ROLE_PERMISSIONS[currentUser.role]?.canCreateRFO : true;
   const isAdmin = currentUser?.role === 'admin';
   const isTemplatesActive =
-    activeTab === 'templates' || activeTab === 'templates-st' || activeTab === 'templates-ba';
+    activeTab === 'templates' ||
+    activeTab === 'templates-st' ||
+    activeTab === 'templates-ba' ||
+    activeTab === 'templates-pm';
   const [isTemplateMenuOpen, setIsTemplateMenuOpen] = useState<boolean>(true);
 
   useEffect(() => {
@@ -278,6 +282,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full shrink-0 ${
                           activeTab === 'templates-ba' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                         }`}>
+                          Resmi
+                        </span>
+                      </button>
+
+                      {/* Sub 4: Template Permit Barang */}
+                      <button
+                        onClick={() => setActiveTab('templates-pm')}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all ${
+                          activeTab === 'templates-pm'
+                            ? 'bg-blue-600 text-white font-bold shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <PackageCheck
+                            className={`w-3.5 h-3.5 shrink-0 ${
+                              activeTab === 'templates-pm' ? 'text-white' : 'text-blue-600'
+                            }`}
+                          />
+                          <span className="truncate">Template Permit Barang</span>
+                        </div>
+                        <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full shrink-0 ${
+                          activeTab === 'templates-pm' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}>
                           Baru
                         </span>
                       </button>
@@ -289,9 +317,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             const isActive =
               item.id === 'create'
-                ? activeTab === 'create' || activeTab === 'create-st' || activeTab === 'create-ba'
+                ? activeTab === 'create' || activeTab === 'create-st' || activeTab === 'create-ba' || activeTab === 'create-pm'
                 : item.id === 'history'
-                ? activeTab === 'history' || activeTab === 'history-st' || activeTab === 'history-ba'
+                ? activeTab === 'history' || activeTab === 'history-st' || activeTab === 'history-ba' || activeTab === 'history-pm'
                 : activeTab === item.id;
             return (
               <React.Fragment key={item.id}>

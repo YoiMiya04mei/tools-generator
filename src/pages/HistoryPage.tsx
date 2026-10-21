@@ -18,21 +18,25 @@ import {
   RotateCcw,
   Clock,
   Loader2,
+  PackageCheck,
 } from 'lucide-react';
 import type { RFODocument, RFOTemplate, ActiveTab } from '../types/rfo';
 import type { SuratTugasDocument, SuratTugasTemplate } from '../types/suratTugas';
 import type { BeritaAcaraDocument, BeritaAcaraTemplate } from '../types/beritaAcara';
+import type { PermitBarangDocument, PermitBarangTemplate } from '../types/permitBarang';
 import type { UserAccount } from '../types/auth';
 import type { ToastMessage } from '../components/Toast';
 import { authService } from '../services/authService';
 import { storageService } from '../services/storageService';
 import { suratTugasStorage } from '../services/suratTugasStorage';
 import { beritaAcaraStorage } from '../services/beritaAcaraStorage';
+import { permitBarangStorage } from '../services/permitBarangStorage';
 import { RFOService } from '../services/rfoService';
 import { PDFService } from '../services/pdfService';
 import { RFOPaperDocument } from '../components/RFOPaperDocument';
 import { SuratTugasPaperDocument } from '../components/SuratTugasPaperDocument';
 import { BeritaAcaraPaperDocument } from '../components/BeritaAcaraPaperDocument';
+import { PermitBarangPaperDocument } from '../components/PermitBarangPaperDocument';
 import { formatIndonesianDateOnly, formatCreationTimestamp } from '../utils/dateFormatter';
 import {
   formatSuratTugasExecutionDate,
@@ -44,8 +48,14 @@ import {
   generateBeritaAcaraWhatsAppText,
   generateBeritaAcaraFileName,
 } from '../utils/beritaAcaraUtils';
+import {
+  formatPermitBarangDate,
+  generatePermitBarangWhatsAppText,
+  generatePermitBarangFileName,
+  isPermitBarangMultiPage,
+} from '../utils/permitBarangUtils';
 
-export type UnifiedDocType = 'rfo' | 'surat-tugas' | 'berita-acara';
+export type UnifiedDocType = 'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang';
 
 export interface UnifiedDocumentItem {
   id: string;
@@ -62,12 +72,14 @@ export interface UnifiedDocumentItem {
   rawRFO?: RFODocument;
   rawSuratTugas?: SuratTugasDocument;
   rawBeritaAcara?: BeritaAcaraDocument;
+  rawPermitBarang?: PermitBarangDocument;
 }
 
 interface HistoryPageProps {
   template: RFOTemplate;
   suratTugasTemplate?: SuratTugasTemplate;
   beritaAcaraTemplate?: BeritaAcaraTemplate;
+  permitBarangTemplate?: PermitBarangTemplate;
   setActiveTab?: (tab: ActiveTab) => void;
   onEditRFO: (rfo: RFODocument) => void;
   onDuplicateRFO: (rfo: RFODocument) => void;
@@ -75,15 +87,18 @@ interface HistoryPageProps {
   onDuplicateSuratTugas: (doc: SuratTugasDocument) => void;
   onEditBeritaAcara: (doc: BeritaAcaraDocument) => void;
   onDuplicateBeritaAcara: (doc: BeritaAcaraDocument) => void;
+  onEditPermitBarang?: (doc: PermitBarangDocument) => void;
+  onDuplicatePermitBarang?: (doc: PermitBarangDocument) => void;
   addToast: (type: ToastMessage['type'], title: string, message?: string) => void;
   currentUser?: UserAccount | null;
-  initialTypeFilter?: 'all' | 'rfo' | 'surat-tugas' | 'berita-acara';
+  initialTypeFilter?: 'all' | 'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang';
 }
 
 export const HistoryPage: React.FC<HistoryPageProps> = ({
   template,
   suratTugasTemplate,
   beritaAcaraTemplate,
+  permitBarangTemplate,
   setActiveTab: _setActiveTab,
   onEditRFO,
   onDuplicateRFO,
@@ -91,6 +106,8 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   onDuplicateSuratTugas,
   onEditBeritaAcara,
   onDuplicateBeritaAcara,
+  onEditPermitBarang,
+  onDuplicatePermitBarang,
   addToast,
   currentUser,
   initialTypeFilter = 'all',
@@ -99,10 +116,11 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   const [rfos, setRfos] = useState<RFODocument[]>([]);
   const [suratTugasList, setSuratTugasList] = useState<SuratTugasDocument[]>([]);
   const [beritaAcaraList, setBeritaAcaraList] = useState<BeritaAcaraDocument[]>([]);
+  const [permitBarangList, setPermitBarangList] = useState<PermitBarangDocument[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Filters & Search
-  const [typeFilter, setTypeFilter] = useState<'all' | 'rfo' | 'surat-tugas' | 'berita-acara'>(
+  const [typeFilter, setTypeFilter] = useState<'all' | 'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang'>(
     initialTypeFilter
   );
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -114,7 +132,9 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   const [selectedRFO, setSelectedRFO] = useState<RFODocument | null>(null);
   const [selectedSuratTugas, setSelectedSuratTugas] = useState<SuratTugasDocument | null>(null);
   const [selectedBeritaAcara, setSelectedBeritaAcara] = useState<BeritaAcaraDocument | null>(null);
+  const [selectedPermitBarang, setSelectedPermitBarang] = useState<PermitBarangDocument | null>(null);
   const [baModalPageTab, setBaModalPageTab] = useState<'all' | number>('all');
+  const [pmModalPageTab, setPmModalPageTab] = useState<'all' | 1 | 2>('all');
 
   // Delete Confirmation State
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<{
@@ -139,14 +159,16 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   const loadAllDocuments = async () => {
     setLoading(true);
     try {
-      const [rfoDocs, stDocs, baDocs] = await Promise.all([
+      const [rfoDocs, stDocs, baDocs, pmDocs] = await Promise.all([
         storageService.getAllRFOs().catch(() => []),
         suratTugasStorage.getAllSuratTugas().catch(() => []),
         beritaAcaraStorage.getAllBeritaAcara().catch(() => []),
+        permitBarangStorage.getAllPermitBarang().catch(() => []),
       ]);
       setRfos(rfoDocs);
       setSuratTugasList(stDocs);
       setBeritaAcaraList(baDocs);
+      setPermitBarangList(pmDocs);
     } catch (e) {
       console.error('Failed to load documents:', e);
       addToast('error', 'Gagal Memuat Data', 'Tidak dapat mengambil arsip dokumen.');
@@ -220,13 +242,35 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
       });
     });
 
+    // 4. Process Permit Barang
+    permitBarangList.forEach((pm) => {
+      const deviceSummary =
+        pm.devices && pm.devices.length > 0
+          ? pm.devices.map((d) => d.name).join(', ')
+          : 'Perangkat';
+      list.push({
+        id: pm.id,
+        type: 'permit-barang',
+        typeLabel: 'Permit Barang',
+        number: pm.letterNumber || pm.subject,
+        title: `${pm.subject} — ${pm.location}`,
+        subtitle: `Pemohon: ${pm.applicantName} (${pm.applicantPosition}) • ${pm.devices?.length || 0} Perangkat: ${deviceSummary}`,
+        date: formatPermitBarangDate(pm.permitDate || pm.createdDate),
+        createdDate: pm.createdDate || (pm.createdAt ? pm.createdAt.slice(0, 10) : ''),
+        createdAt: pm.createdAt || pm.createdDate || new Date().toISOString(),
+        creator: pm.createdByName || 'Staff NOC',
+        creatorRole: pm.createdByRole || 'engineer',
+        rawPermitBarang: pm,
+      });
+    });
+
     // Sort
     return list.sort((a, b) => {
       const timeA = new Date(a.createdAt).getTime() || 0;
       const timeB = new Date(b.createdAt).getTime() || 0;
       return sortBy === 'newest' ? timeB - timeA : timeA - timeB;
     });
-  }, [rfos, suratTugasList, beritaAcaraList, sortBy]);
+  }, [rfos, suratTugasList, beritaAcaraList, permitBarangList, sortBy]);
 
   // Distinct Creator Options
   const creatorOptions = useMemo(() => {
@@ -277,6 +321,9 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         if (item.type === 'berita-acara' && item.rawBeritaAcara?.createdDate) {
           candidates.add(item.rawBeritaAcara.createdDate.slice(0, 10));
         }
+        if (item.type === 'permit-barang' && item.rawPermitBarang?.createdDate) {
+          candidates.add(item.rawPermitBarang.createdDate.slice(0, 10));
+        }
 
         if (item.createdAt) {
           candidates.add(item.createdAt.slice(0, 10));
@@ -312,8 +359,9 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
       rfo: rfos.length,
       suratTugas: suratTugasList.length,
       beritaAcara: beritaAcaraList.length,
+      permitBarang: permitBarangList.length,
     };
-  }, [unifiedItems.length, rfos.length, suratTugasList.length, beritaAcaraList.length]);
+  }, [unifiedItems.length, rfos.length, suratTugasList.length, beritaAcaraList.length, permitBarangList.length]);
 
   // Reset Filters
   const handleResetFilters = () => {
@@ -337,6 +385,9 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
     } else if (item.type === 'berita-acara' && item.rawBeritaAcara) {
       setSelectedBeritaAcara(item.rawBeritaAcara);
       setBaModalPageTab('all');
+    } else if (item.type === 'permit-barang' && item.rawPermitBarang) {
+      setSelectedPermitBarang(item.rawPermitBarang);
+      setPmModalPageTab('all');
     }
   };
 
@@ -445,6 +496,53 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             setExportingItem(null);
           }
         }, 300);
+      } else if (item.type === 'permit-barang' && item.rawPermitBarang) {
+        addToast('info', 'Membuat PDF Permit Barang...', 'Sedang merender layout dokumen.');
+        const isModalOpen = selectedPermitBarang?.id === item.id;
+        if (!isModalOpen) {
+          setExportingItem(item);
+        } else {
+          setPmModalPageTab('all');
+        }
+
+        setTimeout(async () => {
+          try {
+            const selector = isModalOpen
+              ? '#history-permit-barang-modal-doc .permit-barang-page, #history-permit-barang-modal-doc .permit-barang-single-page'
+              : '#direct-export-pm-doc .permit-barang-page, #direct-export-pm-doc .permit-barang-single-page';
+            const pageElements = document.querySelectorAll<HTMLElement>(selector);
+
+            const filename = generatePermitBarangFileName(
+              item.rawPermitBarang!.subject,
+              item.rawPermitBarang!.location,
+              item.rawPermitBarang!.permitDate || item.rawPermitBarang!.createdDate
+            );
+
+            if (pageElements.length > 1) {
+              await PDFService.exportMultiPagePDF(pageElements, filename);
+            } else if (pageElements.length === 1) {
+              await PDFService.exportSinglePagePDF(pageElements[0], filename);
+            } else {
+              const targetId = isModalOpen
+                ? 'history-permit-barang-modal-doc'
+                : 'direct-export-pm-doc';
+              const element = document.getElementById(targetId);
+              if (!element) {
+                addToast('error', 'Gagal', 'Elemen dokumen tidak ditemukan.');
+                return;
+              }
+              await PDFService.exportSinglePagePDF(element, filename);
+            }
+
+            addToast('success', 'PDF Terunduh', filename);
+          } catch (e) {
+            console.error('PM PDF error:', e);
+            addToast('error', 'Gagal', 'Terjadi kesalahan saat mengekspor PDF.');
+          } finally {
+            setDownloadingId(null);
+            setExportingItem(null);
+          }
+        }, 300);
       }
     } catch {
       setDownloadingId(null);
@@ -468,6 +566,11 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
           item.rawBeritaAcara,
           beritaAcaraTemplate?.companyName || template.companyName
         );
+      } else if (item.type === 'permit-barang' && item.rawPermitBarang) {
+        text = generatePermitBarangWhatsAppText(
+          item.rawPermitBarang,
+          permitBarangTemplate?.companyName || template.companyName
+        );
       }
 
       await navigator.clipboard.writeText(text);
@@ -489,6 +592,8 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
       onEditSuratTugas(item.rawSuratTugas);
     } else if (item.type === 'berita-acara' && item.rawBeritaAcara) {
       onEditBeritaAcara(item.rawBeritaAcara);
+    } else if (item.type === 'permit-barang' && item.rawPermitBarang) {
+      onEditPermitBarang?.(item.rawPermitBarang);
     }
   };
 
@@ -500,6 +605,8 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
       onDuplicateSuratTugas(item.rawSuratTugas);
     } else if (item.type === 'berita-acara' && item.rawBeritaAcara) {
       onDuplicateBeritaAcara(item.rawBeritaAcara);
+    } else if (item.type === 'permit-barang' && item.rawPermitBarang) {
+      onDuplicatePermitBarang?.(item.rawPermitBarang);
     }
   };
 
@@ -519,6 +626,10 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
       } else if (type === 'berita-acara') {
         success = await beritaAcaraStorage.deleteBeritaAcara(id);
         if (success) setBeritaAcaraList((prev) => prev.filter((ba) => ba.id !== id));
+      } else if (type === 'permit-barang') {
+        await permitBarangStorage.deletePermitBarang(id);
+        setPermitBarangList((prev) => prev.filter((pm) => pm.id !== id));
+        success = true;
       }
 
       if (success) {
@@ -526,6 +637,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         if (selectedRFO?.id === id) setSelectedRFO(null);
         if (selectedSuratTugas?.id === id) setSelectedSuratTugas(null);
         if (selectedBeritaAcara?.id === id) setSelectedBeritaAcara(null);
+        if (selectedPermitBarang?.id === id) setSelectedPermitBarang(null);
       } else {
         addToast('error', 'Gagal', 'Dokumen tidak ditemukan.');
       }
@@ -561,6 +673,13 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             Berita Acara
           </span>
         );
+      case 'permit-barang':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+            <PackageCheck className="w-3 h-3 text-purple-600" />
+            Permit Barang
+          </span>
+        );
     }
   };
 
@@ -581,13 +700,13 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
               Arsip & Riwayat Dokumen
             </h1>
             <p className="text-xs md:text-sm text-slate-500">
-              Akses riwayat terpusat untuk dokumen Reason For Outage (RFO), Surat Tugas Visit, dan Berita Acara Visit.
+              Akses riwayat terpusat untuk dokumen Reason For Outage (RFO), Surat Tugas Visit, Berita Acara Visit, dan Permit Keluar/Masuk Barang.
             </p>
           </div>
         </div>
 
         {/* 2. Interactive Document Type Filter Tabs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
           <button
             onClick={() => setTypeFilter('all')}
             className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
@@ -673,6 +792,28 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             </div>
             {typeFilter === 'berita-acara' && (
               <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setTypeFilter('permit-barang')}
+            className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+              typeFilter === 'permit-barang'
+                ? 'bg-white border-purple-600 shadow-xs ring-2 ring-purple-500/20'
+                : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-xs'
+            }`}
+          >
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600 shrink-0">
+                <PackageCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">Permit Barang</p>
+                <p className="text-base sm:text-lg font-black text-purple-700">{counts.permitBarang}</p>
+              </div>
+            </div>
+            {typeFilter === 'permit-barang' && (
+              <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0"></span>
             )}
           </button>
         </div>
@@ -1203,6 +1344,121 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         </div>
       )}
 
+      {/* ================= MODAL PREVIEW PERMIT BARANG ================= */}
+      {selectedPermitBarang && (
+        <div className="print-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="print-modal-container relative bg-white border border-slate-200 rounded-2xl w-full max-w-4xl max-h-[96vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+            {/* Modal Header */}
+            <div className="no-print px-3.5 py-2.5 sm:px-5 sm:py-4 border-b border-slate-200 flex items-center justify-between gap-2 bg-white shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 shrink-0">
+                  Permit Barang
+                </span>
+                <span className="font-mono text-xs sm:text-sm text-slate-900 font-bold truncate">
+                  {selectedPermitBarang.subject}
+                </span>
+              </div>
+
+              {/* Page Tabs for Multi-Page Permit Barang */}
+              {isPermitBarangMultiPage(selectedPermitBarang) && (
+                <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 rounded-lg p-0.5 ml-1 sm:ml-2">
+                  <button
+                    type="button"
+                    onClick={() => setPmModalPageTab('all')}
+                    className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                      pmModalPageTab === 'all'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Semua
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPmModalPageTab(1)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                      pmModalPageTab === 1
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Hal 1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPmModalPageTab(2)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                      pmModalPageTab === 2
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Hal 2
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setPmModalPageTab('all');
+                    setTimeout(() => window.print(), 100);
+                  }}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-xs text-slate-700 border border-slate-200 font-medium shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  title="Cetak Dokumen"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Cetak</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const item = unifiedItems.find((u) => u.id === selectedPermitBarang.id && u.type === 'permit-barang');
+                    if (item) handleDownloadPDF(item);
+                  }}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  title="Unduh PDF Resmi"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Ekspor PDF</span>
+                  <span className="sm:hidden font-semibold">PDF</span>
+                </button>
+                <button
+                  onClick={() => setSelectedPermitBarang(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer ml-0.5 sm:ml-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Subheader: Metadata Waktu Pembuatan & Pembuat */}
+            <div className="no-print px-3.5 py-2 sm:px-5 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-1 text-[11px] sm:text-xs text-slate-600 shrink-0">
+              <span className="flex items-center gap-1.5 text-blue-700 font-medium">
+                <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span>Waktu: <strong className="text-slate-900 font-semibold">{formatCreationTimestamp(selectedPermitBarang.createdAt)}</strong></span>
+              </span>
+              <span className="text-slate-300 hidden sm:inline">•</span>
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Oleh: <strong className="text-slate-900 font-semibold">{selectedPermitBarang.createdByName || 'Staff NOC'}</strong> {selectedPermitBarang.createdByRole ? `(${selectedPermitBarang.createdByRole})` : ''}</span>
+              </span>
+            </div>
+
+            {/* Modal Body: A4 Paper Document */}
+            <div className="print-modal-body p-2 sm:p-4 lg:p-8 overflow-auto bg-slate-100/70 flex justify-start sm:justify-center">
+              <div id="history-permit-barang-modal-doc" className="print-modal-doc-wrapper w-full max-w-[210mm] min-w-[210mm] sm:min-w-0 shadow-lg shadow-slate-300/60 rounded-sm">
+                <PermitBarangPaperDocument
+                  doc={selectedPermitBarang}
+                  template={permitBarangTemplate}
+                  id="permit-barang-paper-doc"
+                  previewPageFilter={pmModalPageTab}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ================= DELETE CONFIRMATION MODAL ================= */}
       {deleteConfirmItem && (
         <div className="no-print fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
@@ -1286,6 +1542,17 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                 doc={exportingItem.rawBeritaAcara}
                 template={beritaAcaraTemplate}
                 id="direct-export-ba-paper"
+                previewPageFilter="all"
+              />
+            </div>
+          )}
+
+          {exportingItem.type === 'permit-barang' && exportingItem.rawPermitBarang && (
+            <div id="direct-export-pm-doc" className="w-[794px] flex flex-col gap-4">
+              <PermitBarangPaperDocument
+                doc={exportingItem.rawPermitBarang}
+                template={permitBarangTemplate}
+                id="direct-export-pm-paper"
                 previewPageFilter="all"
               />
             </div>

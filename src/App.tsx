@@ -22,6 +22,9 @@ import { suratTugasStorage } from './services/suratTugasStorage';
 import type { BeritaAcaraDocument, BeritaAcaraTemplate } from './types/beritaAcara';
 import { DEFAULT_BERITA_ACARA_TEMPLATE } from './types/beritaAcara';
 import { beritaAcaraStorage } from './services/beritaAcaraStorage';
+import type { PermitBarangDocument, PermitBarangTemplate } from './types/permitBarang';
+import { DEFAULT_PERMIT_BARANG_TEMPLATE } from './types/permitBarang';
+import { permitBarangStorage } from './services/permitBarangStorage';
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => authService.getCurrentUser());
@@ -33,12 +36,16 @@ export function App() {
   const [beritaAcaraTemplate, setBeritaAcaraTemplate] = useState<BeritaAcaraTemplate>(
     DEFAULT_BERITA_ACARA_TEMPLATE
   );
+  const [permitBarangTemplate, setPermitBarangTemplate] = useState<PermitBarangTemplate>(
+    DEFAULT_PERMIT_BARANG_TEMPLATE
+  );
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [editingRFO, setEditingRFO] = useState<RFODocument | null>(null);
   const [editingSuratTugas, setEditingSuratTugas] = useState<SuratTugasDocument | null>(null);
   const [editingBeritaAcara, setEditingBeritaAcara] = useState<BeritaAcaraDocument | null>(null);
+  const [editingPermitBarang, setEditingPermitBarang] = useState<PermitBarangDocument | null>(null);
   const [hasDraft, setHasDraft] = useState<boolean>(false);
 
   // Initialize template and check draft on startup
@@ -46,6 +53,7 @@ export function App() {
     loadTemplate();
     loadSuratTugasTemplate();
     loadBeritaAcaraTemplate();
+    loadPermitBarangTemplate();
     checkDraft();
   }, []);
 
@@ -73,6 +81,15 @@ export function App() {
       setBeritaAcaraTemplate(baTmpl);
     } catch (e) {
       console.warn('Berita Acara template load fallback:', e);
+    }
+  };
+
+  const loadPermitBarangTemplate = async () => {
+    try {
+      const pmTmpl = await permitBarangStorage.getTemplate();
+      setPermitBarangTemplate(pmTmpl);
+    } catch (e) {
+      console.warn('Permit Barang template load fallback:', e);
     }
   };
 
@@ -123,13 +140,20 @@ export function App() {
       (activeTab === 'templates' ||
         activeTab === 'templates-st' ||
         activeTab === 'templates-ba' ||
+        activeTab === 'templates-pm' ||
         activeTab === 'users' ||
         activeTab === 'settings') &&
       !isAdmin
     ) {
       setActiveTab('dashboard');
       addToast('error', 'Akses Ditolak', 'Halaman tersebut hanya dapat diakses dan dikelola oleh Super Admin.');
-    } else if ((activeTab === 'create' || activeTab === 'create-st' || activeTab === 'create-ba') && !canCreate) {
+    } else if (
+      (activeTab === 'create' ||
+        activeTab === 'create-st' ||
+        activeTab === 'create-ba' ||
+        activeTab === 'create-pm') &&
+      !canCreate
+    ) {
       setActiveTab('history');
       addToast('info', 'Akses Terbatas', 'Akun Auditor/Viewer hanya memiliki wewenang membaca arsip.');
     }
@@ -237,6 +261,36 @@ export function App() {
     setActiveTab('history');
   };
 
+  // Permit Barang Handlers
+  const handleEditPermitBarang = (doc: PermitBarangDocument) => {
+    setEditingPermitBarang(doc);
+    setActiveTab('create-pm');
+    addToast('info', 'Mode Edit Permit Barang', `Memuat permohonan ${doc.subject} ke form.`);
+  };
+
+  const handleDuplicatePermitBarang = (doc: PermitBarangDocument) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const clone: PermitBarangDocument = {
+      ...doc,
+      id: '',
+      createdDate: today,
+      permitDate: today,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: currentUser?.id,
+      createdByName: currentUser?.name || 'Staff NOC',
+      createdByRole: currentUser?.role || 'engineer',
+    };
+    setEditingPermitBarang(clone);
+    setActiveTab('create-pm');
+    addToast('info', 'Duplikasi Permit Barang', 'Data permit disalin ke formulir baru.');
+  };
+
+  const handlePermitBarangSaved = () => {
+    setEditingPermitBarang(null);
+    setActiveTab('history');
+  };
+
   // If not logged in, render the Login Page
   if (!currentUser) {
     return (
@@ -302,17 +356,22 @@ export function App() {
               template={template}
               suratTugasTemplate={suratTugasTemplate}
               beritaAcaraTemplate={beritaAcaraTemplate}
+              permitBarangTemplate={permitBarangTemplate}
               setActiveTab={setActiveTab}
               onEditRFO={handleEditRFO}
               onViewRFO={handleViewRFO}
               onEditSuratTugas={handleEditSuratTugas}
               onEditBeritaAcara={handleEditBeritaAcara}
+              onEditPermitBarang={handleEditPermitBarang}
               addToast={addToast}
               currentUser={currentUser}
             />
           )}
 
-          {(activeTab === 'create' || activeTab === 'create-st' || activeTab === 'create-ba') && (
+          {(activeTab === 'create' ||
+            activeTab === 'create-st' ||
+            activeTab === 'create-ba' ||
+            activeTab === 'create-pm') && (
             <CreateUnifiedDocumentPage
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -325,16 +384,23 @@ export function App() {
               beritaAcaraTemplate={beritaAcaraTemplate}
               editingBeritaAcara={editingBeritaAcara}
               onBeritaAcaraSaved={handleBeritaAcaraSaved}
+              permitBarangTemplate={permitBarangTemplate}
+              editingPermitBarang={editingPermitBarang}
+              onPermitBarangSaved={handlePermitBarangSaved}
               addToast={addToast}
               currentUser={currentUser}
             />
           )}
 
-          {(activeTab === 'history' || activeTab === 'history-st' || activeTab === 'history-ba') && (
+          {(activeTab === 'history' ||
+            activeTab === 'history-st' ||
+            activeTab === 'history-ba' ||
+            activeTab === 'history-pm') && (
             <HistoryPage
               template={template}
               suratTugasTemplate={suratTugasTemplate}
               beritaAcaraTemplate={beritaAcaraTemplate}
+              permitBarangTemplate={permitBarangTemplate}
               setActiveTab={setActiveTab}
               onEditRFO={handleEditRFO}
               onDuplicateRFO={handleDuplicateRFO}
@@ -342,6 +408,8 @@ export function App() {
               onDuplicateSuratTugas={handleDuplicateSuratTugas}
               onEditBeritaAcara={handleEditBeritaAcara}
               onDuplicateBeritaAcara={handleDuplicateBeritaAcara}
+              onEditPermitBarang={handleEditPermitBarang}
+              onDuplicatePermitBarang={handleDuplicatePermitBarang}
               addToast={addToast}
               currentUser={currentUser}
               initialTypeFilter={
@@ -349,30 +417,40 @@ export function App() {
                   ? 'surat-tugas'
                   : activeTab === 'history-ba'
                   ? 'berita-acara'
+                  : activeTab === 'history-pm'
+                  ? 'permit-barang'
                   : 'all'
               }
             />
           )}
 
-          {(activeTab === 'templates' || activeTab === 'templates-st' || activeTab === 'templates-ba') && isAdmin && (
-            <TemplatePage
-              template={template}
-              onUpdateTemplate={(newTmpl) => setTemplate(newTmpl)}
-              suratTugasTemplate={suratTugasTemplate}
-              onUpdateSuratTugasTemplate={(newStTmpl) => setSuratTugasTemplate(newStTmpl)}
-              beritaAcaraTemplate={beritaAcaraTemplate}
-              onUpdateBeritaAcaraTemplate={(newBaTmpl) => setBeritaAcaraTemplate(newBaTmpl)}
-              addToast={addToast}
-              currentUser={currentUser}
-              initialSubTab={
-                activeTab === 'templates-ba'
-                  ? 'berita-acara'
-                  : activeTab === 'templates-st'
-                  ? 'surat-tugas'
-                  : 'rfo'
-              }
-            />
-          )}
+          {(activeTab === 'templates' ||
+            activeTab === 'templates-st' ||
+            activeTab === 'templates-ba' ||
+            activeTab === 'templates-pm') &&
+            isAdmin && (
+              <TemplatePage
+                template={template}
+                onUpdateTemplate={(newTmpl) => setTemplate(newTmpl)}
+                suratTugasTemplate={suratTugasTemplate}
+                onUpdateSuratTugasTemplate={(newStTmpl) => setSuratTugasTemplate(newStTmpl)}
+                beritaAcaraTemplate={beritaAcaraTemplate}
+                onUpdateBeritaAcaraTemplate={(newBaTmpl) => setBeritaAcaraTemplate(newBaTmpl)}
+                permitBarangTemplate={permitBarangTemplate}
+                onUpdatePermitBarangTemplate={(newPmTmpl) => setPermitBarangTemplate(newPmTmpl)}
+                addToast={addToast}
+                currentUser={currentUser}
+                initialSubTab={
+                  activeTab === 'templates-pm'
+                    ? 'permit-barang'
+                    : activeTab === 'templates-ba'
+                    ? 'berita-acara'
+                    : activeTab === 'templates-st'
+                    ? 'surat-tugas'
+                    : 'rfo'
+                }
+              />
+            )}
 
           {activeTab === 'users' && isAdmin && (
             <UsersPage

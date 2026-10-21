@@ -24,12 +24,15 @@ import type { RFOTemplate } from '../types/rfo';
 import type { SuratTugasTemplate } from '../types/suratTugas';
 import type { BeritaAcaraTemplate } from '../types/beritaAcara';
 import { DEFAULT_BERITA_ACARA_TEMPLATE } from '../types/beritaAcara';
+import type { PermitBarangTemplate } from '../types/permitBarang';
+import { DEFAULT_PERMIT_BARANG_TEMPLATE } from '../types/permitBarang';
 import type { UserAccount } from '../types/auth';
 import { storageService } from '../services/storageService';
 import { RFOPaperDocument } from '../components/RFOPaperDocument';
 import { SignatureBlock } from '../components/SignatureBlock';
 import { SuratTugasTemplateEditor } from '../components/SuratTugasTemplateEditor';
 import { BeritaAcaraTemplateEditor } from '../components/BeritaAcaraTemplateEditor';
+import { PermitBarangTemplateEditor } from '../components/PermitBarangTemplateEditor';
 import { processImageFile } from '../utils/imageUtils';
 import { extractFromDocx } from '../utils/docxUtils';
 import { extractFromPdf } from '../utils/pdfUtils';
@@ -42,9 +45,11 @@ interface TemplatePageProps {
   onUpdateSuratTugasTemplate: (template: SuratTugasTemplate) => void;
   beritaAcaraTemplate?: BeritaAcaraTemplate;
   onUpdateBeritaAcaraTemplate?: (template: BeritaAcaraTemplate) => void;
+  permitBarangTemplate?: PermitBarangTemplate;
+  onUpdatePermitBarangTemplate?: (template: PermitBarangTemplate) => void;
   addToast: (type: ToastMessage['type'], title: string, message?: string) => void;
   currentUser?: UserAccount | null;
-  initialSubTab?: 'rfo' | 'surat-tugas' | 'berita-acara';
+  initialSubTab?: 'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang';
 }
 
 export const TemplatePage: React.FC<TemplatePageProps> = ({
@@ -54,12 +59,14 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   onUpdateSuratTugasTemplate,
   beritaAcaraTemplate,
   onUpdateBeritaAcaraTemplate,
+  permitBarangTemplate,
+  onUpdatePermitBarangTemplate,
   addToast,
   currentUser,
   initialSubTab = 'rfo',
 }) => {
   const isAdmin = currentUser?.role === 'admin';
-  const [activeSubTab, setActiveSubTab] = useState<'rfo' | 'surat-tugas' | 'berita-acara'>(initialSubTab);
+  const [activeSubTab, setActiveSubTab] = useState<'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang'>(initialSubTab);
   const [formData, setFormData] = useState<RFOTemplate>({ ...template });
 
   useEffect(() => {
@@ -409,6 +416,19 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
             <Building className="w-3.5 h-3.5" />
             <span>Template Berita Acara</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('permit-barang')}
+            className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 ${
+              activeSubTab === 'permit-barang'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Building className="w-3.5 h-3.5" />
+            <span>Template Permit Barang</span>
+          </button>
         </div>
       </div>
 
@@ -424,6 +444,13 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
         <BeritaAcaraTemplateEditor
           template={beritaAcaraTemplate || DEFAULT_BERITA_ACARA_TEMPLATE}
           onUpdateTemplate={onUpdateBeritaAcaraTemplate || (() => {})}
+          addToast={addToast}
+          currentUser={currentUser}
+        />
+      ) : activeSubTab === 'permit-barang' ? (
+        <PermitBarangTemplateEditor
+          template={permitBarangTemplate || DEFAULT_PERMIT_BARANG_TEMPLATE}
+          onUpdateTemplate={onUpdatePermitBarangTemplate || (() => {})}
           addToast={addToast}
           currentUser={currentUser}
         />

@@ -9,37 +9,43 @@ import {
   Layers,
   Sliders,
   ChevronRight,
+  PackageCheck,
 } from 'lucide-react';
 import type { RFODocument, RFOTemplate, ActiveTab } from '../types/rfo';
 import type { SuratTugasDocument, SuratTugasTemplate } from '../types/suratTugas';
 import type { BeritaAcaraDocument, BeritaAcaraTemplate } from '../types/beritaAcara';
+import type { PermitBarangDocument, PermitBarangTemplate } from '../types/permitBarang';
 import type { UserAccount } from '../types/auth';
 import type { ToastMessage } from '../components/Toast';
 import { storageService } from '../services/storageService';
 import { suratTugasStorage } from '../services/suratTugasStorage';
 import { beritaAcaraStorage } from '../services/beritaAcaraStorage';
+import { permitBarangStorage } from '../services/permitBarangStorage';
 import { formatIndonesianDateOnly } from '../utils/dateFormatter';
 import { formatSuratTugasExecutionDate } from '../utils/suratTugasUtils';
 import { formatBeritaAcaraExecutionDate } from '../utils/beritaAcaraUtils';
+import { formatPermitBarangDate } from '../utils/permitBarangUtils';
 
 interface DashboardPageProps {
   template?: RFOTemplate;
   suratTugasTemplate?: SuratTugasTemplate;
   beritaAcaraTemplate?: BeritaAcaraTemplate;
+  permitBarangTemplate?: PermitBarangTemplate;
   setActiveTab: (tab: ActiveTab) => void;
   onEditRFO?: (rfo: RFODocument) => void;
   onViewRFO: (rfo: RFODocument) => void;
   onEditSuratTugas?: (doc: SuratTugasDocument) => void;
   onEditBeritaAcara?: (doc: BeritaAcaraDocument) => void;
+  onEditPermitBarang?: (doc: PermitBarangDocument) => void;
   addToast: (type: ToastMessage['type'], title: string, message?: string) => void;
   currentUser?: UserAccount | null;
 }
 
-type FeedFilterType = 'all' | 'surat-tugas' | 'berita-acara' | 'rfo';
+type FeedFilterType = 'all' | 'surat-tugas' | 'berita-acara' | 'permit-barang' | 'rfo';
 
 interface UnifiedFeedItem {
   id: string;
-  type: 'surat-tugas' | 'berita-acara' | 'rfo';
+  type: 'surat-tugas' | 'berita-acara' | 'permit-barang' | 'rfo';
   typeLabel: string;
   number: string;
   title: string;
@@ -49,6 +55,7 @@ interface UnifiedFeedItem {
   creator: string;
   rawST?: SuratTugasDocument;
   rawBA?: BeritaAcaraDocument;
+  rawPM?: PermitBarangDocument;
   rawRFO?: RFODocument;
 }
 
@@ -57,12 +64,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onViewRFO,
   onEditSuratTugas,
   onEditBeritaAcara,
+  onEditPermitBarang,
   addToast,
   currentUser,
 }) => {
   const [rfos, setRfos] = useState<RFODocument[]>([]);
   const [suratTugasList, setSuratTugasList] = useState<SuratTugasDocument[]>([]);
   const [beritaAcaraList, setBeritaAcaraList] = useState<BeritaAcaraDocument[]>([]);
+  const [permitBarangList, setPermitBarangList] = useState<PermitBarangDocument[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [feedFilter, setFeedFilter] = useState<FeedFilterType>('all');
 
@@ -73,14 +82,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [rfoDocs, stDocs, baDocs] = await Promise.all([
+      const [rfoDocs, stDocs, baDocs, pmDocs] = await Promise.all([
         storageService.getAllRFOs().catch(() => []),
         suratTugasStorage.getAllSuratTugas().catch(() => []),
         beritaAcaraStorage.getAllBeritaAcara().catch(() => []),
+        permitBarangStorage.getAllPermitBarang().catch(() => []),
       ]);
       setRfos(rfoDocs);
       setSuratTugasList(stDocs);
       setBeritaAcaraList(baDocs);
+      setPermitBarangList(pmDocs);
     } catch (e) {
       console.error('Failed to load dashboard data:', e);
       addToast('error', 'Gagal Memuat Data', 'Tidak dapat mengambil ringkasan dokumen.');
@@ -125,6 +136,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       });
     });
 
+    // Permit Barang
+    permitBarangList.forEach((pm) => {
+      list.push({
+        id: pm.id,
+        type: 'permit-barang',
+        typeLabel: pm.permitType === 'masuk' ? 'Permit Masuk' : 'Permit Keluar',
+        number: pm.subject,
+        title: pm.location || 'Lokasi Gedung',
+        subtitle: `PIC: ${pm.applicantName} (${pm.applicantPosition}) • ${pm.devices.length} Perangkat • Jadwal: ${formatPermitBarangDate(pm.permitDate)} (${pm.permitTime})`,
+        date: formatIndonesianDateOnly(pm.createdDate),
+        createdAt: pm.createdAt || pm.createdDate || new Date().toISOString(),
+        creator: pm.createdByName || 'Staff Operasional',
+        rawPM: pm,
+      });
+    });
+
     // RFO
     rfos.forEach((r) => {
       list.push({
@@ -144,7 +171,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     return list.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [suratTugasList, beritaAcaraList, rfos]);
+  }, [suratTugasList, beritaAcaraList, permitBarangList, rfos]);
 
   const filteredFeed = useMemo(() => {
     if (feedFilter === 'all') return unifiedFeed;
@@ -156,12 +183,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       onEditSuratTugas(item.rawST);
     } else if (item.type === 'berita-acara' && item.rawBA && onEditBeritaAcara) {
       onEditBeritaAcara(item.rawBA);
+    } else if (item.type === 'permit-barang' && item.rawPM && onEditPermitBarang) {
+      onEditPermitBarang(item.rawPM);
     } else if (item.type === 'rfo' && item.rawRFO) {
       onViewRFO(item.rawRFO);
     }
   };
 
-  const totalDocuments = suratTugasList.length + beritaAcaraList.length + rfos.length;
+  const totalDocuments =
+    suratTugasList.length + beritaAcaraList.length + permitBarangList.length + rfos.length;
   const isAdmin = currentUser?.role === 'admin';
 
   if (loading) {
@@ -194,15 +224,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
             Platform terpadu penerbitan surat & dokumen resmi operasional. Buat dan cetak{' '}
             <span className="font-semibold text-slate-800">Surat Tugas Visit</span>,{' '}
-            <span className="font-semibold text-slate-800">Berita Acara Pekerjaan</span>, dan{' '}
+            <span className="font-semibold text-slate-800">Berita Acara Pekerjaan</span>,{' '}
+            <span className="font-semibold text-slate-800">Surat Permit Masuk & Keluar Barang</span>, dan{' '}
             <span className="font-semibold text-slate-800">Laporan RFO</span> dengan penomoran
             urut otomatis, layout kop standar, dan ekspor instan format A4.
           </p>
         </div>
       </div>
 
-      {/* 4 Core Balanced KPI Cards: Total Docs, Surat Tugas, Berita Acara, RFO */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* 5 Core Balanced KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
         {/* Card 1: Total Dokumen */}
         <div
           onClick={() => setActiveTab('history')}
@@ -218,8 +249,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <span className="text-3xl font-black text-slate-900 tracking-tight font-mono">
               {totalDocuments}
             </span>
-            <p className="text-[11px] text-slate-500 mt-1">
-              {suratTugasList.length} ST • {beritaAcaraList.length} BA • {rfos.length} RFO
+            <p className="text-[11px] text-slate-500 mt-1 truncate">
+              {suratTugasList.length} ST • {beritaAcaraList.length} BA • {permitBarangList.length} PM • {rfos.length} RFO
             </p>
           </div>
           <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-blue-600 font-semibold group-hover:underline">
@@ -274,7 +305,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         </div>
 
-        {/* Card 4: Laporan RFO */}
+        {/* Card 4: Permit Barang */}
+        <div
+          onClick={() => setActiveTab('history-pm')}
+          className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs relative overflow-hidden group hover:border-purple-300 transition-all cursor-pointer"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Permit Barang Terbit</span>
+            <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600">
+              <PackageCheck className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-3xl font-black text-purple-700 tracking-tight font-mono">
+              {permitBarangList.length}
+            </span>
+            <p className="text-[11px] text-slate-500 mt-1">Izin masuk & keluar perangkat</p>
+          </div>
+          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-purple-600 font-semibold group-hover:underline">
+            <span>Arsip Permit Barang</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </div>
+        </div>
+
+        {/* Card 5: Laporan RFO */}
         <div
           onClick={() => setActiveTab('history')}
           className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs relative overflow-hidden group hover:border-blue-300 transition-all cursor-pointer"
@@ -297,8 +351,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         </div>
       </div>
-
-
 
       {/* Unified Recent Document Activity Feed */}
       <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 shadow-xs space-y-4">
@@ -360,6 +412,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </button>
 
           <button
+            onClick={() => setFeedFilter('permit-barang')}
+            className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+              feedFilter === 'permit-barang'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200'
+            }`}
+          >
+            <PackageCheck className="w-3.5 h-3.5" />
+            <span>Permit Barang ({permitBarangList.length})</span>
+          </button>
+
+          <button
             onClick={() => setFeedFilter('rfo')}
             className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
               feedFilter === 'rfo'
@@ -378,6 +442,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             filteredFeed.slice(0, 7).map((item) => {
               const isST = item.type === 'surat-tugas';
               const isBA = item.type === 'berita-acara';
+              const isPM = item.type === 'permit-barang';
               const isRFO = item.type === 'rfo';
 
               return (
@@ -393,11 +458,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           ? 'bg-sky-100 text-sky-700'
                           : isBA
                           ? 'bg-indigo-100 text-indigo-700'
+                          : isPM
+                          ? 'bg-purple-100 text-purple-700'
                           : 'bg-blue-100 text-blue-700'
                       }`}
                     >
                       {isST && <ClipboardList className="w-4 h-4" />}
                       {isBA && <FileCheck className="w-4 h-4" />}
+                      {isPM && <PackageCheck className="w-4 h-4" />}
                       {isRFO && <FileText className="w-4 h-4" />}
                     </div>
 
@@ -409,6 +477,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                               ? 'bg-sky-50 text-sky-700 border border-sky-200'
                               : isBA
                               ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                              : isPM
+                              ? 'bg-purple-50 text-purple-700 border border-purple-200'
                               : 'bg-blue-50 text-blue-700 border border-blue-200'
                           }`}
                         >
@@ -462,7 +532,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <span className="text-[11px] text-slate-400">Khusus Super Admin</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <button
               onClick={() => setActiveTab('templates-st')}
               className="p-3.5 rounded-xl border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 text-left transition-all cursor-pointer group flex items-center justify-between"
@@ -491,6 +561,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </span>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
+            </button>
+
+            <button
+              onClick={() => setActiveTab('templates-pm')}
+              className="p-3.5 rounded-xl border border-slate-200 hover:border-purple-300 hover:bg-purple-50/40 text-left transition-all cursor-pointer group flex items-center justify-between"
+            >
+              <div>
+                <span className="font-bold text-xs text-slate-900 block group-hover:text-purple-700">
+                  Template Permit Barang
+                </span>
+                <span className="text-[11px] text-slate-500 mt-0.5 block">
+                  Kop surat, TTD Direktur, pembuka & penutup
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-purple-600" />
             </button>
 
             <button

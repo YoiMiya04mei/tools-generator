@@ -59,10 +59,12 @@ export class PDFService {
             !paperElement.classList.contains('rfo-document-container') &&
             !paperElement.classList.contains('surat-tugas-container') &&
             !paperElement.classList.contains('berita-acara-page') &&
-            !paperElement.classList.contains('berita-acara-single-page')
+            !paperElement.classList.contains('berita-acara-single-page') &&
+            !paperElement.classList.contains('permit-barang-container') &&
+            !paperElement.classList.contains('permit-barang-page')
           ) {
             const found = paperElement.querySelector<HTMLElement>(
-              '.rfo-document-container, .surat-tugas-container, .berita-acara-page, .berita-acara-single-page'
+              '.rfo-document-container, .surat-tugas-container, .berita-acara-page, .berita-acara-single-page, .permit-barang-container, .permit-barang-page'
             );
             if (found) {
               paperElement = found;
