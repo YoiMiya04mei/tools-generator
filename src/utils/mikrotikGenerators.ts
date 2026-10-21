@@ -14,6 +14,27 @@ import type {
   VPNGamesConfig,
   VPNRemoteClientConfig,
   SocialMediaRoutingConfig,
+  HotspotQRCodeConfig,
+  HotspotUserGenConfig,
+  BlockSharingTTLConfig,
+  BandwidthUpToConfig,
+  HotspotWizardConfig,
+  ExpiredNotificationConfig,
+  PPPSecretsGenConfig,
+  DoHConfig,
+  BondingConfig,
+  NetwatchConfig,
+  RogueDHCPConfig,
+  MacChangeConfig,
+  HideRouterboardConfig,
+  PortKnockingConfig,
+  AdvancedProtectionConfig,
+  BlockWebsitesConfig,
+  AutoBackupEmailConfig,
+  MangleObfuscatorConfig,
+  BlockSocialMediaConfig,
+  IndonesiaNTPConfig,
+  WifiIdAutoLoginConfig,
 } from '../types/mikrotikTools';
 
 // Game Port Presets Database
@@ -939,6 +960,948 @@ export function generateSocialMediaRoutingScript(config: SocialMediaRoutingConfi
   lines.push('/ip route');
   const routingParam = rosVersion === 'v7' ? `routing-table="${routingMarkName}"` : `routing-mark="${routingMarkName}"`;
   lines.push(`add dst-address=0.0.0.0/0 gateway=${targetGateway} ${routingParam} distance=1 check-gateway=ping comment="Social Route via ${targetWan}"`);
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 17. Free Hotspot Wi-Fi QR Code Template & MikroTik Integration
+// ==============================================================================
+export function generateHotspotQRCodeScript(config: HotspotQRCodeConfig): string {
+  const { rosVersion, ssid, encryption, password, hidden, loginUrl, hotspotServerName } = config;
+  const qrString = `WIFI:S:${ssid};T:${encryption};P:${password || ''};${hidden ? 'H:true;' : ''};`;
+
+  const lines: string[] = [
+    headerBanner('Hotspot Wi-Fi QR Code & Captive Portal Login Script', rosVersion),
+    '# ==============================================================================',
+    `# 1. Payload Data QR Code (Gunakan format ini di generator QR atau barcode printer):`,
+    `# ${qrString}`,
+    '# ==============================================================================',
+    '',
+    '# 2. Walled Garden Rules untuk Asset QR Code Scanner di Halaman Login Hotspot',
+    '/ip hotspot walled-garden ip',
+    `add dst-host="*.qr-code-styling.com" action=accept comment="Allow QR Code Lib"`,
+    `add dst-host="*.cloudflare.com" action=accept comment="Allow CDN Lib"`,
+    `add dst-host="cdnjs.cloudflare.com" action=accept comment="Allow Cloudflare CDN"`,
+    '',
+    '# 3. Pengaturan Walled Garden HTTP Domain',
+    '/ip hotspot walled-garden',
+    `add dst-host="*.jsdelivr.net" action=allow comment="Allow JS QR scanner"`,
+    `add dst-host="*.unpkg.com" action=allow comment="Allow HTML5 QR scanner"`,
+    '',
+    '# 4. Potongan Script HTML (Paste di login.html MikroTik Hotspot):',
+    '# ------------------------------------------------------------------------------',
+    `# <!-- Hotspot QR Auto Login -->`,
+    `# <a href="${loginUrl || 'http://192.168.88.1/login'}?username=GUEST&password=" class="btn-qr">`,
+    `#    Hubungkan via QR Code SSID: ${ssid}`,
+    `# </a>`,
+    '# ------------------------------------------------------------------------------',
+    '',
+    '# 5. User Profil Hotspot Khusus Tamu QR (Gratis / Trial)',
+    '/ip hotspot user profile',
+    `add name="QR_FREE_USER" rate-limit="3M/3M" shared-users=1 session-timeout=01:00:00 status-autorefresh=1m keepalive-timeout=2m comment="Profil Tamu QR Code"`,
+    '',
+    '# 6. User Default untuk Hotspot Server: ' + hotspotServerName,
+    '/ip hotspot user',
+    `add name="GUEST" password="" profile="QR_FREE_USER" server="${hotspotServerName}" comment="Akun Tamu QR Code"`,
+    '',
+  ];
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 18. Hotspot Username Password Generator
+// ==============================================================================
+export function generateHotspotUserGenScript(config: HotspotUserGenConfig): string {
+  const { rosVersion, server, profile, prefix, userCount, userType, charType, length, uptimeLimit, comment } = config;
+  const lines: string[] = [headerBanner(`Hotspot Batch User Generator (${userCount} Vouchers)`, rosVersion)];
+
+  lines.push('# Batch Generator Akun Hotspot MikroTik');
+  lines.push('/ip hotspot user');
+
+  const chars =
+    charType === 'numeric'
+      ? '0123456789'
+      : charType === 'lowercase'
+      ? 'abcdefghijklmnopqrstuvwxyz0123456789'
+      : 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+  const makeRand = (len: number) => {
+    let res = '';
+    for (let i = 0; i < len; i++) {
+      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return res;
+  };
+
+  const count = Math.min(Math.max(1, userCount), 200);
+  const uptimeParam = uptimeLimit ? ` limit-uptime=${uptimeLimit}` : '';
+  const serverParam = server && server !== 'all' ? ` server="${server}"` : '';
+
+  for (let i = 1; i <= count; i++) {
+    const rawUser = makeRand(length || 4);
+    const uName = prefix ? `${prefix}${rawUser}` : rawUser;
+    const uPass = userType === 'same' ? uName : makeRand(length || 4);
+    lines.push(
+      `add name="${uName}" password="${uPass}" profile="${profile || 'default'}"${serverParam}${uptimeParam} comment="${comment || 'Batch Voucher'}"`
+    );
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 19. Block Sharing Hotspot with "Change TTL"
+// ==============================================================================
+export function generateBlockSharingTTLScript(config: BlockSharingTTLConfig): string {
+  const { rosVersion, hotspotInterface, ttlValue, chain, comment } = config;
+  const lines: string[] = [headerBanner('Block Sharing Hotspot / Anti-Tethering (Change TTL)', rosVersion)];
+
+  lines.push('# 1. Aturan Mangle TTL: Mengunci nilai TTL paket agar tidak bisa di-share/tethering');
+  lines.push('/ip firewall mangle');
+
+  lines.push(
+    `add chain=${chain} out-interface="${hotspotInterface}" action=change-ttl new-ttl=set:${ttlValue || 1} passthrough=yes comment="${comment || 'Anti-Tethering Hotspot (TTL 1)'}"`
+  );
+
+  lines.push(
+    `add chain=prerouting in-interface="${hotspotInterface}" ttl=equal:1 action=drop comment="Drop Paket Bekas Tethering / Repeater"`
+  );
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 20. Bandwidth Share Up-To for Hotspot (PCQ)
+// ==============================================================================
+export function generateBandwidthUpToScript(config: BandwidthUpToConfig): string {
+  const { rosVersion, queueName, targetSubnet, totalDownloadRate, totalUploadRate, maxClientRate } = config;
+  const lines: string[] = [headerBanner('Bandwidth Share Up-To (PCQ Equal Dynamic Sharing)', rosVersion)];
+
+  lines.push('# 1. Queue Types PCQ (Download & Upload)');
+  lines.push('/queue type');
+  const maxDown = maxClientRate && maxClientRate !== '0' ? maxClientRate : '0';
+  const maxUp = maxClientRate && maxClientRate !== '0' ? maxClientRate : '0';
+
+  lines.push(
+    `add name="pcq_hotspot_down" kind=pcq pcq-rate=${maxDown} pcq-limit=50KiB pcq-total-limit=2000KiB pcq-classifier=dst-address comment="PCQ Dynamic Download"`
+  );
+  lines.push(
+    `add name="pcq_hotspot_up" kind=pcq pcq-rate=${maxUp} pcq-limit=50KiB pcq-total-limit=2000KiB pcq-classifier=src-address comment="PCQ Dynamic Upload"`
+  );
+  lines.push('');
+
+  lines.push('# 2. Simple Queue dengan PCQ Equal Distribution');
+  lines.push('/queue simple');
+  lines.push(
+    `add name="${queueName || 'Hotspot_UpTo_Share'}" target="${targetSubnet || '192.168.88.0/24'}" max-limit="${totalUploadRate || '20M'}/${totalDownloadRate || '50M'}" queue="pcq_hotspot_up/pcq_hotspot_down" priority=8/8 comment="Bandwidth Share Up-To Hotspot"`
+  );
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 21. Easy Hotspot Configuration Wizard
+// ==============================================================================
+export function generateHotspotWizardScript(config: HotspotWizardConfig): string {
+  const { rosVersion, interfaceName, localIpAddress, dhcpPoolRange, dnsName, adminUser, adminPassword, defaultProfileRateLimit, sharedUsers } = config;
+  const lines: string[] = [headerBanner(`Easy Hotspot Setup Wizard (${interfaceName})`, rosVersion)];
+
+  const cleanIp = localIpAddress.split('/')[0];
+  const poolName = `hs-pool-${interfaceName}`;
+
+  lines.push('# 1. Pasang IP Address pada Interface Hotspot');
+  lines.push('/ip address');
+  lines.push(`add address=${localIpAddress} interface="${interfaceName}" comment="Hotspot Gateway"`);
+  lines.push('');
+
+  lines.push('# 2. IP Pool & DHCP Server untuk Klien Hotspot');
+  lines.push('/ip pool');
+  lines.push(`add name="${poolName}" ranges=${dhcpPoolRange}`);
+  lines.push('/ip dhcp-server');
+  lines.push(`add name="dhcp-${interfaceName}" interface="${interfaceName}" address-pool="${poolName}" lease-time=1h disabled=no`);
+  lines.push('/ip dhcp-server network');
+  lines.push(`add address=${localIpAddress} gateway=${cleanIp} dns-server=${cleanIp},8.8.8.8 comment="Hotspot Network"`);
+  lines.push('');
+
+  lines.push('# 3. Profil Server Hotspot');
+  lines.push('/ip hotspot profile');
+  lines.push(
+    `add name="hsprof-${interfaceName}" hotspot-address=${cleanIp} dns-name="${dnsName || 'hotspot.net'}" html-directory=hotspot login-by=http-chap,http-pap use-radius=no`
+  );
+  lines.push('');
+
+  lines.push('# 4. Server Hotspot');
+  lines.push('/ip hotspot');
+  lines.push(`add name="hotspot-${interfaceName}" interface="${interfaceName}" address-pool="${poolName}" profile="hsprof-${interfaceName}" disabled=no`);
+  lines.push('');
+
+  lines.push('# 5. Profil User Default');
+  lines.push('/ip hotspot user profile');
+  lines.push(
+    `add name="uprof-default" rate-limit="${defaultProfileRateLimit || '5M/5M'}" shared-users=${sharedUsers || 1} status-autorefresh=1m keepalive-timeout=2m`
+  );
+  lines.push('');
+
+  lines.push('# 6. Akun Admin Awal');
+  lines.push('/ip hotspot user');
+  lines.push(`add name="${adminUser || 'admin'}" password="${adminPassword || 'admin123'}" profile="uprof-default" comment="Master Admin Hotspot"`);
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 22. Expired Notification Hotspot + PPPoE
+// ==============================================================================
+export function generateExpiredNotificationScript(config: ExpiredNotificationConfig): string {
+  const { rosVersion, serviceType, redirectUrl, internalProxyPort, addressListName } = config;
+  const listName = addressListName || 'ISOLIR_CLIENTS';
+  const lines: string[] = [headerBanner(`Expired / Isolir Notification Redirect (${serviceType.toUpperCase()})`, rosVersion)];
+
+  lines.push('# 1. Address List Dummy (Tambahkan IP Klien yang Jatuh Tempo ke List ini)');
+  lines.push('/ip firewall address-list');
+  lines.push(`add address=10.254.254.2 list=${listName} comment="Contoh Klien Isolir"`);
+  lines.push('');
+
+  lines.push('# 2. DST-NAT Redirect HTTP Port 80 ke Halaman Pemberitahuan Isolir');
+  lines.push('/ip firewall nat');
+  lines.push(
+    `add chain=dstnat src-address-list=${listName} protocol=tcp dst-port=80 action=redirect to-ports=${internalProxyPort || '8080'} comment="Redirect HTTP to Isolir Notice"`
+  );
+  lines.push('');
+
+  lines.push('# 3. Firewall Filter: Blokir Akses Selain Halaman Isolir');
+  lines.push('/ip firewall filter');
+  lines.push(`add chain=forward src-address-list=${listName} protocol=tcp dst-port=53 action=accept comment="Allow DNS TCP"`);
+  lines.push(`add chain=forward src-address-list=${listName} protocol=udp dst-port=53 action=accept comment="Allow DNS UDP"`);
+  lines.push(
+    `add chain=forward src-address-list=${listName} action=drop comment="Drop Seluruh Internet Klien yang Expired / Isolir"`
+  );
+  lines.push('');
+
+  lines.push('# 4. Web Proxy Internal MikroTik (Untuk Menampilkan Redirect URL)');
+  lines.push('/ip proxy');
+  lines.push(`set enabled=yes port=${internalProxyPort || '8080'}`);
+  lines.push('/ip proxy access');
+  lines.push(`add action=deny redirect-to="${redirectUrl || 'http://billing.isp.net/isolir.html'}" comment="Tampilkan Web Isolir"`);
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 23. PPP Secrets Username Password Generator
+// ==============================================================================
+export function generatePPPSecretsGenScript(config: PPPSecretsGenConfig): string {
+  const { rosVersion, service, profile, prefix, userCount, length, remoteIpPrefix, comment } = config;
+  const lines: string[] = [headerBanner(`PPP Secrets Batch Generator (${userCount} Accounts)`, rosVersion)];
+
+  lines.push('/ppp secret');
+  const count = Math.min(Math.max(1, userCount), 200);
+
+  const makeRand = (len: number) => {
+    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+    let res = '';
+    for (let i = 0; i < len; i++) {
+      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return res;
+  };
+
+  for (let i = 1; i <= count; i++) {
+    const rawUser = makeRand(length || 5);
+    const uName = prefix ? `${prefix}${rawUser}` : `user_${rawUser}`;
+    const uPass = makeRand(6);
+    const remoteParam = remoteIpPrefix ? ` remote-address="${remoteIpPrefix}${i + 1}"` : '';
+    lines.push(
+      `add name="${uName}" password="${uPass}" service=${service || 'pppoe'} profile="${profile || 'default'}"${remoteParam} comment="${comment || 'Pelanggan PPPoE'}"`
+    );
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 24. DNS over HTTPS (DoH) Servers
+// ==============================================================================
+export function generateDoHScript(config: DoHConfig): string {
+  const { rosVersion, provider, dohUrl, fallbackDns, verifyCert } = config;
+  const lines: string[] = [headerBanner(`DNS over HTTPS (DoH) - ${provider.toUpperCase()}`, rosVersion)];
+
+  lines.push('# 1. Set Regular Fallback DNS Resolvers');
+  lines.push('/ip dns');
+  lines.push(`set servers=${fallbackDns || '1.1.1.1,8.8.8.8'} allow-remote-requests=yes max-concurrent-queries=200 max-concurrent-tcp-sessions=50`);
+  lines.push('');
+
+  lines.push('# 2. Aktifkan DNS over HTTPS (DoH)');
+  const verifyParam = verifyCert ? 'verify-doh-cert=yes' : 'verify-doh-cert=no';
+  lines.push(`set use-doh-server="${dohUrl}" ${verifyParam}`);
+  lines.push('');
+
+  lines.push('# 3. Static Host Resolution untuk DoH Endpoint (Mencegah Loop Query)');
+  lines.push('/ip dns static');
+  if (provider === 'cloudflare') {
+    lines.push('add name=cloudflare-dns.com address=1.1.1.1 comment="DoH Cloudflare"');
+    lines.push('add name=cloudflare-dns.com address=1.0.0.1 comment="DoH Cloudflare"');
+  } else if (provider === 'google') {
+    lines.push('add name=dns.google address=8.8.8.8 comment="DoH Google"');
+    lines.push('add name=dns.google address=8.8.4.4 comment="DoH Google"');
+  } else if (provider === 'adguard') {
+    lines.push('add name=dns.adguard-dns.com address=94.140.14.14 comment="DoH AdGuard"');
+  }
+  lines.push('');
+
+  lines.push('# 4. Redirect DNS Biasa (Port 53) ke DoH Router');
+  lines.push('/ip firewall nat');
+  lines.push('add chain=dstnat protocol=udp dst-port=53 action=redirect to-ports=53 comment="Force DNS UDP to Router DoH"');
+  lines.push('add chain=dstnat protocol=tcp dst-port=53 action=redirect to-ports=53 comment="Force DNS TCP to Router DoH"');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 25. Bonding Interface / Link Aggregation
+// ==============================================================================
+export function generateBondingScript(config: BondingConfig): string {
+  const { rosVersion, bondingName, slaveInterfaces, mode, lacpRate, transmitHashPolicy, ipAddress } = config;
+  const lines: string[] = [headerBanner(`Bonding Interface / Link Aggregation (${bondingName})`, rosVersion)];
+
+  lines.push('# 1. Buat Interface Bonding');
+  lines.push('/interface bonding');
+  const slavesStr = slaveInterfaces.join(',');
+  const lacpParam = mode === '802.3ad' ? ` lacp-rate=${lacpRate || '1sec'}` : '';
+  const hashParam = mode === '802.3ad' ? ` transmit-hash-policy=${transmitHashPolicy || 'layer-2-and-3'}` : '';
+
+  lines.push(
+    `add name="${bondingName}" slaves="${slavesStr}" mode=${mode}${lacpParam}${hashParam} comment="Bonding Link Aggregation"`
+  );
+  lines.push('');
+
+  if (ipAddress) {
+    lines.push('# 2. Pasang IP Address pada Interface Bonding');
+    lines.push('/ip address');
+    lines.push(`add address="${ipAddress}" interface="${bondingName}" comment="IP Bonding Trunk"`);
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 26. Netwatch to Telegram, WA, Email, SMS
+// ==============================================================================
+export function generateNetwatchScript(config: NetwatchConfig): string {
+  const { rosVersion, hostIp, hostName, checkInterval, timeout, notifyChannel, telegramBotToken, telegramChatId, emailRecipient } = config;
+  const lines: string[] = [headerBanner(`Netwatch Auto Notification (${hostName || hostIp}) via ${notifyChannel.toUpperCase()}`, rosVersion)];
+
+  let upScript = '';
+  let downScript = '';
+
+  if (notifyChannel === 'telegram') {
+    const token = telegramBotToken || '<TELEGRAM_BOT_TOKEN>';
+    const chatId = telegramChatId || '<TELEGRAM_CHAT_ID>';
+    downScript = `/tool fetch url="https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=%E2%9A%A0%EF%B8%8F+ALERT:+Host+${hostName}+(${hostIp})+is+DOWN!" keep-result=no`;
+    upScript = `/tool fetch url="https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=%E2%9C%85+RECOVERY:+Host+${hostName}+(${hostIp})+is+BACK+ONLINE!" keep-result=no`;
+  } else if (notifyChannel === 'email') {
+    const email = emailRecipient || 'admin@network.lan';
+    downScript = `/tool e-mail send to="${email}" subject="[ALERT] ${hostName} is DOWN" body="Host ${hostName} (${hostIp}) tidak merespon ping!"`;
+    upScript = `/tool e-mail send to="${email}" subject="[RECOVERY] ${hostName} is UP" body="Host ${hostName} (${hostIp}) sudah online kembali."`;
+  } else {
+    downScript = `:log error "NETWATCH: Host ${hostName} (${hostIp}) is DOWN!"`;
+    upScript = `:log info "NETWATCH: Host ${hostName} (${hostIp}) is UP!"`;
+  }
+
+  lines.push('# Buat Aturan Netwatch');
+  lines.push('/tool netwatch');
+  lines.push(
+    `add host=${hostIp} interval=${checkInterval || '30s'} timeout=${timeout || '1000ms'} up-script="${upScript}" down-script="${downScript}" comment="Netwatch ${hostName}"`
+  );
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 27. Looping / Unknown DHCP Rogue Server
+// ==============================================================================
+export function generateRogueDHCPScript(config: RogueDHCPConfig): string {
+  const { rosVersion, lanInterface, validServerMac, alertTimeout, action } = config;
+  const lines: string[] = [headerBanner('Looping & Rogue DHCP Server Protection', rosVersion)];
+
+  lines.push('# 1. DHCP Server Alert Detector');
+  lines.push('/ip dhcp-server alert');
+  lines.push(
+    `add interface="${lanInterface}" valid-server="${validServerMac}" alert-timeout=${alertTimeout || '1h'} on-alert=":log error \\"BAHAYA: Terdeteksi Rogue DHCP Server asing di ${lanInterface}!\\"" disabled=no`
+  );
+  lines.push('');
+
+  if (action === 'block' || action === 'both') {
+    lines.push('# 2. Bridge Filter: Blokir Paket DHCP Offer dari Port Selain Server Resmi');
+    lines.push('/interface bridge filter');
+    lines.push(
+      `add chain=forward in-interface=!"${lanInterface}" mac-protocol=ip ip-protocol=udp src-port=67 action=drop comment="Block Rogue DHCP Server Offer"`
+    );
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 28. Change or Random Mac Address Interface
+// ==============================================================================
+export function generateMacChangeScript(config: MacChangeConfig): string {
+  const { rosVersion, targetInterface, newMacAddress } = config;
+  const lines: string[] = [headerBanner(`Change / Clone MAC Address (${targetInterface})`, rosVersion)];
+
+  lines.push('# 1. Ubah MAC Address Interface untuk Bypass ISP Binding');
+  lines.push(`/interface ethernet set [find name="${targetInterface}"] mac-address="${newMacAddress}"`);
+  lines.push('');
+  lines.push('# Catatan: Untuk mengembalikan ke MAC Address fisik bawaan pabrik:');
+  lines.push(`# /interface ethernet reset-mac [find name="${targetInterface}"]`);
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 29. MikroTik Ninja: Hide Routerboard from ISP
+// ==============================================================================
+export function generateHideRouterboardScript(config: HideRouterboardConfig): string {
+  const { rosVersion, wanInterface, lanInterface, disableNeighborDiscovery, disableMacServer, disableBandwidthServer, blockIcmpTracerouteToWan, normalizeOutboundTTL } = config;
+  const lines: string[] = [headerBanner('MikroTik Ninja: Hide Routerboard Identity from ISP', rosVersion)];
+
+  if (disableNeighborDiscovery) {
+    lines.push('# 1. Matikan Neighbor Discovery (MNDP, CDP, LLDP) ke Arah ISP');
+    lines.push('/ip neighbor discovery-settings');
+    lines.push(`set discover-interface-list=!"${wanInterface}"`);
+    lines.push('');
+  }
+
+  if (disableMacServer) {
+    lines.push('# 2. Batasi MAC Server & MAC Winbox Hanya untuk Jaringan LAN');
+    lines.push('/tool mac-server');
+    lines.push(`set allowed-interface-list="${lanInterface}"`);
+    lines.push('/tool mac-server mac-winbox');
+    lines.push(`set allowed-interface-list="${lanInterface}"`);
+    lines.push('');
+  }
+
+  if (disableBandwidthServer) {
+    lines.push('# 3. Matikan BTest Bandwidth Server dari Sisi Internet');
+    lines.push('/tool bandwidth-server set enabled=no');
+    lines.push('');
+  }
+
+  if (normalizeOutboundTTL) {
+    lines.push('# 4. Samarkan Nilai TTL Menjadi Normal (64) agar Topologi Router di Belakang Tersembunyi');
+    lines.push('/ip firewall mangle');
+    lines.push(
+      `add chain=postrouting out-interface="${wanInterface}" action=change-ttl new-ttl=set:64 passthrough=yes comment="Ninja: Normal TTL 64"`
+    );
+    lines.push('');
+  }
+
+  if (blockIcmpTracerouteToWan) {
+    lines.push('# 5. Blokir Balasan Traceroute ICMP TTL-Exceeded ke Arah ISP (Hop Router Menjadi Bintang *)');
+    lines.push('/ip firewall filter');
+    lines.push(
+      `add chain=output out-interface="${wanInterface}" protocol=icmp icmp-options=11:0 action=drop comment="Ninja: Hide Hop from Traceroute"`
+    );
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 30. Port Knocking with ICMP + Packet Size
+// ==============================================================================
+export function generatePortKnockingScript(config: PortKnockingConfig): string {
+  const { rosVersion, wanInterface, targetPort, knockSize1, knockSize2, knockTimeout, accessDuration } = config;
+  const lines: string[] = [headerBanner('Port Knocking with ICMP (Ping Packet Size Sequence)', rosVersion)];
+
+  lines.push('# 1. Urutan Port Knocking via Ping ICMP:');
+  lines.push(`#    Langkah 1: Ping router dengan ukuran paket ${knockSize1} bytes (contoh: ping ${wanInterface} -l ${knockSize1})`);
+  lines.push(`#    Langkah 2: Dalam ${knockTimeout}, ping dengan ukuran paket ${knockSize2} bytes`);
+  lines.push(`#    Hasil: Port ${targetPort} terbuka otomatis selama ${accessDuration}`);
+  lines.push('');
+
+  lines.push('/ip firewall filter');
+  lines.push(
+    `add chain=input in-interface="${wanInterface}" protocol=icmp packet-size=${knockSize1} action=add-src-to-address-list address-list=KNOCK_STEP_1 address-list-timeout=${knockTimeout || '30s'} comment="Knock 1: Ping size ${knockSize1}"`
+  );
+
+  lines.push(
+    `add chain=input in-interface="${wanInterface}" src-address-list=KNOCK_STEP_1 protocol=icmp packet-size=${knockSize2} action=add-src-to-address-list address-list=KNOCK_AUTHORIZED address-list-timeout=${accessDuration || '1h'} comment="Knock 2: Authorized Access"`
+  );
+
+  lines.push(
+    `add chain=input in-interface="${wanInterface}" src-address-list=KNOCK_AUTHORIZED protocol=tcp dst-port=${targetPort || '8291'} action=accept comment="Allow Port ${targetPort} for Knocked Admin"`
+  );
+
+  lines.push(
+    `add chain=input in-interface="${wanInterface}" protocol=tcp dst-port=${targetPort || '8291'} action=drop comment="Drop Port ${targetPort} for Everyone Else"`
+  );
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 31. Advanced MikroTik Router-OS Protection
+// ==============================================================================
+export function generateAdvancedProtectionScript(config: AdvancedProtectionConfig): string {
+  const { rosVersion, wanInterface, dropInvalid, blockSynFlood, blockPortScanners, protectBruteForceWinbox, protectBruteForceSSH, blockDnsOpenResolver } = config;
+  const lines: string[] = [headerBanner('Enterprise-Grade Advanced MikroTik Security Protection', rosVersion)];
+
+  lines.push('/ip firewall filter');
+
+  if (dropInvalid) {
+    lines.push('add chain=input connection-state=invalid action=drop comment="Drop Invalid Packets (Input)"');
+    lines.push('add chain=forward connection-state=invalid action=drop comment="Drop Invalid Packets (Forward)"');
+  }
+
+  if (blockDnsOpenResolver) {
+    lines.push(
+      `add chain=input in-interface="${wanInterface}" protocol=udp dst-port=53 action=drop comment="Block Open DNS Resolver from WAN"`
+    );
+    lines.push(
+      `add chain=input in-interface="${wanInterface}" protocol=tcp dst-port=53 action=drop comment="Block Open DNS Resolver from WAN (TCP)"`
+    );
+  }
+
+  if (blockSynFlood) {
+    lines.push(
+      `add chain=input protocol=tcp tcp-flags=syn connection-state=new limit=100,5:packet action=accept comment="Protect Against SYN Flood"`
+    );
+    lines.push('add chain=input protocol=tcp tcp-flags=syn connection-state=new action=drop comment="Drop Excess SYN Packets"');
+  }
+
+  if (blockPortScanners) {
+    lines.push(
+      `add chain=input protocol=tcp psd=21,3s,3,1 action=add-src-to-address-list address-list=PORT_SCANNERS address-list-timeout=1d comment="Detect Port Scanner"`
+    );
+    lines.push('add chain=input src-address-list=PORT_SCANNERS action=drop comment="Drop Blacklisted Port Scanners"');
+  }
+
+  if (protectBruteForceWinbox) {
+    lines.push(
+      `add chain=input in-interface="${wanInterface}" protocol=tcp dst-port=8291 connection-state=new src-address-list=winbox_stage3 action=add-src-to-address-list address-list=winbox_blacklist address-list-timeout=1d comment="Winbox Brute Force Blacklist"`
+    );
+    lines.push(
+      `add chain=input in-interface="${wanInterface}" protocol=tcp dst-port=8291 connection-state=new src-address-list=winbox_stage2 action=add-src-to-address-list address-list=winbox_stage3 address-list-timeout=1m`
+    );
+    lines.push(
+      `add chain=input in-interface="${wanInterface}" protocol=tcp dst-port=8291 connection-state=new src-address-list=winbox_stage1 action=add-src-to-address-list address-list=winbox_stage2 address-list-timeout=1m`
+    );
+    lines.push(
+      `add chain=input in-interface="${wanInterface}" protocol=tcp dst-port=8291 connection-state=new action=add-src-to-address-list address-list=winbox_stage1 address-list-timeout=1m`
+    );
+    lines.push('add chain=input src-address-list=winbox_blacklist action=drop comment="Drop Winbox Brute Force Attackers"');
+  }
+
+  if (protectBruteForceSSH) {
+    lines.push(
+      `add chain=input in-interface="${wanInterface}" protocol=tcp dst-port=22 connection-state=new src-address-list=ssh_stage3 action=add-src-to-address-list address-list=ssh_blacklist address-list-timeout=1d comment="SSH Brute Force Blacklist"`
+    );
+    lines.push(
+      `add chain=input in-interface="${wanInterface}" protocol=tcp dst-port=22 connection-state=new src-address-list=ssh_stage2 action=add-src-to-address-list address-list=ssh_stage3 address-list-timeout=1m`
+    );
+    lines.push(
+      `add chain=input in-interface="${wanInterface}" protocol=tcp dst-port=22 connection-state=new action=add-src-to-address-list address-list=ssh_stage1 address-list-timeout=1m`
+    );
+    lines.push('add chain=input src-address-list=ssh_blacklist action=drop comment="Drop SSH Brute Force Attackers"');
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 32. Block Websites Generator
+// ==============================================================================
+export function generateBlockWebsitesScript(config: BlockWebsitesConfig): string {
+  const { rosVersion, lanInterface, categories, customDomains, blockMethod } = config;
+  const lines: string[] = [headerBanner('Block Websites & Domain Filter Generator', rosVersion)];
+
+  const domainsToBlock: string[] = [];
+
+  if (categories.includes('gambling')) {
+    domainsToBlock.push('sbobet.com', 'maxbet.com', 'slot88.com', 'judionline.com', 'pragmaticplay.com', 'spadegaming.com');
+  }
+  if (categories.includes('pornography')) {
+    domainsToBlock.push('pornhub.com', 'xvideos.com', 'xnxx.com', 'redtube.com', 'onlyfans.com');
+  }
+  if (categories.includes('crypto_mining')) {
+    domainsToBlock.push('coin-hive.com', 'coinhive.com', 'cryptoloot.pro', 'minr.pw', 'webminepool.com');
+  }
+  if (categories.includes('piracy')) {
+    domainsToBlock.push('thepiratebay.org', '1337x.to', 'rarbg.to', 'torrentz.eu', 'yts.mx');
+  }
+
+  customDomains.forEach((d) => {
+    if (d.trim()) domainsToBlock.push(d.trim());
+  });
+
+  const unique = Array.from(new Set(domainsToBlock));
+
+  if (blockMethod === 'address-list' || blockMethod === 'tls-host') {
+    lines.push('# 1. Address List Situs Terlarang');
+    lines.push('/ip firewall address-list');
+    unique.forEach((d) => {
+      lines.push(`add address="${d}" list=BLOCKED_DOMAINS comment="Block ${d}"`);
+    });
+    lines.push('');
+
+    lines.push('# 2. Drop Akses ke Situs Terlarang');
+    lines.push('/ip firewall filter');
+    lines.push(
+      `add chain=forward in-interface="${lanInterface}" dst-address-list=BLOCKED_DOMAINS action=drop comment="Block Access to Restricted Websites"`
+    );
+    if (blockMethod === 'tls-host') {
+      unique.forEach((d) => {
+        lines.push(
+          `add chain=forward in-interface="${lanInterface}" protocol=tcp dst-port=443 tls-host="*${d}*" action=drop comment="TLS Block ${d}"`
+        );
+      });
+    }
+  } else {
+    lines.push('# 1. DNS Static Sinkhole (Arahkan Domain ke 127.0.0.1)');
+    lines.push('/ip dns static');
+    unique.forEach((d) => {
+      lines.push(`add name="${d}" address=127.0.0.1 comment="Sinkhole ${d}"`);
+      lines.push(`add name="*.${d}" address=127.0.0.1 comment="Sinkhole wildcard ${d}"`);
+    });
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 33. MikroTik Auto Backup to E-Mail
+// ==============================================================================
+export function generateAutoBackupEmailScript(config: AutoBackupEmailConfig): string {
+  const { rosVersion, emailRecipient, backupPassword, exportRsc, scheduleTime, scheduleInterval, routerIdentity } = config;
+  const lines: string[] = [headerBanner(`Automated Scheduled Backup to E-Mail (${scheduleInterval})`, rosVersion)];
+
+  const scriptName = 'AutoBackupToEmail';
+  const passParam = backupPassword ? ` password="${backupPassword}"` : '';
+  const sysnameExpr = routerIdentity ? `\\"${routerIdentity}\\"` : `[\\/system identity get name]`;
+
+  lines.push('# 1. Buat Script Auto Backup & E-Mail');
+  lines.push('/system script');
+  lines.push(`add name="${scriptName}" source="\\
+  :local sysname ${sysnameExpr};\\
+  :local date [\\/system clock get date];\\
+  :local time [\\/system clock get time];\\
+  :local filename (\\$sysname . \\"-\\" . \\$date . \\"-\\" . [:pick \\$time 0 2] . [:pick \\$time 3 5] . \\".backup\\");\\
+  :local rscname (\\$sysname . \\"-\\" . \\$date . \\"-\\" . [:pick \\$time 0 2] . [:pick \\$time 3 5] . \\".rsc\\");\\
+  /system backup save name=\\$filename${passParam};\\
+  ${exportRsc ? '/export file=\\$rscname;\\ ' : ''}\\
+  :delay 5s;\\
+  /tool e-mail send to=\\"${emailRecipient}\\" subject=(\\"[BACKUP] \\" . \\$sysname . \\" - \\" . \\$date) file=\\$filename body=(\\"Lampiran backup otomatis router \\" . \\$sysname . \\" per \\" . \\$date . \\" \\" . \\$time);\\
+  :log info (\\"Backup email berhasil terkirim ke ${emailRecipient}\\");\\
+" comment="Script Pengirim Backup E-Mail"`);
+  lines.push('');
+
+  lines.push('# 2. Jadwalkan Eksekusi Otomatis Melalui Scheduler');
+  lines.push('/system scheduler');
+  lines.push(
+    `add name="Sched_${scriptName}" start-time="${scheduleTime || '02:00:00'}" interval=${scheduleInterval || '1d'} on-event="${scriptName}" comment="Jadwal Auto Backup E-Mail"`
+  );
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 34. Mangle Chain Obfuscator / Encryption
+// ==============================================================================
+export function generateMangleObfuscatorScript(config: MangleObfuscatorConfig): string {
+  const { rosVersion, originalScript, stripComments, addDecoyRules } = config;
+  const lines: string[] = [headerBanner('Mangle Chain Obfuscator & Script Protect', rosVersion)];
+
+  lines.push('# Script yang Telah Diobfuskasi / Dibersihkan dari Identifikasi Terbuka');
+  lines.push('');
+
+  const rawLines = originalScript.split('\n');
+  rawLines.forEach((l) => {
+    let line = l;
+    if (stripComments) {
+      if (line.trim().startsWith('#')) return;
+      line = line.replace(/comment="[^"]*"/g, '');
+    }
+    if (line.trim()) lines.push(line);
+  });
+
+  if (addDecoyRules) {
+    lines.push('');
+    lines.push('# Decoy Rules (Pengabur Pola Mangle)');
+    lines.push('/ip firewall mangle');
+    lines.push('add chain=prerouting protocol=tcp dst-port=65534 action=passthrough disabled=yes');
+    lines.push('add chain=forward protocol=udp dst-port=65534 action=passthrough disabled=yes');
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 35. Block For Youtube, Tiktok, WA, FB, etc.
+// ==============================================================================
+export function generateBlockSocialMediaScript(config: BlockSocialMediaConfig): string {
+  const { rosVersion, lanInterface, selectedPlatforms, blockTimeStart, blockTimeEnd, blockDays } = config;
+  const lines: string[] = [headerBanner('Block Social Media & Video Streaming Filter', rosVersion)];
+
+  const timeParam =
+    blockTimeStart && blockTimeEnd
+      ? ` time="${blockTimeStart}-${blockTimeEnd},${blockDays || 'mon,tue,wed,thu,fri'}"`
+      : '';
+
+  lines.push('# 1. Address List Platform yang Diblokir');
+  lines.push('/ip firewall address-list');
+
+  selectedPlatforms.forEach((plat) => {
+    const p = SOCIAL_PRESETS.find((x) => x.id === plat);
+    if (p) {
+      p.domains.forEach((d) => {
+        lines.push(`add address="${d}" list=BLOCKED_SOCIAL comment="Block ${p.name}"`);
+      });
+    }
+  });
+  lines.push('');
+
+  lines.push('# 2. Drop Forward Rules (Dengan Opsi Jam Kerja/Sekolah)');
+  lines.push('/ip firewall filter');
+  lines.push(
+    `add chain=forward in-interface="${lanInterface}" dst-address-list=BLOCKED_SOCIAL${timeParam} action=drop comment="Drop Social Media & Video Streaming"`
+  );
+
+  // TLS Host deep blocking for HTTPS
+  selectedPlatforms.forEach((plat) => {
+    const p = SOCIAL_PRESETS.find((x) => x.id === plat);
+    if (p) {
+      p.domains.slice(0, 2).forEach((d) => {
+        lines.push(
+          `add chain=forward in-interface="${lanInterface}" protocol=tcp dst-port=443 tls-host="*${d}*"${timeParam} action=drop comment="TLS Drop ${d}"`
+        );
+      });
+    }
+  });
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 36. Load Balancing PCC Calculation
+// ==============================================================================
+export function calculatePCCDivisors(wanSpeeds: number[]): {
+  totalSlots: number;
+  allocations: { wanIndex: number; slots: number; pccRatios: string[] }[];
+  cliScript: string;
+} {
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  const validSpeeds = wanSpeeds.map((s) => Math.max(1, Math.round(s)));
+
+  let overallGcd = validSpeeds[0] || 1;
+  for (let i = 1; i < validSpeeds.length; i++) {
+    overallGcd = gcd(overallGcd, validSpeeds[i]);
+  }
+
+  const normalizedSlots = validSpeeds.map((s) => Math.round(s / overallGcd));
+  const totalSlots = normalizedSlots.reduce((a, b) => a + b, 0);
+
+  let currentSlot = 0;
+  const allocations = normalizedSlots.map((slots, idx) => {
+    const pccRatios: string[] = [];
+    for (let s = 0; s < slots; s++) {
+      pccRatios.push(`${totalSlots}/${currentSlot}`);
+      currentSlot++;
+    }
+    return {
+      wanIndex: idx + 1,
+      slots,
+      pccRatios,
+    };
+  });
+
+  const scriptLines: string[] = [
+    `# ==============================================================================`,
+    `# PCC DIVISOR & REMAINDER CALCULATION REPORT`,
+    `# Total Jalur WAN: ${wanSpeeds.length}`,
+    `# Pembagi Utama (Divisor): ${totalSlots}`,
+    `# Rasio Kecepatan: ${normalizedSlots.join(' : ')}`,
+    `# ==============================================================================`,
+    '',
+    '/ip firewall mangle',
+  ];
+
+  allocations.forEach((alloc) => {
+    scriptLines.push(`# --- WAN${alloc.wanIndex} (Alokasi: ${alloc.slots} Bagian) ---`);
+    alloc.pccRatios.forEach((ratio) => {
+      scriptLines.push(
+        `add chain=prerouting in-interface=ether-LAN connection-state=new dst-address-type=!local per-connection-classifier=both-addresses-and-ports:${ratio} action=mark-connection new-connection-mark="WAN${alloc.wanIndex}_conn" passthrough=yes`
+      );
+    });
+  });
+
+  return {
+    totalSlots,
+    allocations,
+    cliScript: scriptLines.join('\n'),
+  };
+}
+
+// ==============================================================================
+// 37. Indonesia Time Zone NTP/SNTP Client
+// ==============================================================================
+export function generateIndonesiaNTPScript(config: IndonesiaNTPConfig): string {
+  const { rosVersion, timezone, ntpServers } = config;
+  const lines: string[] = [headerBanner(`Indonesia Time Zone (${timezone}) & SNTP NTP Client`, rosVersion)];
+
+  lines.push('# 1. Pengaturan Jam Sistem & Zona Waktu');
+  lines.push('/system clock');
+  lines.push(`set time-zone-name="${timezone}"`);
+  lines.push('');
+
+  lines.push('# 2. Sinkronisasi Waktu SNTP / NTP Client (Pool Indonesia)');
+  lines.push('/system ntp client');
+  const srvList = ntpServers.length > 0 ? ntpServers.join(',') : 'id.pool.ntp.org,0.id.pool.ntp.org,1.id.pool.ntp.org';
+
+  if (rosVersion === 'v7') {
+    lines.push(`set enabled=yes servers="${srvList}"`);
+  } else {
+    lines.push(`set enabled=yes primary-ntp=202.162.32.22 secondary-ntp=103.28.57.10 server-dns-names="${srvList}"`);
+  }
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 38. Mikrotik IP Address Calculator
+// ==============================================================================
+export function calculateMikroTikIP(
+  ipWithCidr: string,
+  targetInterface: string,
+  rosVersion: RouterOSVersion
+): {
+  network: string;
+  netmask: string;
+  wildcard: string;
+  broadcast: string;
+  hostMin: string;
+  hostMax: string;
+  totalHosts: number;
+  usableHosts: number;
+  cliScript: string;
+} {
+  const parts = ipWithCidr.trim().split('/');
+  const ipStr = parts[0] || '192.168.88.1';
+  const prefix = parseInt(parts[1] || '24', 10);
+
+  const ipToInt = (ip: string) =>
+    ip.split('.').reduce((acc, oct) => (acc << 8) + parseInt(oct, 10), 0) >>> 0;
+
+  const intToIp = (num: number) =>
+    [
+      (num >>> 24) & 255,
+      (num >>> 16) & 255,
+      (num >>> 8) & 255,
+      num & 255,
+    ].join('.');
+
+  const ipNum = ipToInt(ipStr);
+  const maskNum = prefix === 0 ? 0 : (~0 << (32 - prefix)) >>> 0;
+  const netNum = (ipNum & maskNum) >>> 0;
+  const wildcardNum = (~maskNum) >>> 0;
+  const bcastNum = (netNum | wildcardNum) >>> 0;
+
+  const totalHosts = Math.pow(2, 32 - prefix);
+  const usableHosts = prefix >= 31 ? (prefix === 31 ? 2 : 1) : Math.max(0, totalHosts - 2);
+
+  const hostMinNum = prefix >= 31 ? netNum : netNum + 1;
+  const hostMaxNum = prefix >= 31 ? bcastNum : bcastNum - 1;
+
+  const network = intToIp(netNum);
+  const netmask = intToIp(maskNum);
+  const wildcard = intToIp(wildcardNum);
+  const broadcast = intToIp(bcastNum);
+  const hostMin = intToIp(hostMinNum);
+  const hostMax = intToIp(hostMaxNum);
+
+  const script = `${headerBanner('MikroTik IP Address Configuration', rosVersion)}
+# Detail Kalkulasi Subnet:
+# IP Address   : ${ipStr}/${prefix}
+# Network      : ${network}
+# Netmask      : ${netmask}
+# Broadcast    : ${broadcast}
+# Usable Hosts : ${hostMin} - ${hostMax} (${usableHosts} Host)
+
+/ip address
+add address=${ipStr}/${prefix} network=${network} interface="${targetInterface || 'ether1'}" comment="Calculated IP Subnet"
+`;
+
+  return {
+    network,
+    netmask,
+    wildcard,
+    broadcast,
+    hostMin,
+    hostMax,
+    totalHosts,
+    usableHosts,
+    cliScript: script,
+  };
+}
+
+// ==============================================================================
+// 39. Wifi.id WMS and Seamless Auto Login
+// ==============================================================================
+export function generateWifiIdAutoLoginScript(config: WifiIdAutoLoginConfig): string {
+  const { rosVersion, loginType, username, password, wanInterface, checkInterval } = config;
+  const serviceLabel = loginType === 'wms' ? 'WMS' : loginType === 'seamless' ? 'Seamless' : '@wifi.id';
+  const lines: string[] = [headerBanner(`Wifi.id / WMS / Seamless Auto-Login Keepalive Script (${serviceLabel})`, rosVersion)];
+
+  const scriptName = 'WifiIdKeepAlive';
+  const authUrl =
+    loginType === 'wms'
+      ? 'https://welcome2.wifi.id/wms/auth.php'
+      : loginType === 'seamless'
+        ? 'https://welcome2.wifi.id/seamless/auth.php'
+        : 'https://welcome2.wifi.id/auth/process.php';
+
+  lines.push('# 1. Script Auto-Login via HTTP POST Request');
+  lines.push('/system script');
+  lines.push(`add name="${scriptName}" source="\\
+  :local check ([\\/ping 8.8.8.8 count=2 interface=\\"${wanInterface}\\"]);\\
+  :if (\\$check = 0) do={\\
+    :log warning (\\"Internet ${serviceLabel} terputus, mencoba auto-login kembali...\\");\\
+    /tool fetch url=\\"${authUrl}\\" http-method=post http-data=\\"username=${username}&password=${password}&submit=Login\\" keep-result=no;\\
+    :delay 3s;\\
+    :log info (\\"Proses login ${serviceLabel} selesai dikirim.\\");\\
+  } else={\\
+    :log info (\\"Status internet ${serviceLabel} normal.\\");\\
+  }\\
+" comment="Auto Login ${serviceLabel}"`);
+  lines.push('');
+
+  lines.push('# 2. Jadwalkan Pengecekan Koneksi Secara Berkala');
+  lines.push('/system scheduler');
+  lines.push(
+    `add name="Sched_${scriptName}" interval=${checkInterval || '2m'} on-event="${scriptName}" comment="Cek Koneksi ${serviceLabel} Berkala"`
+  );
   lines.push('');
 
   return lines.join('\n');

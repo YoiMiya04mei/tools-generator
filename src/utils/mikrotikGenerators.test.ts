@@ -14,6 +14,29 @@ import {
   generateVPNGamesScript,
   generateVPNRemoteClientScript,
   generateSocialMediaRoutingScript,
+  generateHotspotQRCodeScript,
+  generateHotspotUserGenScript,
+  generateBlockSharingTTLScript,
+  generateBandwidthUpToScript,
+  generateHotspotWizardScript,
+  generateExpiredNotificationScript,
+  generatePPPSecretsGenScript,
+  generateDoHScript,
+  generateBondingScript,
+  generateNetwatchScript,
+  generateRogueDHCPScript,
+  generateMacChangeScript,
+  generateHideRouterboardScript,
+  generatePortKnockingScript,
+  generateAdvancedProtectionScript,
+  generateBlockWebsitesScript,
+  generateAutoBackupEmailScript,
+  generateMangleObfuscatorScript,
+  generateBlockSocialMediaScript,
+  calculatePCCDivisors,
+  generateIndonesiaNTPScript,
+  calculateMikroTikIP,
+  generateWifiIdAutoLoginScript,
 } from './mikrotikGenerators';
 
 describe('MikroTik Script Generators', () => {
@@ -299,5 +322,318 @@ describe('MikroTik Script Generators', () => {
     expect(script).toContain('tiktok.com');
     expect(script).toContain('threads.net');
     expect(script).toContain('routing-table="SOSMED_TRAFFIC"');
+  });
+
+  it('17. Hotspot QR Code generates WiFi payload and walled garden', () => {
+    const script = generateHotspotQRCodeScript({
+      rosVersion: 'v7',
+      ssid: 'Cafe_Free_WiFi',
+      encryption: 'WPA',
+      password: 'password123',
+      hidden: false,
+      loginUrl: 'http://hotspot.lan/login',
+      hotspotServerName: 'hotspot1',
+    });
+    expect(script).toContain('WIFI:S:Cafe_Free_WiFi;T:WPA;P:password123;;');
+    expect(script).toContain('walled-garden');
+    expect(script).toContain('QR_FREE_USER');
+  });
+
+  it('18. Hotspot User Generator generates batch user accounts', () => {
+    const script = generateHotspotUserGenScript({
+      rosVersion: 'v7',
+      server: 'hotspot1',
+      profile: 'Voucher2Jam',
+      prefix: 'vc-',
+      userCount: 5,
+      userType: 'different',
+      charType: 'numeric',
+      length: 4,
+      uptimeLimit: '2h',
+      comment: 'Voucher Test',
+    });
+    expect(script).toContain('/ip hotspot user');
+    expect(script).toContain('profile="Voucher2Jam"');
+    expect(script).toContain('limit-uptime=2h');
+  });
+
+  it('19. Block Sharing TTL generates anti-tethering rules', () => {
+    const script = generateBlockSharingTTLScript({
+      rosVersion: 'v7',
+      hotspotInterface: 'ether3-Hotspot',
+      ttlValue: 1,
+      chain: 'postrouting',
+      comment: 'Anti-Tethering',
+    });
+    expect(script).toContain('action=change-ttl new-ttl=set:1');
+    expect(script).toContain('ttl=equal:1 action=drop');
+  });
+
+  it('20. Bandwidth Share Up-To generates PCQ queues', () => {
+    const script = generateBandwidthUpToScript({
+      rosVersion: 'v7',
+      queueName: 'UpTo_Office',
+      targetSubnet: '192.168.10.0/24',
+      totalDownloadRate: '50M',
+      totalUploadRate: '20M',
+      minClientRate: '1M',
+      maxClientRate: '10M',
+    });
+    expect(script).toContain('kind=pcq pcq-rate=10M');
+    expect(script).toContain('queue="pcq_hotspot_up/pcq_hotspot_down"');
+  });
+
+  it('21. Easy Hotspot Wizard generates full setup script', () => {
+    const script = generateHotspotWizardScript({
+      rosVersion: 'v7',
+      interfaceName: 'ether4-Hotspot',
+      localIpAddress: '192.168.30.1/24',
+      dhcpPoolRange: '192.168.30.10-192.168.30.250',
+      dnsName: 'wifi.net',
+      adminUser: 'superuser',
+      adminPassword: 'superpassword',
+      defaultProfileRateLimit: '10M/10M',
+      sharedUsers: 2,
+    });
+    expect(script).toContain('hotspot-address=192.168.30.1');
+    expect(script).toContain('dns-name="wifi.net"');
+    expect(script).toContain('rate-limit="10M/10M"');
+  });
+
+  it('22. Expired Notification redirects client to notice', () => {
+    const script = generateExpiredNotificationScript({
+      rosVersion: 'v7',
+      serviceType: 'pppoe',
+      redirectUrl: 'http://billing.isp.net/isolir.html',
+      internalProxyPort: '8080',
+      addressListName: 'ISOLIR_CLIENTS',
+    });
+    expect(script).toContain('redirect-to="http://billing.isp.net/isolir.html"');
+    expect(script).toContain('dst-port=80 action=redirect to-ports=8080');
+  });
+
+  it('23. PPP Secrets Generator creates accounts', () => {
+    const script = generatePPPSecretsGenScript({
+      rosVersion: 'v7',
+      service: 'pppoe',
+      profile: 'profile-50m',
+      prefix: 'client_',
+      userCount: 3,
+      length: 4,
+      remoteIpPrefix: '10.10.10.',
+      comment: 'PPPoE Client',
+    });
+    expect(script).toContain('/ppp secret');
+    expect(script).toContain('service=pppoe');
+    expect(script).toContain('profile="profile-50m"');
+  });
+
+  it('24. DoH sets secure DNS resolvers', () => {
+    const script = generateDoHScript({
+      rosVersion: 'v7',
+      provider: 'cloudflare',
+      dohUrl: 'https://cloudflare-dns.com/dns-query',
+      fallbackDns: '1.1.1.1,8.8.8.8',
+      verifyCert: true,
+      cleanStaticEntries: true,
+    });
+    expect(script).toContain('use-doh-server="https://cloudflare-dns.com/dns-query"');
+    expect(script).toContain('cloudflare-dns.com');
+  });
+
+  it('25. Bonding Interface sets aggregation', () => {
+    const script = generateBondingScript({
+      rosVersion: 'v7',
+      bondingName: 'bonding1',
+      slaveInterfaces: ['ether1', 'ether2'],
+      mode: '802.3ad',
+      lacpRate: '1sec',
+      transmitHashPolicy: 'layer-2-and-3',
+      ipAddress: '10.0.0.1/30',
+    });
+    expect(script).toContain('slaves="ether1,ether2"');
+    expect(script).toContain('mode=802.3ad');
+  });
+
+  it('26. Netwatch generates alert scripts', () => {
+    const script = generateNetwatchScript({
+      rosVersion: 'v7',
+      hostIp: '8.8.8.8',
+      hostName: 'GoogleDNS',
+      checkInterval: '15s',
+      timeout: '500ms',
+      notifyChannel: 'telegram',
+      telegramBotToken: '123456:ABC',
+      telegramChatId: '987654',
+    });
+    expect(script).toContain('api.telegram.org/bot123456:ABC/sendMessage');
+    expect(script).toContain('host=8.8.8.8');
+  });
+
+  it('27. Rogue DHCP alert and blocking works', () => {
+    const script = generateRogueDHCPScript({
+      rosVersion: 'v7',
+      lanInterface: 'bridge-LAN',
+      validServerMac: '00:11:22:33:44:55',
+      alertTimeout: '1h',
+      action: 'both',
+    });
+    expect(script).toContain('valid-server="00:11:22:33:44:55"');
+    expect(script).toContain('Block Rogue DHCP Server Offer');
+  });
+
+  it('28. MAC address change generates command', () => {
+    const script = generateMacChangeScript({
+      rosVersion: 'v7',
+      targetInterface: 'ether1',
+      newMacAddress: 'AA:BB:CC:DD:EE:FF',
+      backupOldMac: true,
+    });
+    expect(script).toContain('mac-address="AA:BB:CC:DD:EE:FF"');
+  });
+
+  it('29. Hide Routerboard Ninja disables discovery on WAN', () => {
+    const script = generateHideRouterboardScript({
+      rosVersion: 'v7',
+      wanInterface: 'ether1-ISP1',
+      lanInterface: 'ether2-LAN',
+      disableNeighborDiscovery: true,
+      disableMacServer: true,
+      disableBandwidthServer: true,
+      blockIcmpTracerouteToWan: true,
+      normalizeOutboundTTL: true,
+    });
+    expect(script).toContain('discover-interface-list=!"ether1-ISP1"');
+    expect(script).toContain('Ninja: Normal TTL 64');
+  });
+
+  it('30. Port Knocking generates sequential ICMP rules', () => {
+    const script = generatePortKnockingScript({
+      rosVersion: 'v7',
+      wanInterface: 'ether1-ISP',
+      targetPort: '8291',
+      knockSize1: 128,
+      knockSize2: 256,
+      knockTimeout: '30s',
+      accessDuration: '1h',
+    });
+    expect(script).toContain('packet-size=128');
+    expect(script).toContain('packet-size=256');
+    expect(script).toContain('KNOCK_AUTHORIZED');
+  });
+
+  it('31. Advanced Protection defends against attacks', () => {
+    const script = generateAdvancedProtectionScript({
+      rosVersion: 'v7',
+      wanInterface: 'ether1-ISP',
+      lanInterface: 'ether2-LAN',
+      dropInvalid: true,
+      blockSynFlood: true,
+      blockPortScanners: true,
+      protectBruteForceWinbox: true,
+      protectBruteForceSSH: true,
+      blockDnsOpenResolver: true,
+    });
+    expect(script).toContain('SYN Flood');
+    expect(script).toContain('winbox_blacklist');
+    expect(script).toContain('ssh_blacklist');
+  });
+
+  it('32. Block Websites filters gambling and piracy', () => {
+    const script = generateBlockWebsitesScript({
+      rosVersion: 'v7',
+      lanInterface: 'ether3-LAN',
+      categories: ['gambling', 'piracy'],
+      customDomains: ['badsite.org'],
+      blockMethod: 'address-list',
+    });
+    expect(script).toContain('sbobet.com');
+    expect(script).toContain('thepiratebay.org');
+    expect(script).toContain('badsite.org');
+  });
+
+  it('33. Auto Backup Email generates backup scheduler script', () => {
+    const script = generateAutoBackupEmailScript({
+      rosVersion: 'v7',
+      emailRecipient: 'noc@perusahaan.com',
+      backupPassword: 'SecretPassword',
+      exportRsc: true,
+      scheduleTime: '03:00:00',
+      scheduleInterval: '1d',
+      routerIdentity: 'Core-RB4011',
+    });
+    expect(script).toContain('noc@perusahaan.com');
+    expect(script).toContain('AutoBackupToEmail');
+    expect(script).toContain('/system scheduler');
+  });
+
+  it('34. Mangle Obfuscator strips comments', () => {
+    const sample = `/ip firewall mangle\nadd chain=prerouting comment="Test" action=accept`;
+    const obfuscated = generateMangleObfuscatorScript({
+      rosVersion: 'v7',
+      originalScript: sample,
+      stripComments: true,
+      addDecoyRules: true,
+      renameIdentifiers: false,
+    });
+    expect(obfuscated).not.toContain('comment="Test"');
+    expect(obfuscated).toContain('Decoy Rules');
+  });
+
+  it('35. Block Social Media blocks platforms during hours', () => {
+    const script = generateBlockSocialMediaScript({
+      rosVersion: 'v7',
+      lanInterface: 'ether3-LAN',
+      selectedPlatforms: ['youtube', 'tiktok'],
+      blockTimeStart: '08:00:00',
+      blockTimeEnd: '17:00:00',
+      blockDays: 'mon,tue,wed,thu,fri',
+    });
+    expect(script).toContain('youtube.com');
+    expect(script).toContain('tiktok.com');
+    expect(script).toContain('time="08:00:00-17:00:00,mon,tue,wed,thu,fri"');
+  });
+
+  it('36. PCC Calculation computes correct divisors and ratios', () => {
+    const calc = calculatePCCDivisors([100, 50]); // 2:1 ratio
+    expect(calc.totalSlots).toBe(3);
+    expect(calc.allocations[0].slots).toBe(2);
+    expect(calc.allocations[1].slots).toBe(1);
+    expect(calc.cliScript).toContain('per-connection-classifier=both-addresses-and-ports:3/0');
+  });
+
+  it('37. Indonesia NTP sets timezone and NTP servers', () => {
+    const script = generateIndonesiaNTPScript({
+      rosVersion: 'v7',
+      timezone: 'Asia/Jakarta',
+      ntpServers: ['id.pool.ntp.org'],
+    });
+    expect(script).toContain('time-zone-name="Asia/Jakarta"');
+    expect(script).toContain('servers="id.pool.ntp.org"');
+  });
+
+  it('38. MikroTik IP Calculator calculates subnet details', () => {
+    const res = calculateMikroTikIP('192.168.10.15/24', 'ether2', 'v7');
+    expect(res.network).toBe('192.168.10.0');
+    expect(res.broadcast).toBe('192.168.10.255');
+    expect(res.totalHosts).toBe(256);
+    expect(res.usableHosts).toBe(254);
+    expect(res.hostMin).toBe('192.168.10.1');
+    expect(res.hostMax).toBe('192.168.10.254');
+    expect(res.cliScript).toContain('/ip address');
+  });
+
+  it('39. Wifi.id Auto-Login creates keepalive script', () => {
+    const script = generateWifiIdAutoLoginScript({
+      rosVersion: 'v7',
+      loginType: 'wifi_id',
+      username: 'wifi_user',
+      password: 'wifi_pass',
+      wanInterface: 'wlan1',
+      checkInterval: '2m',
+    });
+    expect(script).toContain('welcome2.wifi.id/auth/process.php');
+    expect(script).toContain('username=wifi_user');
+    expect(script).toContain('WifiIdKeepAlive');
   });
 });

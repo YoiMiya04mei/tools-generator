@@ -1,6 +1,7 @@
 export type RouterOSVersion = 'v6' | 'v7';
 
 export type MikroTikToolId =
+  // Route, Mangle, NAT & VPN (16 tools)
   | 'lb-pcc'
   | 'lb-nth'
   | 'lb-ecmp'
@@ -16,22 +17,45 @@ export type MikroTikToolId =
   | 'vpn-port-games'
   | 'vpn-ip-games'
   | 'vpn-remote-client'
-  | 'social-media-routing';
+  | 'social-media-routing'
+
+  // HOTSPOT // PPPOE // PPP (7 tools)
+  | 'hotspot-qr-code'
+  | 'hotspot-user-gen'
+  | 'hotspot-block-sharing-ttl'
+  | 'hotspot-bandwidth-up-to'
+  | 'hotspot-config-wizard'
+  | 'hotspot-expired-notif'
+  | 'ppp-secrets-gen'
+
+  // DNS // NETWATCH // INTERFACE // MAC // DHCP (5 tools)
+  | 'dns-doh'
+  | 'bonding-interface'
+  | 'netwatch-notifications'
+  | 'dhcp-rogue-protection'
+  | 'mac-random-change'
+
+  // PROTECTION // BLOCK // BACKUP (7 tools)
+  | 'hide-routerboard-isp'
+  | 'port-knocking-icmp'
+  | 'advanced-router-protection'
+  | 'block-websites-gen'
+  | 'auto-backup-email'
+  | 'mangle-obfuscator'
+  | 'block-social-streaming'
+
+  // ROUTER-OS OTHER TOOLS (4 tools)
+  | 'pcc-calculator'
+  | 'indonesia-ntp-clock'
+  | 'ip-calculator'
+  | 'wifi-id-autologin';
 
 export type ToolCategory =
-  | 'load-balancing'
-  | 'traffic-steering'
-  | 'nat-firewall'
-  | 'vpn-tunnel';
-
-export interface ToolDefinition {
-  id: MikroTikToolId;
-  name: string;
-  category: ToolCategory;
-  shortDesc: string;
-  badge?: string;
-  icon: string;
-}
+  | 'route-mangle-nat-vpn'
+  | 'hotspot-pppoe-ppp'
+  | 'dns-netwatch-dhcp'
+  | 'protection-block-backup'
+  | 'routeros-other-tools';
 
 export interface WanLine {
   id: string;
@@ -78,16 +102,16 @@ export interface RecursiveFailoverConfig {
   rosVersion: RouterOSVersion;
   primaryWan: WanLine;
   secondaryWan: WanLine;
-  primaryTargetDns: string; // e.g. 8.8.8.8
-  secondaryTargetDns: string; // e.g. 1.1.1.1
+  primaryTargetDns: string;
+  secondaryTargetDns: string;
   addNatMasquerade: boolean;
 }
 
-// 5 & 6. Games Routing (Raw & Mangle) Config
+// 5 & 6. Games Routing Config
 export interface GamesRoutingConfig {
   rosVersion: RouterOSVersion;
   lanInterface: string;
-  targetWan: string; // Interface or Routing Mark (e.g. WAN1 or ISP-GAMES)
+  targetWan: string;
   targetGateway: string;
   routingMarkName: string;
   method: 'raw' | 'mangle';
@@ -104,7 +128,7 @@ export interface WebsiteRoutingConfig {
   targetGateway: string;
   routingMarkName: string;
   selectedPresets: string[];
-  customDomains: string[]; // e.g. klikbca.com, pajak.go.id
+  customDomains: string[];
 }
 
 // 8. Local Client IP Static Routing Config
@@ -114,19 +138,19 @@ export interface ClientIpRoutingConfig {
   targetWan: string;
   targetGateway: string;
   routingMarkName: string;
-  clientIpList: string; // e.g. "192.168.88.50, 192.168.88.100-192.168.88.150, 192.168.88.200/29"
+  clientIpList: string;
   description: string;
 }
 
-// 9. Port Forwarding NAT (dst-nat) Config
+// 9. Port Forwarding NAT Config
 export interface PortForwardingConfig {
   rosVersion: RouterOSVersion;
   wanInterface: string;
-  publicIp: string; // optional (if empty, uses in-interface)
+  publicIp: string;
   protocol: 'tcp' | 'udp' | 'both';
-  externalPort: string; // e.g. "8080" or "8000-8010"
-  internalIp: string; // e.g. "192.168.88.20"
-  internalPort: string; // e.g. "80"
+  externalPort: string;
+  internalIp: string;
+  internalPort: string;
   comment: string;
   includeHairpinNat: boolean;
   lanSubnet: string;
@@ -140,27 +164,27 @@ export interface PortRoutingConfig {
   targetGateway: string;
   routingMarkName: string;
   protocol: 'tcp' | 'udp' | 'both';
-  ports: string; // e.g. "80,443,8080"
+  ports: string;
   description: string;
 }
 
 // 11. All Traffic to VPN Tunnel Config
 export interface AllTrafficVPNConfig {
   rosVersion: RouterOSVersion;
-  vpnInterface: string; // e.g. "wireguard1" or "ovpn-out1" or "l2tp-out1"
+  vpnInterface: string;
   lanInterface: string;
-  vpnServerIp: string; // Real IP of VPN server to exclude from tunnel
+  vpnServerIp: string;
   addNatMasquerade: boolean;
   enableKillSwitch: boolean;
-  clientSubnet: string; // empty for all LAN
+  clientSubnet: string;
 }
 
-// 12. Remote Access ISP "Public IP Static" Config
+// 12. Remote Access Config
 export interface RemoteAccessConfig {
   rosVersion: RouterOSVersion;
   wanInterface: string;
   wanGateway: string;
-  allowedSourceIps: string; // empty for anywhere (0.0.0.0/0) or specific admin IP/subnet
+  allowedSourceIps: string;
   enableWinbox: boolean;
   winboxPort: string;
   enableWebfig: boolean;
@@ -169,10 +193,10 @@ export interface RemoteAccessConfig {
   sshPort: string;
   enableApi: boolean;
   apiPort: string;
-  addMangleReplyRule: boolean; // multi-wan reply guarantee
+  addMangleReplyRule: boolean;
 }
 
-// 13 & 14. VPN Routing for Games (Port & IP) Config
+// 13 & 14. VPN Routing for Games Config
 export interface VPNGamesConfig {
   rosVersion: RouterOSVersion;
   vpnInterface: string;
@@ -181,15 +205,15 @@ export interface VPNGamesConfig {
   selectedGameIds: string[];
   customPortsTcp: string;
   customPortsUdp: string;
-  customIps: string; // for IP-based
+  customIps: string;
 }
 
 // 15. VPN Remote Client Config
 export interface VPNRemoteClientConfig {
   rosVersion: RouterOSVersion;
   vpnType: 'sstp' | 'l2tp' | 'pptp' | 'ovpn' | 'wireguard';
-  serverAddress: string; // e.g. id1.tunnel.id or remote.ip.addr
-  serverPort: string; // e.g. 443 / 1194 / 1701 / 51820
+  serverAddress: string;
+  serverPort: string;
   username: string;
   password: string;
   profileName: string;
@@ -200,13 +224,254 @@ export interface VPNRemoteClientConfig {
   wireguardServerPublicKey?: string;
 }
 
-// 16. Social Media & Streaming Static Routing Config
+// 16. Social Media Routing Config
 export interface SocialMediaRoutingConfig {
   rosVersion: RouterOSVersion;
   lanInterface: string;
   targetWan: string;
   targetGateway: string;
   routingMarkName: string;
-  selectedPlatforms: string[]; // ['youtube', 'tiktok', 'facebook_meta', 'whatsapp', 'netflix']
+  selectedPlatforms: string[];
   customDomains: string[];
+}
+
+// ==========================================
+// NEW TOOLS CONFIGS
+// ==========================================
+
+// 17. Hotspot QR Code Config
+export interface HotspotQRCodeConfig {
+  rosVersion: RouterOSVersion;
+  ssid: string;
+  encryption: 'WPA' | 'WEP' | 'nopass';
+  password?: string;
+  hidden: boolean;
+  loginUrl?: string; // Hotspot login URL e.g. http://hotspot.lan/login?username=...
+  hotspotServerName: string;
+}
+
+// 18. Hotspot User Generator Config
+export interface HotspotUserGenConfig {
+  rosVersion: RouterOSVersion;
+  server: string; // e.g. all or hotspot1
+  profile: string; // e.g. default or 2Jam
+  prefix: string; // e.g. vc-
+  userCount: number;
+  userType: 'same' | 'different'; // username = password or separate password
+  charType: 'numeric' | 'alphanumeric' | 'lowercase';
+  length: number;
+  uptimeLimit: string; // e.g. 2h, 1d
+  comment: string;
+}
+
+// 19. Block Sharing Hotspot with Change TTL Config
+export interface BlockSharingTTLConfig {
+  rosVersion: RouterOSVersion;
+  hotspotInterface: string;
+  ttlValue: number; // usually 1
+  chain: 'postrouting' | 'prerouting';
+  comment: string;
+}
+
+// 20. Bandwidth Share Up-To (PCQ) Config
+export interface BandwidthUpToConfig {
+  rosVersion: RouterOSVersion;
+  queueName: string;
+  targetSubnet: string; // e.g. 192.168.88.0/24
+  totalDownloadRate: string; // e.g. 50M
+  totalUploadRate: string; // e.g. 20M
+  minClientRate: string; // e.g. 1M or 0
+  maxClientRate: string; // e.g. 10M or 0 (unlimited up to total)
+}
+
+// 21. Easy Hotspot Config Wizard
+export interface HotspotWizardConfig {
+  rosVersion: RouterOSVersion;
+  interfaceName: string; // e.g. ether3-Hotspot
+  localIpAddress: string; // e.g. 192.168.20.1/24
+  dhcpPoolRange: string; // e.g. 192.168.20.10-192.168.20.250
+  dnsName: string; // e.g. hotspot.net
+  adminUser: string;
+  adminPassword: string;
+  defaultProfileRateLimit: string; // e.g. 5M/5M
+  sharedUsers: number;
+}
+
+// 22. Expired Notification Config
+export interface ExpiredNotificationConfig {
+  rosVersion: RouterOSVersion;
+  serviceType: 'hotspot' | 'pppoe' | 'both';
+  redirectUrl: string; // e.g. http://billing.isp.net/isolir.html
+  internalProxyPort: string; // 8080
+  addressListName: string; // ISOLIR_USERS
+}
+
+// 23. PPP Secrets Generator Config
+export interface PPPSecretsGenConfig {
+  rosVersion: RouterOSVersion;
+  service: 'pppoe' | 'l2tp' | 'sstp' | 'ovpn' | 'any';
+  profile: string;
+  prefix: string;
+  userCount: number;
+  length: number;
+  remoteIpPrefix?: string; // e.g. 10.10.10.
+  comment: string;
+}
+
+// 24. DNS over HTTPS (DoH) Config
+export interface DoHConfig {
+  rosVersion: RouterOSVersion;
+  provider: 'cloudflare' | 'google' | 'adguard' | 'nextdns' | 'custom';
+  dohUrl: string;
+  fallbackDns: string;
+  verifyCert: boolean;
+  cleanStaticEntries: boolean;
+}
+
+// 25. Bonding Interface Config
+export interface BondingConfig {
+  rosVersion: RouterOSVersion;
+  bondingName: string;
+  slaveInterfaces: string[]; // e.g. ['ether1', 'ether2']
+  mode: '802.3ad' | 'balance-rr' | 'active-backup' | 'balance-xor' | 'broadcast' | 'balance-tlb' | 'balance-alb';
+  lacpRate: '1sec' | '30sec';
+  transmitHashPolicy: 'layer-2' | 'layer-2-and-3' | 'layer-3-and-4';
+  ipAddress?: string;
+}
+
+// 26. Netwatch Notifications Config
+export interface NetwatchConfig {
+  rosVersion: RouterOSVersion;
+  hostIp: string;
+  hostName: string;
+  checkInterval: string; // 30s
+  timeout: string; // 1000ms
+  notifyChannel: 'telegram' | 'whatsapp' | 'email';
+  telegramBotToken?: string;
+  telegramChatId?: string;
+  whatsappApiUrl?: string;
+  emailRecipient?: string;
+}
+
+// 27. Looping / Unknown Rogue DHCP Server Config
+export interface RogueDHCPConfig {
+  rosVersion: RouterOSVersion;
+  lanInterface: string;
+  validServerMac: string; // valid DHCP server MAC
+  alertTimeout: string; // 1h
+  action: 'alert' | 'block' | 'both';
+}
+
+// 28. Change / Random MAC Address Config
+export interface MacChangeConfig {
+  rosVersion: RouterOSVersion;
+  targetInterface: string;
+  newMacAddress: string;
+  backupOldMac: boolean;
+}
+
+// 29. Hide Routerboard from ISP (MikroTik Ninja)
+export interface HideRouterboardConfig {
+  rosVersion: RouterOSVersion;
+  wanInterface: string;
+  lanInterface: string;
+  disableNeighborDiscovery: boolean;
+  disableMacServer: boolean;
+  disableBandwidthServer: boolean;
+  blockIcmpTracerouteToWan: boolean;
+  normalizeOutboundTTL: boolean;
+}
+
+// 30. Port Knocking with ICMP + Packet Size
+export interface PortKnockingConfig {
+  rosVersion: RouterOSVersion;
+  wanInterface: string;
+  targetPort: string; // e.g. 8291 (Winbox) or 22 (SSH)
+  knockSize1: number; // e.g. 128
+  knockSize2: number; // e.g. 256
+  knockTimeout: string; // e.g. 30s
+  accessDuration: string; // e.g. 1h
+}
+
+// 31. Advanced MikroTik RouterOS Protection
+export interface AdvancedProtectionConfig {
+  rosVersion: RouterOSVersion;
+  wanInterface: string;
+  lanInterface: string;
+  dropInvalid: boolean;
+  blockSynFlood: boolean;
+  blockPortScanners: boolean;
+  protectBruteForceWinbox: boolean;
+  protectBruteForceSSH: boolean;
+  blockDnsOpenResolver: boolean;
+}
+
+// 32. Block Websites Generator Config
+export interface BlockWebsitesConfig {
+  rosVersion: RouterOSVersion;
+  lanInterface: string;
+  categories: Array<'gambling' | 'pornography' | 'crypto_mining' | 'piracy' | 'custom'>;
+  customDomains: string[];
+  blockMethod: 'tls-host' | 'address-list' | 'dns-static';
+}
+
+// 33. Auto Backup to E-Mail Config
+export interface AutoBackupEmailConfig {
+  rosVersion: RouterOSVersion;
+  emailRecipient: string;
+  backupPassword?: string;
+  exportRsc: boolean;
+  scheduleTime: string; // e.g. 02:00:00
+  scheduleInterval: '1d' | '7d' | '30d';
+  routerIdentity: string;
+}
+
+// 34. Mangle Chain Obfuscator Config
+export interface MangleObfuscatorConfig {
+  rosVersion: RouterOSVersion;
+  originalScript: string;
+  stripComments: boolean;
+  addDecoyRules: boolean;
+  renameIdentifiers: boolean;
+}
+
+// 35. Block Social Media & Video Streaming
+export interface BlockSocialMediaConfig {
+  rosVersion: RouterOSVersion;
+  lanInterface: string;
+  selectedPlatforms: string[]; // youtube, tiktok, facebook, whatsapp, netflix, etc.
+  blockTimeStart?: string; // e.g. 08:00:00
+  blockTimeEnd?: string; // e.g. 17:00:00
+  blockDays?: string; // e.g. mon,tue,wed,thu,fri
+}
+
+// 36. PCC Divisor & Remainder Calculator Config
+export interface PCCCalculatorConfig {
+  wan1Mbps: number;
+  wan2Mbps: number;
+  wan3Mbps?: number;
+  wan4Mbps?: number;
+}
+
+// 37. Indonesia NTP / Timezone Config
+export interface IndonesiaNTPConfig {
+  rosVersion: RouterOSVersion;
+  timezone: 'Asia/Jakarta' | 'Asia/Makassar' | 'Asia/Jayapura';
+  ntpServers: string[];
+}
+
+// 38. IP Calculator Config
+export interface IPCalculatorConfig {
+  ipWithCidr: string; // e.g. 192.168.10.1/24
+  targetInterface: string;
+}
+
+// 39. Wifi.id Auto-Login Config
+export interface WifiIdAutoLoginConfig {
+  rosVersion: RouterOSVersion;
+  loginType: 'wifi_id' | 'wms' | 'seamless';
+  username: string;
+  password: string;
+  wanInterface: string;
+  checkInterval: string; // 2m
 }

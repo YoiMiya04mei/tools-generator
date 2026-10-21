@@ -21,6 +21,26 @@ import {
   Radio,
   ArrowRightLeft,
   Key,
+  QrCode,
+  Users,
+  Gauge,
+  Wand2,
+  Bell,
+  FileKey,
+  Link2,
+  Send,
+  AlertTriangle,
+  Binary,
+  EyeOff,
+  DoorClosed,
+  ShieldAlert,
+  Ban,
+  Mail,
+  FileCode,
+  Clock,
+  Calculator,
+  Wifi,
+  Search,
 } from 'lucide-react';
 import type {
   MikroTikToolId,
@@ -46,6 +66,29 @@ import {
   generateVPNGamesScript,
   generateVPNRemoteClientScript,
   generateSocialMediaRoutingScript,
+  generateHotspotQRCodeScript,
+  generateHotspotUserGenScript,
+  generateBlockSharingTTLScript,
+  generateBandwidthUpToScript,
+  generateHotspotWizardScript,
+  generateExpiredNotificationScript,
+  generatePPPSecretsGenScript,
+  generateDoHScript,
+  generateBondingScript,
+  generateNetwatchScript,
+  generateRogueDHCPScript,
+  generateMacChangeScript,
+  generateHideRouterboardScript,
+  generatePortKnockingScript,
+  generateAdvancedProtectionScript,
+  generateBlockWebsitesScript,
+  generateAutoBackupEmailScript,
+  generateMangleObfuscatorScript,
+  generateBlockSocialMediaScript,
+  calculatePCCDivisors,
+  generateIndonesiaNTPScript,
+  calculateMikroTikIP,
+  generateWifiIdAutoLoginScript,
   GAME_PRESETS,
   WEBSITE_PRESETS,
   SOCIAL_PRESETS,
@@ -63,131 +106,295 @@ interface ToolItem {
   icon: React.ReactNode;
 }
 
-const TOOLS_LIST: ToolItem[] = [
-  // Load Balancing
+export const TOOLS_LIST: ToolItem[] = [
+  // Category 1: Route, Mangle, NAT & VPN (16 tools)
   {
     id: 'lb-pcc',
     name: 'Load Balancing PCC',
-    category: 'load-balancing',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Per Connection Classifier multi-WAN balancing',
     icon: <Network className="w-4 h-4 text-orange-600" />,
   },
   {
     id: 'lb-nth',
     name: 'Load Balancing NTH',
-    category: 'load-balancing',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Round-robin packet / connection counter balancing',
     icon: <Layers className="w-4 h-4 text-amber-600" />,
   },
   {
     id: 'lb-ecmp',
     name: 'Load Balancing ECMP',
-    category: 'load-balancing',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Equal Cost Multi-Path multi-gateway route',
     icon: <ArrowRightLeft className="w-4 h-4 text-blue-600" />,
   },
   {
     id: 'failover-recursive',
     name: 'Failover Recursive Gateway',
-    category: 'load-balancing',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'DNS check (8.8.8.8 / 1.1.1.1) recursive gateway failover',
     icon: <Radio className="w-4 h-4 text-emerald-600" />,
   },
-
-  // Traffic Steering
   {
     id: 'games-raw',
     name: 'Games Static Routing (Filter Raw)',
-    category: 'traffic-steering',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Route game traffic with low CPU Raw filter address-list',
     icon: <Gamepad2 className="w-4 h-4 text-purple-600" />,
   },
   {
     id: 'games-mangle',
     name: 'Games Static Routing (Mangle Port)',
-    category: 'traffic-steering',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Port-based game traffic steering to dedicated ISP',
     icon: <Gamepad2 className="w-4 h-4 text-indigo-600" />,
   },
   {
     id: 'website-routing',
     name: 'Website Static Routing',
-    category: 'traffic-steering',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Route Perbankan, DJP Online, Zoom ke ISP khusus',
     icon: <Globe className="w-4 h-4 text-teal-600" />,
   },
   {
     id: 'client-ip-routing',
     name: 'Local Client IP Static Routing',
-    category: 'traffic-steering',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Policy Based Routing untuk IP Client / Subnet VIP',
     icon: <Sliders className="w-4 h-4 text-cyan-600" />,
   },
   {
     id: 'port-tcp-udp-routing',
     name: 'Port TCP/UDP Static Routing',
-    category: 'traffic-steering',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Route traffic berdasarkan nomor port TCP atau UDP',
     icon: <Sliders className="w-4 h-4 text-sky-600" />,
   },
   {
     id: 'social-media-routing',
     name: 'Static Routing Youtube, Tiktok, FB, WA',
-    category: 'traffic-steering',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Pisahkan trafik sosmed & streaming ke ISP cadangan',
     icon: <Share2 className="w-4 h-4 text-rose-600" />,
   },
-
-  // NAT & Firewall
   {
     id: 'port-forwarding',
     name: 'Port Forwarding with NAT',
-    category: 'nat-firewall',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'DST-NAT untuk CCTV, Web Server, Winbox + Hairpin NAT',
     icon: <Shield className="w-4 h-4 text-green-600" />,
   },
   {
     id: 'remote-access-isp',
     name: 'Remote Access ISP "Public IP Static"',
-    category: 'nat-firewall',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Filter aman remote Winbox/WebFig & Multi-WAN reply rule',
     icon: <Lock className="w-4 h-4 text-slate-700" />,
   },
-
-  // VPN
   {
     id: 'vpn-all-traffic',
     name: 'All Traffic to VPN Tunnel',
-    category: 'vpn-tunnel',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Arahkan seluruh internet ke VPN + proteksi Kill-Switch',
     icon: <Server className="w-4 h-4 text-indigo-600" />,
   },
   {
     id: 'vpn-port-games',
     name: 'VPN Routing Port Games',
-    category: 'vpn-tunnel',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Kirim hanya port game online ke tunnel VPN gaming',
     icon: <Key className="w-4 h-4 text-violet-600" />,
   },
   {
     id: 'vpn-ip-games',
     name: 'VPN Routing IP Address Games',
-    category: 'vpn-tunnel',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Route IP Address game server melalui tunnel VPN',
     icon: <Gamepad2 className="w-4 h-4 text-fuchsia-600" />,
   },
   {
     id: 'vpn-remote-client',
     name: 'VPN Remote SSTP - L2TP - PPTP - OVPN',
-    category: 'vpn-tunnel',
+    category: 'route-mangle-nat-vpn',
     shortDesc: 'Client dialer untuk remote Mikrotik & Mikhmon Online',
     icon: <Server className="w-4 h-4 text-blue-700" />,
+  },
+
+  // Category 2: Hotspot // PPPoE // PPP (7 tools)
+  {
+    id: 'hotspot-qr-code',
+    name: 'Free Hotspot Wi-Fi QR Code Template',
+    category: 'hotspot-pppoe-ppp',
+    shortDesc: 'Format payload QR Code Wi-Fi & walled garden scanner',
+    icon: <QrCode className="w-4 h-4 text-blue-600" />,
+  },
+  {
+    id: 'hotspot-user-gen',
+    name: 'Hotspot Username Password Generator',
+    category: 'hotspot-pppoe-ppp',
+    shortDesc: 'Batch generator voucher akun Hotspot acak / prefix',
+    icon: <Users className="w-4 h-4 text-teal-600" />,
+  },
+  {
+    id: 'hotspot-block-sharing-ttl',
+    name: 'Block Sharing Hotspot with "Change TTL"',
+    category: 'hotspot-pppoe-ppp',
+    shortDesc: 'Anti-tethering Hotspot mengunci nilai TTL paket',
+    icon: <Ban className="w-4 h-4 text-red-600" />,
+  },
+  {
+    id: 'hotspot-bandwidth-up-to',
+    name: 'Bandwidth Share Up-To for Hotspot',
+    category: 'hotspot-pppoe-ppp',
+    shortDesc: 'PCQ dynamic queue pembagian kuota bandwidth merata',
+    icon: <Gauge className="w-4 h-4 text-amber-600" />,
+  },
+  {
+    id: 'hotspot-config-wizard',
+    name: 'Easy Hotspot Configuration Wizard',
+    category: 'hotspot-pppoe-ppp',
+    shortDesc: 'Wizard skrip lengkap setup Hotspot server, pool & DHCP',
+    icon: <Wand2 className="w-4 h-4 text-purple-600" />,
+  },
+  {
+    id: 'hotspot-expired-notif',
+    name: 'Expired Notification Hotspot + PPPoE',
+    category: 'hotspot-pppoe-ppp',
+    shortDesc: 'Isolir redirect ke web pemberitahuan tagihan jatuh tempo',
+    icon: <Bell className="w-4 h-4 text-rose-600" />,
+  },
+  {
+    id: 'ppp-secrets-gen',
+    name: 'PPP Secrets Username Password Generator',
+    category: 'hotspot-pppoe-ppp',
+    shortDesc: 'Batch generator akun pelanggan PPPoE / L2TP / SSTP',
+    icon: <FileKey className="w-4 h-4 text-indigo-600" />,
+  },
+
+  // Category 3: DNS // NETWATCH // INTERFACE // MAC // DHCP (5 tools)
+  {
+    id: 'dns-doh',
+    name: 'DNS over HTTPS (DoH) Servers',
+    category: 'dns-netwatch-dhcp',
+    shortDesc: 'DoH terenkripsi Cloudflare, Google, AdGuard, NextDNS',
+    icon: <Shield className="w-4 h-4 text-sky-600" />,
+  },
+  {
+    id: 'bonding-interface',
+    name: 'Bonding Interface / Link Aggregation',
+    category: 'dns-netwatch-dhcp',
+    shortDesc: 'Agregasi link LACP 802.3ad / balance-rr port ethernet',
+    icon: <Link2 className="w-4 h-4 text-cyan-600" />,
+  },
+  {
+    id: 'netwatch-notifications',
+    name: 'Netwatch to Telegram, WA, Email, SMS',
+    category: 'dns-netwatch-dhcp',
+    shortDesc: 'Monitoring host otomatis kirim notifikasi Telegram / Email',
+    icon: <Send className="w-4 h-4 text-blue-600" />,
+  },
+  {
+    id: 'dhcp-rogue-protection',
+    name: 'Looping / Unknown DHCP Rogue Server',
+    category: 'dns-netwatch-dhcp',
+    shortDesc: 'Proteksi loop kabel dan deteksi DHCP server liar di LAN',
+    icon: <AlertTriangle className="w-4 h-4 text-amber-600" />,
+  },
+  {
+    id: 'mac-random-change',
+    name: 'Change or Random Mac Address Interface',
+    category: 'dns-netwatch-dhcp',
+    shortDesc: 'Kloning atau acak MAC Address untuk bypass binding ISP',
+    icon: <Binary className="w-4 h-4 text-emerald-600" />,
+  },
+
+  // Category 4: PROTECTION // BLOCK // BACKUP (7 tools)
+  {
+    id: 'hide-routerboard-isp',
+    name: 'MikroTik Ninja: Hide Routerboard from ISP',
+    category: 'protection-block-backup',
+    shortDesc: 'Sembunyikan identitas router, MNDP, MAC, TTL dari ISP',
+    icon: <EyeOff className="w-4 h-4 text-slate-800" />,
+  },
+  {
+    id: 'port-knocking-icmp',
+    name: 'Port Knocking with ICMP + Packet Size',
+    category: 'protection-block-backup',
+    shortDesc: 'Buka port Winbox/SSH dengan ketukan ukuran paket ping',
+    icon: <DoorClosed className="w-4 h-4 text-orange-700" />,
+  },
+  {
+    id: 'advanced-router-protection',
+    name: 'Advanced MikroTik Router-OS Protection',
+    category: 'protection-block-backup',
+    shortDesc: 'Proteksi SYN flood, port scan, brute force blacklist',
+    icon: <ShieldAlert className="w-4 h-4 text-red-600" />,
+  },
+  {
+    id: 'block-websites-gen',
+    name: 'Block Websites Generator',
+    category: 'protection-block-backup',
+    shortDesc: 'Blokir situs judi online, pornografi, malware, mining',
+    icon: <Ban className="w-4 h-4 text-rose-700" />,
+  },
+  {
+    id: 'auto-backup-email',
+    name: 'MikroTik Auto Backup to E-Mail',
+    category: 'protection-block-backup',
+    shortDesc: 'Jadwal otomatis backup .backup & .rsc ke email admin',
+    icon: <Mail className="w-4 h-4 text-indigo-600" />,
+  },
+  {
+    id: 'mangle-obfuscator',
+    name: 'Mangle Chain Obfuscator / Encryption',
+    category: 'protection-block-backup',
+    shortDesc: 'Pengabur dan pembersih komentar skrip mangle',
+    icon: <FileCode className="w-4 h-4 text-purple-700" />,
+  },
+  {
+    id: 'block-social-streaming',
+    name: 'Block For Youtube, Tiktok, WA, FB, etc.',
+    category: 'protection-block-backup',
+    shortDesc: 'Filter pemblokiran sosmed & streaming di jam kerja/sekolah',
+    icon: <Ban className="w-4 h-4 text-amber-700" />,
+  },
+
+  // Category 5: ROUTER-OS OTHER TOOLS (4 tools)
+  {
+    id: 'pcc-calculator',
+    name: 'Load Balancing PCC Calculation',
+    category: 'routeros-other-tools',
+    shortDesc: 'Kalkulator pembagi divisor & rasio jalur multi-WAN',
+    icon: <Calculator className="w-4 h-4 text-blue-600" />,
+  },
+  {
+    id: 'indonesia-ntp-clock',
+    name: 'Indonesia Time Zone NTP/SNTP Client',
+    category: 'routeros-other-tools',
+    shortDesc: 'Pengaturan jam sistem WIB/WITA/WIT & NTP pool Indonesia',
+    icon: <Clock className="w-4 h-4 text-emerald-600" />,
+  },
+  {
+    id: 'ip-calculator',
+    name: 'Mikrotik IP Address Calculator',
+    category: 'routeros-other-tools',
+    shortDesc: 'Kalkulator subnet CIDR, netmask, host min/max & broadcast',
+    icon: <Calculator className="w-4 h-4 text-indigo-600" />,
+  },
+  {
+    id: 'wifi-id-autologin',
+    name: 'Wifi.id WMS and Seamless Auto Login',
+    category: 'routeros-other-tools',
+    shortDesc: 'Skrip keepalive auto login portal @wifi.id & WMS 24 jam',
+    icon: <Wifi className="w-4 h-4 text-rose-600" />,
   },
 ];
 
 export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }) => {
   const [selectedToolId, setSelectedToolId] = useState<MikroTikToolId>('lb-pcc');
   const [categoryFilter, setCategoryFilter] = useState<'all' | ToolCategory>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [rosVersion, setRosVersion] = useState<RouterOSVersion>('v7');
   const [terminalTheme, setTerminalTheme] = useState<'light' | 'dark'>('light');
   const [copied, setCopied] = useState<boolean>(false);
@@ -306,7 +513,176 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
   const [smSelected, setSmSelected] = useState<string[]>(['youtube', 'tiktok', 'facebook_meta', 'whatsapp']);
   const [smCustomDomains, setSmCustomDomains] = useState<string>('');
 
-  // WAN lines helper functions
+  // 17. Hotspot QR Code state
+  const [qrSsid, setQrSsid] = useState<string>('Cafe_Free_WiFi');
+  const [qrEncryption, setQrEncryption] = useState<'WPA' | 'WEP' | 'nopass'>('WPA');
+  const [qrPassword, setQrPassword] = useState<string>('kopi12345');
+  const [qrHidden, setQrHidden] = useState<boolean>(false);
+  const [qrLoginUrl, setQrLoginUrl] = useState<string>('http://192.168.88.1/login');
+  const [qrServerName, setQrServerName] = useState<string>('hotspot1');
+
+  // 18. Hotspot User Gen state
+  const [huServer, setHuServer] = useState<string>('all');
+  const [huProfile, setHuProfile] = useState<string>('Voucher2Jam');
+  const [huPrefix, setHuPrefix] = useState<string>('vc-');
+  const [huCount, setHuCount] = useState<number>(10);
+  const [huType, setHuType] = useState<'same' | 'different'>('same');
+  const [huCharType, setHuCharType] = useState<'numeric' | 'alphanumeric' | 'lowercase'>('numeric');
+  const [huLength, setHuLength] = useState<number>(4);
+  const [huUptime, setHuUptime] = useState<string>('2h');
+  const [huComment, setHuComment] = useState<string>('Voucher 2 Jam Rp 3000');
+
+  // 19. Block Sharing TTL state
+  const [ttlHotspotInterface, setTtlHotspotInterface] = useState<string>('ether3-Hotspot');
+  const [ttlValue, setTtlValue] = useState<number>(1);
+  const [ttlChain, setTtlChain] = useState<'postrouting' | 'prerouting'>('postrouting');
+  const [ttlComment, setTtlComment] = useState<string>('Anti-Tethering Hotspot (TTL 1)');
+
+  // 20. Bandwidth Share Up-To PCQ state
+  const [pcqQueueName, setPcqQueueName] = useState<string>('Hotspot_UpTo_50M');
+  const [pcqTargetSubnet, setPcqTargetSubnet] = useState<string>('192.168.88.0/24');
+  const [pcqTotalDown, setPcqTotalDown] = useState<string>('50M');
+  const [pcqTotalUp, setPcqTotalUp] = useState<string>('20M');
+  const [pcqMaxClientRate, setPcqMaxClientRate] = useState<string>('10M');
+
+  // 21. Hotspot Wizard state
+  const [wizIface, setWizIface] = useState<string>('ether3-Hotspot');
+  const [wizIp, setWizIp] = useState<string>('192.168.20.1/24');
+  const [wizPool, setWizPool] = useState<string>('192.168.20.10-192.168.20.250');
+  const [wizDns, setWizDns] = useState<string>('hotspot.lan');
+  const [wizAdminUser, setWizAdminUser] = useState<string>('admin');
+  const [wizAdminPass, setWizAdminPass] = useState<string>('admin123');
+  const [wizRateLimit, setWizRateLimit] = useState<string>('5M/5M');
+  const [wizShared, setWizShared] = useState<number>(1);
+
+  // 22. Expired Notification state
+  const [expService, setExpService] = useState<'hotspot' | 'pppoe' | 'both'>('both');
+  const [expRedirectUrl, setExpRedirectUrl] = useState<string>('http://billing.isp.net/isolir.html');
+  const [expProxyPort, setExpProxyPort] = useState<string>('8080');
+  const [expAddressList, setExpAddressList] = useState<string>('ISOLIR_CLIENTS');
+
+  // 23. PPP Secrets Gen state
+  const [pppService, setPppService] = useState<'pppoe' | 'l2tp' | 'sstp' | 'ovpn' | 'any'>('pppoe');
+  const [pppProfile, setPppProfile] = useState<string>('profile-50m');
+  const [pppPrefix, setPppPrefix] = useState<string>('user_');
+  const [pppCount, setPppCount] = useState<number>(10);
+  const [pppLength, setPppLength] = useState<number>(5);
+  const [pppRemoteIpPrefix, setPppRemoteIpPrefix] = useState<string>('10.10.10.');
+  const [pppComment, setPppComment] = useState<string>('Pelanggan Rumahan');
+
+  // 24. DoH state
+  const [dohProvider, setDohProvider] = useState<'cloudflare' | 'google' | 'adguard' | 'nextdns' | 'custom'>('cloudflare');
+  const [dohUrl, setDohUrl] = useState<string>('https://cloudflare-dns.com/dns-query');
+  const [dohFallback, setDohFallback] = useState<string>('1.1.1.1,8.8.8.8');
+  const [dohVerifyCert, setDohVerifyCert] = useState<boolean>(true);
+
+  // 25. Bonding state
+  const [bondName, setBondName] = useState<string>('bonding1');
+  const [bondSlaves, setBondSlaves] = useState<string>('ether1,ether2');
+  const [bondMode, setBondMode] = useState<any>('802.3ad');
+  const [bondLacpRate, setBondLacpRate] = useState<'1sec' | '30sec'>('1sec');
+  const [bondHashPolicy, setBondHashPolicy] = useState<'layer-2' | 'layer-2-and-3' | 'layer-3-and-4'>('layer-2-and-3');
+  const [bondIp, setBondIp] = useState<string>('10.0.0.1/30');
+
+  // 26. Netwatch state
+  const [netHostIp, setNetHostIp] = useState<string>('8.8.8.8');
+  const [netHostName, setNetHostName] = useState<string>('Google_DNS');
+  const [netInterval, setNetInterval] = useState<string>('30s');
+  const [netTimeout, setNetTimeout] = useState<string>('1000ms');
+  const [netChannel, setNetChannel] = useState<'telegram' | 'whatsapp' | 'email'>('telegram');
+  const [netTgToken, setNetTgToken] = useState<string>('1234567890:ABCdefGHIjklMNOpqrSTUvwxYZ');
+  const [netTgChatId, setNetTgChatId] = useState<string>('123456789');
+  const [netEmail, setNetEmail] = useState<string>('noc@isp.net');
+
+  // 27. Rogue DHCP state
+  const [rdLanIface, setRdLanIface] = useState<string>('bridge-LAN');
+  const [rdValidMac, setRdValidMac] = useState<string>('00:0C:42:XX:XX:XX');
+  const [rdAlertTimeout, setRdAlertTimeout] = useState<string>('1h');
+  const [rdAction, setRdAction] = useState<'alert' | 'block' | 'both'>('both');
+
+  // 28. MAC Address Change state
+  const [macIface, setMacIface] = useState<string>('ether1');
+  const [macAddress, setMacAddress] = useState<string>('B8:69:F4:A1:B2:C3');
+
+  // 29. Hide Routerboard Ninja state
+  const [ninjaWan, setNinjaWan] = useState<string>('ether1-ISP1');
+  const [ninjaLan, setNinjaLan] = useState<string>('ether2-LAN');
+  const [ninjaMndp, setNinjaMndp] = useState<boolean>(true);
+  const [ninjaMacServer, setNinjaMacServer] = useState<boolean>(true);
+  const [ninjaBwServer, setNinjaBwServer] = useState<boolean>(true);
+  const [ninjaBlockTraceroute, setNinjaBlockTraceroute] = useState<boolean>(true);
+  const [ninjaNormalTTL, setNinjaNormalTTL] = useState<boolean>(true);
+
+  // 30. Port Knocking state
+  const [pkWan, setPkWan] = useState<string>('ether1-ISP1');
+  const [pkPort, setPkPort] = useState<string>('8291');
+  const [pkSize1, setPkSize1] = useState<number>(128);
+  const [pkSize2, setPkSize2] = useState<number>(256);
+  const [pkTimeout, setPkTimeout] = useState<string>('30s');
+  const [pkDuration, setPkDuration] = useState<string>('1h');
+
+  // 31. Advanced Protection state
+  const [apWan, setApWan] = useState<string>('ether1-ISP1');
+  const [apLan, setApLan] = useState<string>('ether2-LAN');
+  const [apDropInvalid, setApDropInvalid] = useState<boolean>(true);
+  const [apSynFlood, setApSynFlood] = useState<boolean>(true);
+  const [apPortScanners, setApPortScanners] = useState<boolean>(true);
+  const [apWinboxBrute, setApWinboxBrute] = useState<boolean>(true);
+  const [apSshBrute, setApSshBrute] = useState<boolean>(true);
+  const [apDnsResolver, setApDnsResolver] = useState<boolean>(true);
+
+  // 32. Block Websites state
+  const [bwLan, setBwLan] = useState<string>('ether3-LAN');
+  const [bwCategories, setBwCategories] = useState<Array<'gambling' | 'pornography' | 'crypto_mining' | 'piracy'>>([
+    'gambling',
+    'pornography',
+  ]);
+  const [bwCustomDomains, setBwCustomDomains] = useState<string>('badsite.org, spammer.xyz');
+  const [bwMethod, setBwMethod] = useState<'address-list' | 'tls-host' | 'dns-static'>('address-list');
+
+  // 33. Auto Backup Email state
+  const [bkEmail, setBkEmail] = useState<string>('backup-router@isp.net');
+  const [bkPass, setBkPass] = useState<string>('SecretBackup123');
+  const [bkExportRsc, setBkExportRsc] = useState<boolean>(true);
+  const [bkTime, setBkTime] = useState<string>('02:00:00');
+  const [bkInterval, setBkInterval] = useState<'1d' | '7d' | '30d'>('1d');
+
+  // 34. Mangle Obfuscator state
+  const [obfScript, setObfScript] = useState<string>(
+    '/ip firewall mangle\nadd chain=prerouting in-interface=ether3-LAN action=mark-connection new-connection-mark=ISP1_conn comment="Route to ISP1"'
+  );
+  const [obfStripComments, setObfStripComments] = useState<boolean>(true);
+  const [obfDecoyRules, setObfDecoyRules] = useState<boolean>(true);
+
+  // 35. Block Social Media state
+  const [bsmLan, setBsmLan] = useState<string>('ether3-LAN');
+  const [bsmPlatforms, setBsmPlatforms] = useState<string[]>(['youtube', 'tiktok']);
+  const [bsmStart, setBsmStart] = useState<string>('08:00:00');
+  const [bsmEnd, setBsmEnd] = useState<string>('17:00:00');
+  const [bsmDays, setBsmDays] = useState<string>('mon,tue,wed,thu,fri');
+
+  // 36. PCC Calculator state
+  const [pccSpeed1, setPccSpeed1] = useState<number>(100);
+  const [pccSpeed2, setPccSpeed2] = useState<number>(50);
+  const [pccSpeed3, setPccSpeed3] = useState<number>(0);
+  const [pccSpeed4, setPccSpeed4] = useState<number>(0);
+
+  // 37. Indonesia NTP state
+  const [ntpTimezone, setNtpTimezone] = useState<'Asia/Jakarta' | 'Asia/Makassar' | 'Asia/Jayapura'>('Asia/Jakarta');
+  const [ntpServers, setNtpServers] = useState<string>('id.pool.ntp.org, 0.id.pool.ntp.org, 1.id.pool.ntp.org');
+
+  // 38. IP Calculator state
+  const [calcIpCidr, setCalcIpCidr] = useState<string>('192.168.10.1/24');
+  const [calcIface, setCalcIface] = useState<string>('ether2');
+
+  // 39. Wifi.id Auto Login state
+  const [wifiLoginType, setWifiLoginType] = useState<'wifi_id' | 'wms' | 'seamless'>('wifi_id');
+  const [wifiUser, setWifiUser] = useState<string>('9912345678');
+  const [wifiPass, setWifiPass] = useState<string>('rahasiaWifi123');
+  const [wifiWan, setWifiWan] = useState<string>('wlan1');
+  const [wifiInterval, setWifiInterval] = useState<string>('2m');
+
+  // Helper functions
   const handleAddWan = () => {
     const nextIdx = wans.length + 1;
     const newWan: WanLine = {
@@ -340,9 +716,23 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
     );
   };
 
+  // Generate random MAC address
+  const handleGenerateRandomMac = () => {
+    const hex = '0123456789ABCDEF';
+    let mac = 'B8:69:F4'; // Popular MikroTik OUI prefix
+    for (let i = 0; i < 3; i++) {
+      const b1 = hex.charAt(Math.floor(Math.random() * hex.length));
+      const b2 = hex.charAt(Math.floor(Math.random() * hex.length));
+      mac += `:${b1}${b2}`;
+    }
+    setMacAddress(mac);
+    addToast?.('info', 'MAC Diperbarui', `MAC Address baru: ${mac}`);
+  };
+
   // Generate output script dynamically based on active tool
   const generatedScript = useMemo<string>(() => {
     switch (selectedToolId) {
+      // 1-16: Route, Mangle, NAT, VPN
       case 'lb-pcc':
         return generatePCCScript({
           rosVersion,
@@ -540,8 +930,251 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
         });
       }
 
+      // 17-23: Hotspot // PPPoE // PPP
+      case 'hotspot-qr-code':
+        return generateHotspotQRCodeScript({
+          rosVersion,
+          ssid: qrSsid,
+          encryption: qrEncryption,
+          password: qrPassword,
+          hidden: qrHidden,
+          loginUrl: qrLoginUrl,
+          hotspotServerName: qrServerName,
+        });
+
+      case 'hotspot-user-gen':
+        return generateHotspotUserGenScript({
+          rosVersion,
+          server: huServer,
+          profile: huProfile,
+          prefix: huPrefix,
+          userCount: huCount,
+          userType: huType,
+          charType: huCharType,
+          length: huLength,
+          uptimeLimit: huUptime,
+          comment: huComment,
+        });
+
+      case 'hotspot-block-sharing-ttl':
+        return generateBlockSharingTTLScript({
+          rosVersion,
+          hotspotInterface: ttlHotspotInterface,
+          ttlValue,
+          chain: ttlChain,
+          comment: ttlComment,
+        });
+
+      case 'hotspot-bandwidth-up-to':
+        return generateBandwidthUpToScript({
+          rosVersion,
+          queueName: pcqQueueName,
+          targetSubnet: pcqTargetSubnet,
+          totalDownloadRate: pcqTotalDown,
+          totalUploadRate: pcqTotalUp,
+          minClientRate: '0',
+          maxClientRate: pcqMaxClientRate,
+        });
+
+      case 'hotspot-config-wizard':
+        return generateHotspotWizardScript({
+          rosVersion,
+          interfaceName: wizIface,
+          localIpAddress: wizIp,
+          dhcpPoolRange: wizPool,
+          dnsName: wizDns,
+          adminUser: wizAdminUser,
+          adminPassword: wizAdminPass,
+          defaultProfileRateLimit: wizRateLimit,
+          sharedUsers: wizShared,
+        });
+
+      case 'hotspot-expired-notif':
+        return generateExpiredNotificationScript({
+          rosVersion,
+          serviceType: expService,
+          redirectUrl: expRedirectUrl,
+          internalProxyPort: expProxyPort,
+          addressListName: expAddressList,
+        });
+
+      case 'ppp-secrets-gen':
+        return generatePPPSecretsGenScript({
+          rosVersion,
+          service: pppService,
+          profile: pppProfile,
+          prefix: pppPrefix,
+          userCount: pppCount,
+          length: pppLength,
+          remoteIpPrefix: pppRemoteIpPrefix,
+          comment: pppComment,
+        });
+
+      // 24-28: DNS // Netwatch // DHCP // MAC
+      case 'dns-doh':
+        return generateDoHScript({
+          rosVersion,
+          provider: dohProvider,
+          dohUrl,
+          fallbackDns: dohFallback,
+          verifyCert: dohVerifyCert,
+          cleanStaticEntries: true,
+        });
+
+      case 'bonding-interface':
+        return generateBondingScript({
+          rosVersion,
+          bondingName: bondName,
+          slaveInterfaces: bondSlaves.split(',').map((s) => s.trim()).filter(Boolean),
+          mode: bondMode,
+          lacpRate: bondLacpRate,
+          transmitHashPolicy: bondHashPolicy,
+          ipAddress: bondIp,
+        });
+
+      case 'netwatch-notifications':
+        return generateNetwatchScript({
+          rosVersion,
+          hostIp: netHostIp,
+          hostName: netHostName,
+          checkInterval: netInterval,
+          timeout: netTimeout,
+          notifyChannel: netChannel,
+          telegramBotToken: netTgToken,
+          telegramChatId: netTgChatId,
+          emailRecipient: netEmail,
+        });
+
+      case 'dhcp-rogue-protection':
+        return generateRogueDHCPScript({
+          rosVersion,
+          lanInterface: rdLanIface,
+          validServerMac: rdValidMac,
+          alertTimeout: rdAlertTimeout,
+          action: rdAction,
+        });
+
+      case 'mac-random-change':
+        return generateMacChangeScript({
+          rosVersion,
+          targetInterface: macIface,
+          newMacAddress: macAddress,
+          backupOldMac: true,
+        });
+
+      // 29-35: Protection // Block // Backup
+      case 'hide-routerboard-isp':
+        return generateHideRouterboardScript({
+          rosVersion,
+          wanInterface: ninjaWan,
+          lanInterface: ninjaLan,
+          disableNeighborDiscovery: ninjaMndp,
+          disableMacServer: ninjaMacServer,
+          disableBandwidthServer: ninjaBwServer,
+          blockIcmpTracerouteToWan: ninjaBlockTraceroute,
+          normalizeOutboundTTL: ninjaNormalTTL,
+        });
+
+      case 'port-knocking-icmp':
+        return generatePortKnockingScript({
+          rosVersion,
+          wanInterface: pkWan,
+          targetPort: pkPort,
+          knockSize1: pkSize1,
+          knockSize2: pkSize2,
+          knockTimeout: pkTimeout,
+          accessDuration: pkDuration,
+        });
+
+      case 'advanced-router-protection':
+        return generateAdvancedProtectionScript({
+          rosVersion,
+          wanInterface: apWan,
+          lanInterface: apLan,
+          dropInvalid: apDropInvalid,
+          blockSynFlood: apSynFlood,
+          blockPortScanners: apPortScanners,
+          protectBruteForceWinbox: apWinboxBrute,
+          protectBruteForceSSH: apSshBrute,
+          blockDnsOpenResolver: apDnsResolver,
+        });
+
+      case 'block-websites-gen': {
+        const customArr = bwCustomDomains.split(',').map((s) => s.trim()).filter(Boolean);
+        return generateBlockWebsitesScript({
+          rosVersion,
+          lanInterface: bwLan,
+          categories: bwCategories,
+          customDomains: customArr,
+          blockMethod: bwMethod,
+        });
+      }
+
+      case 'auto-backup-email':
+        return generateAutoBackupEmailScript({
+          rosVersion,
+          emailRecipient: bkEmail,
+          backupPassword: bkPass,
+          exportRsc: bkExportRsc,
+          scheduleTime: bkTime,
+          scheduleInterval: bkInterval,
+          routerIdentity: 'MikroTik-Router',
+        });
+
+      case 'mangle-obfuscator':
+        return generateMangleObfuscatorScript({
+          rosVersion,
+          originalScript: obfScript,
+          stripComments: obfStripComments,
+          addDecoyRules: obfDecoyRules,
+          renameIdentifiers: false,
+        });
+
+      case 'block-social-streaming':
+        return generateBlockSocialMediaScript({
+          rosVersion,
+          lanInterface: bsmLan,
+          selectedPlatforms: bsmPlatforms,
+          blockTimeStart: bsmStart,
+          blockTimeEnd: bsmEnd,
+          blockDays: bsmDays,
+        });
+
+      // 36-39: RouterOS Other Tools
+      case 'pcc-calculator': {
+        const speeds: number[] = [pccSpeed1, pccSpeed2];
+        if (pccSpeed3 > 0) speeds.push(pccSpeed3);
+        if (pccSpeed4 > 0) speeds.push(pccSpeed4);
+        const result = calculatePCCDivisors(speeds);
+        return result.cliScript;
+      }
+
+      case 'indonesia-ntp-clock': {
+        const srvArr = ntpServers.split(',').map((s) => s.trim()).filter(Boolean);
+        return generateIndonesiaNTPScript({
+          rosVersion,
+          timezone: ntpTimezone,
+          ntpServers: srvArr,
+        });
+      }
+
+      case 'ip-calculator': {
+        const res = calculateMikroTikIP(calcIpCidr, calcIface, rosVersion);
+        return res.cliScript;
+      }
+
+      case 'wifi-id-autologin':
+        return generateWifiIdAutoLoginScript({
+          rosVersion,
+          loginType: wifiLoginType,
+          username: wifiUser,
+          password: wifiPass,
+          wanInterface: wifiWan,
+          checkInterval: wifiInterval,
+        });
+
       default:
-        return '# Pilih salah satu fitur untuk men-generate skrip MikroTik.';
+        return '# Pilih salah satu fitur dari daftar untuk men-generate skrip MikroTik.';
     }
   }, [
     selectedToolId,
@@ -627,6 +1260,124 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
     smRoutingMark,
     smSelected,
     smCustomDomains,
+    qrSsid,
+    qrEncryption,
+    qrPassword,
+    qrHidden,
+    qrLoginUrl,
+    qrServerName,
+    huServer,
+    huProfile,
+    huPrefix,
+    huCount,
+    huType,
+    huCharType,
+    huLength,
+    huUptime,
+    huComment,
+    ttlHotspotInterface,
+    ttlValue,
+    ttlChain,
+    ttlComment,
+    pcqQueueName,
+    pcqTargetSubnet,
+    pcqTotalDown,
+    pcqTotalUp,
+    pcqMaxClientRate,
+    wizIface,
+    wizIp,
+    wizPool,
+    wizDns,
+    wizAdminUser,
+    wizAdminPass,
+    wizRateLimit,
+    wizShared,
+    expService,
+    expRedirectUrl,
+    expProxyPort,
+    expAddressList,
+    pppService,
+    pppProfile,
+    pppPrefix,
+    pppCount,
+    pppLength,
+    pppRemoteIpPrefix,
+    pppComment,
+    dohProvider,
+    dohUrl,
+    dohFallback,
+    dohVerifyCert,
+    bondName,
+    bondSlaves,
+    bondMode,
+    bondLacpRate,
+    bondHashPolicy,
+    bondIp,
+    netHostIp,
+    netHostName,
+    netInterval,
+    netTimeout,
+    netChannel,
+    netTgToken,
+    netTgChatId,
+    netEmail,
+    rdLanIface,
+    rdValidMac,
+    rdAlertTimeout,
+    rdAction,
+    macIface,
+    macAddress,
+    ninjaWan,
+    ninjaLan,
+    ninjaMndp,
+    ninjaMacServer,
+    ninjaBwServer,
+    ninjaBlockTraceroute,
+    ninjaNormalTTL,
+    pkWan,
+    pkPort,
+    pkSize1,
+    pkSize2,
+    pkTimeout,
+    pkDuration,
+    apWan,
+    apLan,
+    apDropInvalid,
+    apSynFlood,
+    apPortScanners,
+    apWinboxBrute,
+    apSshBrute,
+    apDnsResolver,
+    bwLan,
+    bwCategories,
+    bwCustomDomains,
+    bwMethod,
+    bkEmail,
+    bkPass,
+    bkExportRsc,
+    bkTime,
+    bkInterval,
+    obfScript,
+    obfStripComments,
+    obfDecoyRules,
+    bsmLan,
+    bsmPlatforms,
+    bsmStart,
+    bsmEnd,
+    bsmDays,
+    pccSpeed1,
+    pccSpeed2,
+    pccSpeed3,
+    pccSpeed4,
+    ntpTimezone,
+    ntpServers,
+    calcIpCidr,
+    calcIface,
+    wifiLoginType,
+    wifiUser,
+    wifiPass,
+    wifiWan,
+    wifiInterval,
   ]);
 
   const handleCopyScript = () => {
@@ -651,11 +1402,30 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
   };
 
   const filteredTools = useMemo(() => {
-    if (categoryFilter === 'all') return TOOLS_LIST;
-    return TOOLS_LIST.filter((t) => t.category === categoryFilter);
-  }, [categoryFilter]);
+    return TOOLS_LIST.filter((t) => {
+      const matchCat = categoryFilter === 'all' || t.category === categoryFilter;
+      const matchSearch =
+        !searchQuery.trim() ||
+        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.shortDesc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.id.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchCat && matchSearch;
+    });
+  }, [categoryFilter, searchQuery]);
 
   const activeTool = TOOLS_LIST.find((t) => t.id === selectedToolId) || TOOLS_LIST[0];
+
+  // Specific IP Calculator display
+  const ipCalcDetails = useMemo(() => {
+    if (selectedToolId === 'ip-calculator') {
+      try {
+        return calculateMikroTikIP(calcIpCidr, calcIface, rosVersion);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, [selectedToolId, calcIpCidr, calcIface, rosVersion]);
 
   return (
     <div className="space-y-6">
@@ -673,14 +1443,14 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                   MikroTik Script Generator Suite
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
-                  16 Network Tools
+                  39 Network Tools
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                  ROUTE // MANGLE // NAT // VPN
+                  HOTSPOT // PPPOE // DNS // NETWATCH // MANGLE // NAT // VPN
                 </span>
               </div>
               <p className="text-sm text-slate-500 mt-1">
-                Koleksi generator skrip RouterOS lengkap berbasis web: Load Balancing PCC/NTH/ECMP, Failover Recursive, Traffic Steering Game/Sosmed, DST-NAT, dan VPN Tunneling.
+                Koleksi generator skrip RouterOS lengkap: Load Balancing, Anti-Tethering Hotspot, DoH Encrypted DNS, Netwatch Telegram, Firewall Ninja Protection, IP Subnet Calculator, hingga Wifi.id Keepalive.
               </p>
             </div>
           </div>
@@ -725,62 +1495,85 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
             <button
               type="button"
               onClick={() => setCategoryFilter('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 categoryFilter === 'all'
-                  ? 'bg-orange-600 text-white shadow-sm'
+                  ? 'bg-orange-600 text-white shadow-sm font-semibold'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Semua (16)
+              Semua (39)
             </button>
             <button
               type="button"
-              onClick={() => setCategoryFilter('load-balancing')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                categoryFilter === 'load-balancing'
-                  ? 'bg-orange-600 text-white shadow-sm'
+              onClick={() => setCategoryFilter('route-mangle-nat-vpn')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                categoryFilter === 'route-mangle-nat-vpn'
+                  ? 'bg-orange-600 text-white shadow-sm font-semibold'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Load Balancing (4)
+              Route / NAT / VPN (16)
             </button>
             <button
               type="button"
-              onClick={() => setCategoryFilter('traffic-steering')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                categoryFilter === 'traffic-steering'
-                  ? 'bg-orange-600 text-white shadow-sm'
+              onClick={() => setCategoryFilter('hotspot-pppoe-ppp')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                categoryFilter === 'hotspot-pppoe-ppp'
+                  ? 'bg-orange-600 text-white shadow-sm font-semibold'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Traffic Steering (5)
+              Hotspot / PPP (7)
             </button>
             <button
               type="button"
-              onClick={() => setCategoryFilter('nat-firewall')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                categoryFilter === 'nat-firewall'
-                  ? 'bg-orange-600 text-white shadow-sm'
+              onClick={() => setCategoryFilter('dns-netwatch-dhcp')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                categoryFilter === 'dns-netwatch-dhcp'
+                  ? 'bg-orange-600 text-white shadow-sm font-semibold'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              NAT & Sec (2)
+              DNS / Netwatch (5)
             </button>
             <button
               type="button"
-              onClick={() => setCategoryFilter('vpn-tunnel')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                categoryFilter === 'vpn-tunnel'
-                  ? 'bg-orange-600 text-white shadow-sm'
+              onClick={() => setCategoryFilter('protection-block-backup')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                categoryFilter === 'protection-block-backup'
+                  ? 'bg-orange-600 text-white shadow-sm font-semibold'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              VPN & Tunnel (5)
+              Protection / Backup (7)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCategoryFilter('routeros-other-tools')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                categoryFilter === 'routeros-other-tools'
+                  ? 'bg-orange-600 text-white shadow-sm font-semibold'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              Tools & Calc (4)
             </button>
           </div>
 
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari fitur (misal: pcc, hotspot, qr, netwatch, doh, ninja, wifi.id)..."
+              className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            />
+          </div>
+
           {/* Tools List Box */}
-          <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm divide-y divide-slate-100 max-h-[640px] overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
             {filteredTools.map((tool) => {
               const isSelected = tool.id === selectedToolId;
               return (
@@ -824,8 +1617,8 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
               <span>Petunjuk Eksekusi di Router MikroTik:</span>
             </div>
             <ol className="list-decimal pl-4 space-y-1 text-slate-600">
-              <li>Sesuaikan parameter antarmuka (WAN / LAN / Gateway) pada formulir.</li>
-              <li>Klik tombol <b>Salin Skrip CLI</b> atau <b>Download File .rsc</b>.</li>
+              <li>Pilih tool dan sesuaikan parameter pada formulir di sebelah kanan.</li>
+              <li>Klik tombol <b>Salin Skrip CLI</b> atau <b>Download .rsc</b>.</li>
               <li>Buka aplikasi <b>Winbox</b> &rarr; Menu <b>New Terminal</b>.</li>
               <li>Klik kanan &rarr; <b>Paste</b>, lalu tekan <b>Enter</b> hingga selesai.</li>
             </ol>
@@ -914,7 +1707,6 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                   ))}
                 </div>
 
-                {/* Specific configs for PCC */}
                 {selectedToolId === 'lb-pcc' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
                     <div>
@@ -953,7 +1745,6 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                   </div>
                 )}
 
-                {/* Specific configs for NTH */}
                 {selectedToolId === 'lb-nth' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                     <div>
@@ -979,7 +1770,6 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                   </div>
                 )}
 
-                {/* Specific configs for ECMP */}
                 {selectedToolId === 'lb-ecmp' && (
                   <div className="pt-2">
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Check Gateway Protocol</label>
@@ -1003,74 +1793,64 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                     <span className="text-xs font-bold text-slate-800">ISP 1 (Jalur Utama)</span>
-                    <div>
-                      <label className="block text-[11px] text-slate-500 mb-0.5">Interface & Gateway</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          value={wans[0]?.interface || 'ether1-ISP1'}
-                          onChange={(e) => handleUpdateWan(wans[0]?.id || '1', 'interface', e.target.value)}
-                          className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                          placeholder="ether1"
-                        />
-                        <input
-                          type="text"
-                          value={wans[0]?.gateway || '192.168.1.1'}
-                          onChange={(e) => handleUpdateWan(wans[0]?.id || '1', 'gateway', e.target.value)}
-                          className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                          placeholder="192.168.1.1"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-slate-500 mb-0.5">DNS Check Target (Scope 10)</label>
+                    <div className="grid grid-cols-2 gap-2">
                       <input
                         type="text"
-                        value={failoverPrimaryTarget}
-                        onChange={(e) => setFailoverPrimaryTarget(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                        placeholder="8.8.8.8"
+                        value={wans[0]?.interface || 'ether1-ISP1'}
+                        onChange={(e) => handleUpdateWan(wans[0]?.id || '1', 'interface', e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                        placeholder="ether1"
+                      />
+                      <input
+                        type="text"
+                        value={wans[0]?.gateway || '192.168.1.1'}
+                        onChange={(e) => handleUpdateWan(wans[0]?.id || '1', 'gateway', e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                        placeholder="192.168.1.1"
                       />
                     </div>
+                    <label className="block text-[11px] text-slate-500 mb-0.5">DNS Check Target</label>
+                    <input
+                      type="text"
+                      value={failoverPrimaryTarget}
+                      onChange={(e) => setFailoverPrimaryTarget(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="8.8.8.8"
+                    />
                   </div>
 
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                     <span className="text-xs font-bold text-slate-800">ISP 2 (Jalur Cadangan)</span>
-                    <div>
-                      <label className="block text-[11px] text-slate-500 mb-0.5">Interface & Gateway</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          value={wans[1]?.interface || 'ether2-ISP2'}
-                          onChange={(e) => handleUpdateWan(wans[1]?.id || '2', 'interface', e.target.value)}
-                          className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                          placeholder="ether2"
-                        />
-                        <input
-                          type="text"
-                          value={wans[1]?.gateway || '192.168.2.1'}
-                          onChange={(e) => handleUpdateWan(wans[1]?.id || '2', 'gateway', e.target.value)}
-                          className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                          placeholder="192.168.2.1"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-slate-500 mb-0.5">DNS Check Target (Scope 10)</label>
+                    <div className="grid grid-cols-2 gap-2">
                       <input
                         type="text"
-                        value={failoverSecondaryTarget}
-                        onChange={(e) => setFailoverSecondaryTarget(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                        placeholder="1.1.1.1"
+                        value={wans[1]?.interface || 'ether2-ISP2'}
+                        onChange={(e) => handleUpdateWan(wans[1]?.id || '2', 'interface', e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                        placeholder="ether2"
+                      />
+                      <input
+                        type="text"
+                        value={wans[1]?.gateway || '192.168.2.1'}
+                        onChange={(e) => handleUpdateWan(wans[1]?.id || '2', 'gateway', e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                        placeholder="192.168.2.1"
                       />
                     </div>
+                    <label className="block text-[11px] text-slate-500 mb-0.5">DNS Check Target</label>
+                    <input
+                      type="text"
+                      value={failoverSecondaryTarget}
+                      onChange={(e) => setFailoverSecondaryTarget(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="1.1.1.1"
+                    />
                   </div>
                 </div>
               </div>
             )}
 
-            {/* 5 & 6. Games Routing (Raw & Mangle) */}
+            {/* 5 & 6. Games Routing */}
             {(selectedToolId === 'games-raw' || selectedToolId === 'games-mangle') && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -1124,10 +1904,8 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                       return (
                         <label
                           key={p.id}
-                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                            isChecked
-                              ? 'bg-purple-50 border-purple-300 text-purple-900 font-medium'
-                              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer ${
+                            isChecked ? 'bg-purple-50 border-purple-300 text-purple-900 font-medium' : 'bg-white'
                           }`}
                         >
                           <input
@@ -1137,7 +1915,7 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                               if (e.target.checked) setSelectedGames([...selectedGames, p.id]);
                               else setSelectedGames(selectedGames.filter((id) => id !== p.id));
                             }}
-                            className="rounded text-purple-600 focus:ring-purple-500"
+                            className="rounded text-purple-600"
                           />
                           <span className="truncate">{p.name}</span>
                         </label>
@@ -1146,32 +1924,26 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="block text-[11px] text-slate-600 mb-1">Custom Port TCP Tambahan (koma pisah)</label>
-                    <input
-                      type="text"
-                      value={customGameTcp}
-                      onChange={(e) => setCustomGameTcp(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="contoh: 8088,9090-9095"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-slate-600 mb-1">Custom Port UDP Tambahan (koma pisah)</label>
-                    <input
-                      type="text"
-                      value={customGameUdp}
-                      onChange={(e) => setCustomGameUdp(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="contoh: 20001-20010"
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={customGameTcp}
+                    onChange={(e) => setCustomGameTcp(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Custom TCP Ports (contoh: 8088,9090-9095)"
+                  />
+                  <input
+                    type="text"
+                    value={customGameUdp}
+                    onChange={(e) => setCustomGameUdp(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Custom UDP Ports (contoh: 20001-20010)"
+                  />
                 </div>
               </div>
             )}
 
-            {/* 7. Website Static Routing */}
+            {/* 7. Website Routing */}
             {selectedToolId === 'website-routing' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -1206,7 +1978,7 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Routing Mark Name</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Routing Mark</label>
                     <input
                       type="text"
                       value={webRoutingMark}
@@ -1218,17 +1990,15 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-2">Preset Website / Layanan Penting:</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-2">Preset Layanan Website:</label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {WEBSITE_PRESETS.map((p) => {
                       const isChecked = selectedWebsites.includes(p.id);
                       return (
                         <label
                           key={p.id}
-                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                            isChecked
-                              ? 'bg-teal-50 border-teal-300 text-teal-900 font-medium'
-                              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer ${
+                            isChecked ? 'bg-teal-50 border-teal-300 text-teal-900 font-medium' : 'bg-white'
                           }`}
                         >
                           <input
@@ -1238,7 +2008,7 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                               if (e.target.checked) setSelectedWebsites([...selectedWebsites, p.id]);
                               else setSelectedWebsites(selectedWebsites.filter((id) => id !== p.id));
                             }}
-                            className="rounded text-teal-600 focus:ring-teal-500"
+                            className="rounded text-teal-600"
                           />
                           <span className="truncate">{p.name}</span>
                         </label>
@@ -1247,20 +2017,17 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Domain Tambahan (koma pisahkan):</label>
-                  <input
-                    type="text"
-                    value={customWebDomains}
-                    onChange={(e) => setCustomWebDomains(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                    placeholder="contoh: klikbca.com, pajak.go.id, website-perusahaan.co.id"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={customWebDomains}
+                  onChange={(e) => setCustomWebDomains(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                  placeholder="Domain Tambahan (koma pisahkan, misal: klikbca.com, pajak.go.id)"
+                />
               </div>
             )}
 
-            {/* 8. Local Client IP Routing */}
+            {/* 8. Client IP Routing */}
             {selectedToolId === 'client-ip-routing' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -1306,27 +2073,20 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Daftar IP Client / Rentang IP (koma pisah):</label>
-                  <textarea
-                    rows={2}
-                    value={clientIpList}
-                    onChange={(e) => setClientIpList(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
-                    placeholder="contoh: 192.168.88.50, 192.168.88.100-192.168.88.120, 192.168.88.200/29"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Keterangan / Label Client:</label>
-                  <input
-                    type="text"
-                    value={clientDesc}
-                    onChange={(e) => setClientDesc(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg"
-                    placeholder="contoh: Ruang Pimpinan, Server Database, POS Kasir"
-                  />
-                </div>
+                <textarea
+                  rows={2}
+                  value={clientIpList}
+                  onChange={(e) => setClientIpList(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+                  placeholder="Daftar IP Client (misal: 192.168.88.50, 192.168.88.100-192.168.88.120)"
+                />
+                <input
+                  type="text"
+                  value={clientDesc}
+                  onChange={(e) => setClientDesc(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg"
+                  placeholder="Keterangan (misal: Ruang Pimpinan, Server Database)"
+                />
               </div>
             )}
 
@@ -1341,17 +2101,15 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                       value={pfWanInterface}
                       onChange={(e) => setPfWanInterface(e.target.value)}
                       className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="ether1-ISP1"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">IP Publik Statis (Opsional)</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">IP Publik (Opsional)</label>
                     <input
                       type="text"
                       value={pfPublicIp}
                       onChange={(e) => setPfPublicIp(e.target.value)}
                       className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="Kosongkan jika dinamis"
                     />
                   </div>
                   <div>
@@ -1367,73 +2125,61 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Keterangan / Komentar</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Keterangan Rule</label>
                     <input
                       type="text"
                       value={pfComment}
                       onChange={(e) => setPfComment(e.target.value)}
                       className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg"
-                      placeholder="Web Server / CCTV"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Port Eksternal</label>
-                    <input
-                      type="text"
-                      value={pfExternalPort}
-                      onChange={(e) => setPfExternalPort(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="8080"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">IP Target Internal (LAN)</label>
-                    <input
-                      type="text"
-                      value={pfInternalIp}
-                      onChange={(e) => setPfInternalIp(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="192.168.88.50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Port Internal</label>
-                    <input
-                      type="text"
-                      value={pfInternalPort}
-                      onChange={(e) => setPfInternalPort(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="80"
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input
+                    type="text"
+                    value={pfExternalPort}
+                    onChange={(e) => setPfExternalPort(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Port Eksternal (8080)"
+                  />
+                  <input
+                    type="text"
+                    value={pfInternalIp}
+                    onChange={(e) => setPfInternalIp(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="IP Internal Server (192.168.88.50)"
+                  />
+                  <input
+                    type="text"
+                    value={pfInternalPort}
+                    onChange={(e) => setPfInternalPort(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Port Internal (80)"
+                  />
                 </div>
 
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                  <input
+                    type="checkbox"
+                    checked={pfHairpin}
+                    onChange={(e) => setPfHairpin(e.target.checked)}
+                    className="rounded text-green-600"
+                  />
+                  <span>Sertakan Rule Hairpin NAT (Bisa akses via IP Publik/DDNS dari LAN)</span>
+                </label>
+                {pfHairpin && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Subnet LAN (untuk Hairpin NAT)</label>
                     <input
-                      type="checkbox"
-                      checked={pfHairpin}
-                      onChange={(e) => setPfHairpin(e.target.checked)}
-                      className="rounded text-green-600 focus:ring-green-500"
+                      type="text"
+                      value={pfLanSubnet}
+                      onChange={(e) => setPfLanSubnet(e.target.value)}
+                      className="w-full md:w-1/2 px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="192.168.88.0/24"
                     />
-                    <span>Sertakan Rule Hairpin NAT (Bisa buka via IP Publik / DDNS dari jaringan lokal)</span>
-                  </label>
-                  {pfHairpin && (
-                    <div className="pt-1">
-                      <label className="block text-[11px] text-slate-500 mb-1">Subnet LAN Lokal:</label>
-                      <input
-                        type="text"
-                        value={pfLanSubnet}
-                        onChange={(e) => setPfLanSubnet(e.target.value)}
-                        className="w-full max-w-xs px-2.5 py-1 text-xs border border-slate-200 rounded-md font-mono"
-                        placeholder="192.168.88.0/24"
-                      />
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1441,186 +2187,137 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
             {selectedToolId === 'port-tcp-udp-routing' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">LAN Interface</label>
-                    <input
-                      type="text"
-                      value={prLanInterface}
-                      onChange={(e) => setPrLanInterface(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="ether3-LAN"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target WAN</label>
-                    <input
-                      type="text"
-                      value={prTargetWan}
-                      onChange={(e) => setPrTargetWan(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="WAN1"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target Gateway</label>
-                    <input
-                      type="text"
-                      value={prTargetGateway}
-                      onChange={(e) => setPrTargetGateway(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="192.168.1.1"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Routing Mark Name</label>
-                    <input
-                      type="text"
-                      value={prRoutingMark}
-                      onChange={(e) => setPrRoutingMark(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="PORTS_TRAFFIC"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={prLanInterface}
+                    onChange={(e) => setPrLanInterface(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="LAN Interface"
+                  />
+                  <input
+                    type="text"
+                    value={prTargetWan}
+                    onChange={(e) => setPrTargetWan(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Target WAN"
+                  />
+                  <input
+                    type="text"
+                    value={prTargetGateway}
+                    onChange={(e) => setPrTargetGateway(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Gateway IP"
+                  />
+                  <input
+                    type="text"
+                    value={prRoutingMark}
+                    onChange={(e) => setPrRoutingMark(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Routing Mark"
+                  />
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Protokol</label>
-                    <select
-                      value={prProtocol}
-                      onChange={(e) => setPrProtocol(e.target.value as any)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
-                    >
-                      <option value="tcp">TCP</option>
-                      <option value="udp">UDP</option>
-                      <option value="both">TCP & UDP</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nomor Port:</label>
-                    <input
-                      type="text"
-                      value={prPorts}
-                      onChange={(e) => setPrPorts(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="contoh: 80,443,8080 atau 5000-5100"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Keterangan Rule:</label>
-                    <input
-                      type="text"
-                      value={prDesc}
-                      onChange={(e) => setPrDesc(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg"
-                      placeholder="Browsing Web Ports"
-                    />
-                  </div>
+                  <select
+                    value={prProtocol}
+                    onChange={(e) => setPrProtocol(e.target.value as any)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                  >
+                    <option value="tcp">TCP</option>
+                    <option value="udp">UDP</option>
+                    <option value="both">TCP & UDP</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={prPorts}
+                    onChange={(e) => setPrPorts(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Port (80,443,8080)"
+                  />
+                  <input
+                    type="text"
+                    value={prDesc}
+                    onChange={(e) => setPrDesc(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg"
+                    placeholder="Keterangan"
+                  />
                 </div>
               </div>
             )}
 
-            {/* 11. All Traffic to VPN Tunnel */}
+            {/* 11. All Traffic to VPN */}
             {selectedToolId === 'vpn-all-traffic' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Interface VPN Tunnel</label>
-                    <input
-                      type="text"
-                      value={vpnTunnelInterface}
-                      onChange={(e) => setVpnTunnelInterface(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="wireguard1, ovpn-out1, l2tp-out1"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">LAN Interface</label>
-                    <input
-                      type="text"
-                      value={vpnLanInterface}
-                      onChange={(e) => setVpnLanInterface(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="ether3-LAN"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">IP Server VPN (Cegah Loop)</label>
-                    <input
-                      type="text"
-                      value={vpnServerEndpoint}
-                      onChange={(e) => setVpnServerEndpoint(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="103.150.200.5"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Subnet Khusus yang diarahkan ke VPN (Opsional):</label>
                   <input
                     type="text"
-                    value={vpnClientSubnet}
-                    onChange={(e) => setVpnClientSubnet(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                    placeholder="Kosongkan jika ingin mengarahkan seluruh LAN interface"
+                    value={vpnTunnelInterface}
+                    onChange={(e) => setVpnTunnelInterface(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="VPN Interface"
+                  />
+                  <input
+                    type="text"
+                    value={vpnLanInterface}
+                    onChange={(e) => setVpnLanInterface(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="LAN Interface"
+                  />
+                  <input
+                    type="text"
+                    value={vpnServerEndpoint}
+                    onChange={(e) => setVpnServerEndpoint(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="IP Server VPN (Cegah Loop)"
                   />
                 </div>
-
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
-                    <input
-                      type="checkbox"
-                      checked={vpnKillSwitch}
-                      onChange={(e) => setVpnKillSwitch(e.target.checked)}
-                      className="rounded text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span>Aktifkan Kill-Switch Protection (Blokir bocor internet bila VPN putus)</span>
-                  </label>
-                </div>
+                <input
+                  type="text"
+                  value={vpnClientSubnet}
+                  onChange={(e) => setVpnClientSubnet(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                  placeholder="Subnet Client Spesifik (opsional, contoh: 192.168.88.0/24)"
+                />
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                  <input
+                    type="checkbox"
+                    checked={vpnKillSwitch}
+                    onChange={(e) => setVpnKillSwitch(e.target.checked)}
+                    className="rounded text-indigo-600"
+                  />
+                  <span>Aktifkan Kill-Switch Protection (Blokir bocor internet bila VPN putus)</span>
+                </label>
               </div>
             )}
 
-            {/* 12. Remote Access ISP Public IP */}
+            {/* 12. Remote Access */}
             {selectedToolId === 'remote-access-isp' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">WAN Interface</label>
-                    <input
-                      type="text"
-                      value={raWanInterface}
-                      onChange={(e) => setRaWanInterface(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="ether1-ISP1"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">WAN Gateway (untuk Reply Rule)</label>
-                    <input
-                      type="text"
-                      value={raWanGateway}
-                      onChange={(e) => setRaWanGateway(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="192.168.1.1"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Whitelist IP Source Admin (Opsional):</label>
                   <input
                     type="text"
-                    value={raAllowedIps}
-                    onChange={(e) => setRaAllowedIps(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                    placeholder="Kosongkan untuk mengizinkan semua IP (0.0.0.0/0)"
+                    value={raWanInterface}
+                    onChange={(e) => setRaWanInterface(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="WAN Interface"
+                  />
+                  <input
+                    type="text"
+                    value={raWanGateway}
+                    onChange={(e) => setRaWanGateway(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Gateway (untuk Reply)"
                   />
                 </div>
-
+                <input
+                  type="text"
+                  value={raAllowedIps}
+                  onChange={(e) => setRaAllowedIps(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                  placeholder="Whitelist IP Source Admin (0.0.0.0/0 jika bebas)"
+                />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
-                  <div className="p-2 border rounded-lg bg-slate-50 space-y-1">
-                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                  <div className="p-2 border rounded-lg text-xs bg-slate-50 space-y-1">
+                    <label className="flex items-center gap-2 cursor-pointer font-medium">
                       <input
                         type="checkbox"
                         checked={raWinbox}
@@ -1633,13 +2330,12 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                       type="text"
                       value={raWinboxPort}
                       onChange={(e) => setRaWinboxPort(e.target.value)}
-                      className="w-full px-2 py-0.5 text-xs border border-slate-200 rounded font-mono"
+                      className="w-full px-2 py-1 text-xs border border-slate-200 rounded font-mono"
                       placeholder="8291"
                     />
                   </div>
-
-                  <div className="p-2 border rounded-lg bg-slate-50 space-y-1">
-                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                  <div className="p-2 border rounded-lg text-xs bg-slate-50 space-y-1">
+                    <label className="flex items-center gap-2 cursor-pointer font-medium">
                       <input
                         type="checkbox"
                         checked={raWebfig}
@@ -1652,13 +2348,12 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                       type="text"
                       value={raWebfigPort}
                       onChange={(e) => setRaWebfigPort(e.target.value)}
-                      className="w-full px-2 py-0.5 text-xs border border-slate-200 rounded font-mono"
+                      className="w-full px-2 py-1 text-xs border border-slate-200 rounded font-mono"
                       placeholder="80,443"
                     />
                   </div>
-
-                  <div className="p-2 border rounded-lg bg-slate-50 space-y-1">
-                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                  <div className="p-2 border rounded-lg text-xs bg-slate-50 space-y-1">
+                    <label className="flex items-center gap-2 cursor-pointer font-medium">
                       <input
                         type="checkbox"
                         checked={raSSH}
@@ -1671,13 +2366,12 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                       type="text"
                       value={raSSHPort}
                       onChange={(e) => setRaSSHPort(e.target.value)}
-                      className="w-full px-2 py-0.5 text-xs border border-slate-200 rounded font-mono"
+                      className="w-full px-2 py-1 text-xs border border-slate-200 rounded font-mono"
                       placeholder="22"
                     />
                   </div>
-
-                  <div className="p-2 border rounded-lg bg-slate-50 space-y-1">
-                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                  <div className="p-2 border rounded-lg text-xs bg-slate-50 space-y-1">
+                    <label className="flex items-center gap-2 cursor-pointer font-medium">
                       <input
                         type="checkbox"
                         checked={raApi}
@@ -1690,23 +2384,20 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                       type="text"
                       value={raApiPort}
                       onChange={(e) => setRaApiPort(e.target.value)}
-                      className="w-full px-2 py-0.5 text-xs border border-slate-200 rounded font-mono"
+                      className="w-full px-2 py-1 text-xs border border-slate-200 rounded font-mono"
                       placeholder="8728"
                     />
                   </div>
                 </div>
-
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
-                    <input
-                      type="checkbox"
-                      checked={raMangleReply}
-                      onChange={(e) => setRaMangleReply(e.target.checked)}
-                      className="rounded text-blue-600"
-                    />
-                    <span>Sertakan Mangle Reply Rule (Jaminan balasan trafik remote keluar lewat ISP yang sama pada Multi-WAN)</span>
-                  </label>
-                </div>
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                  <input
+                    type="checkbox"
+                    checked={raMangleReply}
+                    onChange={(e) => setRaMangleReply(e.target.checked)}
+                    className="rounded text-blue-600"
+                  />
+                  <span>Sertakan Mangle Reply Rule (Jaminan balasan trafik remote keluar lewat ISP yang sama)</span>
+                </label>
               </div>
             )}
 
@@ -1714,67 +2405,46 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
             {(selectedToolId === 'vpn-port-games' || selectedToolId === 'vpn-ip-games') && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Interface Gaming VPN</label>
-                    <input
-                      type="text"
-                      value={vpnGamesInterface}
-                      onChange={(e) => setVpnGamesInterface(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="ovpn-gaming atau wg-gaming"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Routing Mark</label>
-                    <input
-                      type="text"
-                      value={vpnGamesRoutingMark}
-                      onChange={(e) => setVpnGamesRoutingMark(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="VPN_GAMES_TRAFFIC"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={vpnGamesInterface}
+                    onChange={(e) => setVpnGamesInterface(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Interface Gaming VPN"
+                  />
+                  <input
+                    type="text"
+                    value={vpnGamesRoutingMark}
+                    onChange={(e) => setVpnGamesRoutingMark(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Routing Mark"
+                  />
                 </div>
-
                 {selectedToolId === 'vpn-port-games' ? (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-2">Preset Game Port untuk VPN:</label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {GAME_PRESETS.map((p) => {
-                        const isChecked = vpnGamesSelected.includes(p.id);
-                        return (
-                          <label
-                            key={p.id}
-                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer ${
-                              isChecked ? 'bg-violet-50 border-violet-300 text-violet-900 font-medium' : 'bg-white'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) setVpnGamesSelected([...vpnGamesSelected, p.id]);
-                                else setVpnGamesSelected(vpnGamesSelected.filter((id) => id !== p.id));
-                              }}
-                              className="rounded text-violet-600"
-                            />
-                            <span className="truncate">{p.name}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {GAME_PRESETS.map((p) => (
+                      <label key={p.id} className="flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={vpnGamesSelected.includes(p.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setVpnGamesSelected([...vpnGamesSelected, p.id]);
+                            else setVpnGamesSelected(vpnGamesSelected.filter((id) => id !== p.id));
+                          }}
+                          className="rounded text-violet-600"
+                        />
+                        <span className="truncate">{p.name}</span>
+                      </label>
+                    ))}
                   </div>
                 ) : (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Daftar Subnet IP Server Game:</label>
-                    <textarea
-                      rows={2}
-                      value={vpnGameCustomIps}
-                      onChange={(e) => setVpnGameCustomIps(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="103.28.54.0/24, 103.28.55.0/24"
-                    />
-                  </div>
+                  <textarea
+                    rows={2}
+                    value={vpnGameCustomIps}
+                    onChange={(e) => setVpnGameCustomIps(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Daftar Subnet IP Server Game"
+                  />
                 )}
               </div>
             )}
@@ -1783,207 +2453,1549 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
             {selectedToolId === 'vpn-remote-client' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Jenis Protokol VPN</label>
-                    <select
-                      value={vrcType}
-                      onChange={(e) => setVrcType(e.target.value as any)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
-                    >
-                      <option value="sstp">SSTP (Port 443 - Rekomendasi)</option>
-                      <option value="l2tp">L2TP / IPsec</option>
-                      <option value="pptp">PPTP (Legacy)</option>
-                      <option value="ovpn">OpenVPN (TCP/UDP)</option>
-                      <option value="wireguard">WireGuard (RouterOS v7)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Server Host / DDNS</label>
-                    <input
-                      type="text"
-                      value={vrcServer}
-                      onChange={(e) => setVrcServer(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="id1.tunnel.id"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Server Port</label>
-                    <input
-                      type="text"
-                      value={vrcPort}
-                      onChange={(e) => setVrcPort(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="443"
-                    />
-                  </div>
+                  <select
+                    value={vrcType}
+                    onChange={(e) => setVrcType(e.target.value as any)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                  >
+                    <option value="sstp">SSTP (Port 443 - Rekomendasi)</option>
+                    <option value="l2tp">L2TP / IPsec</option>
+                    <option value="pptp">PPTP (Legacy)</option>
+                    <option value="ovpn">OpenVPN (TCP/UDP)</option>
+                    <option value="wireguard">WireGuard (RouterOS v7)</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={vrcServer}
+                    onChange={(e) => setVrcServer(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Server Host / DDNS"
+                  />
+                  <input
+                    type="text"
+                    value={vrcPort}
+                    onChange={(e) => setVrcPort(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Port"
+                  />
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Username Akun</label>
-                    <input
-                      type="text"
-                      value={vrcUser}
-                      onChange={(e) => setVrcUser(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="username"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-                    <input
-                      type="text"
-                      value={vrcPass}
-                      onChange={(e) => setVrcPass(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="password"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Profile Name</label>
-                    <input
-                      type="text"
-                      value={vrcProfile}
-                      onChange={(e) => setVrcProfile(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="default-encryption"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Interface Name</label>
-                    <input
-                      type="text"
-                      value={vrcInterface}
-                      onChange={(e) => setVrcInterface(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="sstp-out1"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={vrcUser}
+                    onChange={(e) => setVrcUser(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Username"
+                  />
+                  <input
+                    type="text"
+                    value={vrcPass}
+                    onChange={(e) => setVrcPass(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Password"
+                  />
+                  <input
+                    type="text"
+                    value={vrcProfile}
+                    onChange={(e) => setVrcProfile(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Profile"
+                  />
+                  <input
+                    type="text"
+                    value={vrcInterface}
+                    onChange={(e) => setVrcInterface(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Interface Name"
+                  />
                 </div>
 
                 {vrcType === 'wireguard' && (
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-                    <span className="text-xs font-bold text-slate-800">Pengaturan Khusus WireGuard:</span>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-[11px] text-slate-600 mb-1">IP Client WireGuard:</label>
-                        <input
-                          type="text"
-                          value={vrcWgClientIp}
-                          onChange={(e) => setVrcWgClientIp(e.target.value)}
-                          className="w-full px-2.5 py-1 text-xs border border-slate-200 rounded font-mono"
-                          placeholder="10.200.0.2/24"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] text-slate-600 mb-1">Client Private Key:</label>
-                        <input
-                          type="text"
-                          value={vrcWgPrivKey}
-                          onChange={(e) => setVrcWgPrivKey(e.target.value)}
-                          className="w-full px-2.5 py-1 text-xs border border-slate-200 rounded font-mono"
-                          placeholder="<PRIVATE_KEY>"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] text-slate-600 mb-1">Server Public Key:</label>
-                        <input
-                          type="text"
-                          value={vrcWgServerPubKey}
-                          onChange={(e) => setVrcWgServerPubKey(e.target.value)}
-                          className="w-full px-2.5 py-1 text-xs border border-slate-200 rounded font-mono"
-                          placeholder="<SERVER_PUBLIC_KEY>"
-                        />
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                    <input
+                      type="text"
+                      value={vrcWgClientIp}
+                      onChange={(e) => setVrcWgClientIp(e.target.value)}
+                      className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="WireGuard IP Client (10.200.0.2/24)"
+                    />
+                    <input
+                      type="text"
+                      value={vrcWgPrivKey}
+                      onChange={(e) => setVrcWgPrivKey(e.target.value)}
+                      className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="Client Private Key"
+                    />
+                    <input
+                      type="text"
+                      value={vrcWgServerPubKey}
+                      onChange={(e) => setVrcWgServerPubKey(e.target.value)}
+                      className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="Server Public Key"
+                    />
                   </div>
                 )}
               </div>
             )}
 
-            {/* 16. Social Media & Streaming */}
+            {/* 16. Social Media Routing */}
             {selectedToolId === 'social-media-routing' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <input
+                    type="text"
+                    value={smLanInterface}
+                    onChange={(e) => setSmLanInterface(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="LAN Interface"
+                  />
+                  <input
+                    type="text"
+                    value={smTargetWan}
+                    onChange={(e) => setSmTargetWan(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Target WAN"
+                  />
+                  <input
+                    type="text"
+                    value={smTargetGateway}
+                    onChange={(e) => setSmTargetGateway(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Target Gateway"
+                  />
+                  <input
+                    type="text"
+                    value={smRoutingMark}
+                    onChange={(e) => setSmRoutingMark(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Routing Mark"
+                  />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {SOCIAL_PRESETS.map((p) => (
+                    <label key={p.id} className="flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={smSelected.includes(p.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSmSelected([...smSelected, p.id]);
+                          else setSmSelected(smSelected.filter((id) => id !== p.id));
+                        }}
+                        className="rounded text-rose-600"
+                      />
+                      <span className="truncate">{p.name}</span>
+                    </label>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={smCustomDomains}
+                  onChange={(e) => setSmCustomDomains(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                  placeholder="Domain Tambahan (koma pisahkan)"
+                />
+              </div>
+            )}
+
+            {/* 17. Hotspot QR Code */}
+            {selectedToolId === 'hotspot-qr-code' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nama SSID Wi-Fi</label>
+                    <input
+                      type="text"
+                      value={qrSsid}
+                      onChange={(e) => setQrSsid(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Enkripsi</label>
+                    <select
+                      value={qrEncryption}
+                      onChange={(e) => setQrEncryption(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="WPA">WPA / WPA2 / WPA3</option>
+                      <option value="nopass">Tanpa Password (Open Hotspot)</option>
+                      <option value="WEP">WEP</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Password Wi-Fi</label>
+                    <input
+                      type="text"
+                      value={qrPassword}
+                      onChange={(e) => setQrPassword(e.target.value)}
+                      disabled={qrEncryption === 'nopass'}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono disabled:bg-slate-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={qrServerName}
+                    onChange={(e) => setQrServerName(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Hotspot Server Name (hotspot1)"
+                  />
+                  <input
+                    type="text"
+                    value={qrLoginUrl}
+                    onChange={(e) => setQrLoginUrl(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Login URL (http://192.168.88.1/login)"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={qrHidden}
+                      onChange={(e) => setQrHidden(e.target.checked)}
+                      className="rounded text-blue-600"
+                    />
+                    <span>Hidden SSID (Jaringan Tersembunyi)</span>
+                  </label>
+                </div>
+
+                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold">Format String Wi-Fi QR Code:</span>
+                    <p className="font-mono mt-0.5 select-all">
+                      WIFI:S:{qrSsid};T:{qrEncryption};P:{qrPassword};H:{qrHidden ? 'true' : 'false'};;
+                    </p>
+                  </div>
+                  <QrCode className="w-8 h-8 text-blue-600 shrink-0" />
+                </div>
+              </div>
+            )}
+
+            {/* 18. Hotspot User Generator */}
+            {selectedToolId === 'hotspot-user-gen' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Server</label>
+                    <input
+                      type="text"
+                      value={huServer}
+                      onChange={(e) => setHuServer(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Profil User</label>
+                    <input
+                      type="text"
+                      value={huProfile}
+                      onChange={(e) => setHuProfile(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Prefix Kode</label>
+                    <input
+                      type="text"
+                      value={huPrefix}
+                      onChange={(e) => setHuPrefix(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Jumlah Voucher</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={huCount}
+                      onChange={(e) => setHuCount(Number(e.target.value))}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tipe Login</label>
+                    <select
+                      value={huType}
+                      onChange={(e) => setHuType(e.target.value as any)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="same">User = Password</option>
+                      <option value="different">User & Password Beda</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Karakter</label>
+                    <select
+                      value={huCharType}
+                      onChange={(e) => setHuCharType(e.target.value as any)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="numeric">Angka (1234)</option>
+                      <option value="alphanumeric">Huruf & Angka</option>
+                      <option value="lowercase">Huruf Kecil</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Panjang Karakter</label>
+                    <input
+                      type="number"
+                      min={3}
+                      max={12}
+                      value={huLength}
+                      onChange={(e) => setHuLength(Number(e.target.value))}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Limit Waktu (Uptime)</label>
+                    <input
+                      type="text"
+                      value={huUptime}
+                      onChange={(e) => setHuUptime(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="2h, 1d"
+                    />
+                  </div>
+                </div>
+
+                <input
+                  type="text"
+                  value={huComment}
+                  onChange={(e) => setHuComment(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg"
+                  placeholder="Komentar / Harga Voucher (misal: Paket 2 Jam Rp 3.000)"
+                />
+              </div>
+            )}
+
+            {/* 19. Block Sharing TTL */}
+            {selectedToolId === 'hotspot-block-sharing-ttl' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Hotspot Interface</label>
+                    <input
+                      type="text"
+                      value={ttlHotspotInterface}
+                      onChange={(e) => setTtlHotspotInterface(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="ether3-Hotspot"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nilai TTL</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={255}
+                      value={ttlValue}
+                      onChange={(e) => setTtlValue(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Mangle Chain</label>
+                    <select
+                      value={ttlChain}
+                      onChange={(e) => setTtlChain(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="postrouting">postrouting (Rekomendasi)</option>
+                      <option value="prerouting">prerouting</option>
+                    </select>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value={ttlComment}
+                  onChange={(e) => setTtlComment(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg"
+                  placeholder="Komentar rule"
+                />
+              </div>
+            )}
+
+            {/* 20. Bandwidth Share Up-To PCQ */}
+            {selectedToolId === 'hotspot-bandwidth-up-to' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Queue</label>
+                    <input
+                      type="text"
+                      value={pcqQueueName}
+                      onChange={(e) => setPcqQueueName(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target Subnet Hotspot</label>
+                    <input
+                      type="text"
+                      value={pcqTargetSubnet}
+                      onChange={(e) => setPcqTargetSubnet(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Total Bandwidth Download</label>
+                    <input
+                      type="text"
+                      value={pcqTotalDown}
+                      onChange={(e) => setPcqTotalDown(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="50M"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Total Bandwidth Upload</label>
+                    <input
+                      type="text"
+                      value={pcqTotalUp}
+                      onChange={(e) => setPcqTotalUp(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="20M"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Maks Rate Tiap Klien (Up-To)</label>
+                    <input
+                      type="text"
+                      value={pcqMaxClientRate}
+                      onChange={(e) => setPcqMaxClientRate(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="10M (0 = bebas hingga total)"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 21. Hotspot Wizard */}
+            {selectedToolId === 'hotspot-config-wizard' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Interface Hotspot</label>
+                    <input
+                      type="text"
+                      value={wizIface}
+                      onChange={(e) => setWizIface(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">IP Gateway Hotspot</label>
+                    <input
+                      type="text"
+                      value={wizIp}
+                      onChange={(e) => setWizIp(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Rentang DHCP Pool</label>
+                    <input
+                      type="text"
+                      value={wizPool}
+                      onChange={(e) => setWizPool(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">DNS Name</label>
+                    <input
+                      type="text"
+                      value={wizDns}
+                      onChange={(e) => setWizDns(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Admin User</label>
+                    <input
+                      type="text"
+                      value={wizAdminUser}
+                      onChange={(e) => setWizAdminUser(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Admin Password</label>
+                    <input
+                      type="text"
+                      value={wizAdminPass}
+                      onChange={(e) => setWizAdminPass(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Default Rate Limit</label>
+                    <input
+                      type="text"
+                      value={wizRateLimit}
+                      onChange={(e) => setWizRateLimit(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Shared Users</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={wizShared}
+                      onChange={(e) => setWizShared(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 22. Expired Notification */}
+            {selectedToolId === 'hotspot-expired-notif' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tipe Layanan</label>
+                    <select
+                      value={expService}
+                      onChange={(e) => setExpService(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="both">Hotspot & PPPoE</option>
+                      <option value="hotspot">Hotspot Saja</option>
+                      <option value="pppoe">PPPoE Saja</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Address List</label>
+                    <input
+                      type="text"
+                      value={expAddressList}
+                      onChange={(e) => setExpAddressList(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Port Web Proxy Internal</label>
+                    <input
+                      type="text"
+                      value={expProxyPort}
+                      onChange={(e) => setExpProxyPort(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Redirect Web Notice URL:</label>
+                  <input
+                    type="text"
+                    value={expRedirectUrl}
+                    onChange={(e) => setExpRedirectUrl(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="http://billing.isp.net/isolir.html"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* 23. PPP Secrets Gen */}
+            {selectedToolId === 'ppp-secrets-gen' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Service</label>
+                    <select
+                      value={pppService}
+                      onChange={(e) => setPppService(e.target.value as any)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="pppoe">pppoe</option>
+                      <option value="l2tp">l2tp</option>
+                      <option value="sstp">sstp</option>
+                      <option value="ovpn">ovpn</option>
+                      <option value="any">any</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Profile Name</label>
+                    <input
+                      type="text"
+                      value={pppProfile}
+                      onChange={(e) => setPppProfile(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Prefix</label>
+                    <input
+                      type="text"
+                      value={pppPrefix}
+                      onChange={(e) => setPppPrefix(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Jumlah Akun</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={pppCount}
+                      onChange={(e) => setPppCount(Number(e.target.value))}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Panjang Karakter</label>
+                    <input
+                      type="number"
+                      min={3}
+                      max={16}
+                      value={pppLength}
+                      onChange={(e) => setPppLength(Number(e.target.value))}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={pppRemoteIpPrefix}
+                    onChange={(e) => setPppRemoteIpPrefix(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Prefix Remote IP (10.10.10.)"
+                  />
+                  <input
+                    type="text"
+                    value={pppComment}
+                    onChange={(e) => setPppComment(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg"
+                    placeholder="Komentar Akun"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* 24. DoH Servers */}
+            {selectedToolId === 'dns-doh' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Penyedia DoH</label>
+                    <select
+                      value={dohProvider}
+                      onChange={(e) => {
+                        const prov = e.target.value as any;
+                        setDohProvider(prov);
+                        if (prov === 'cloudflare') setDohUrl('https://cloudflare-dns.com/dns-query');
+                        else if (prov === 'google') setDohUrl('https://dns.google/dns-query');
+                        else if (prov === 'adguard') setDohUrl('https://dns.adguard-dns.com/dns-query');
+                        else if (prov === 'nextdns') setDohUrl('https://dns.nextdns.io/<ID>');
+                      }}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="cloudflare">Cloudflare 1.1.1.1 (Cepat)</option>
+                      <option value="google">Google DNS 8.8.8.8</option>
+                      <option value="adguard">AdGuard (Blokir Iklan)</option>
+                      <option value="nextdns">NextDNS (Custom Filtering)</option>
+                      <option value="custom">Custom DoH URL</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">DoH Server URL</label>
+                    <input
+                      type="text"
+                      value={dohUrl}
+                      onChange={(e) => setDohUrl(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Fallback DNS Resolvers</label>
+                    <input
+                      type="text"
+                      value={dohFallback}
+                      onChange={(e) => setDohFallback(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div className="flex items-end pb-1.5">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={dohVerifyCert}
+                        onChange={(e) => setDohVerifyCert(e.target.checked)}
+                        className="rounded text-sky-600"
+                      />
+                      <span>Verify DoH Certificate</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 25. Bonding Interface */}
+            {selectedToolId === 'bonding-interface' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Bonding Name</label>
+                    <input
+                      type="text"
+                      value={bondName}
+                      onChange={(e) => setBondName(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Port Slaves (koma pisahkan)</label>
+                    <input
+                      type="text"
+                      value={bondSlaves}
+                      onChange={(e) => setBondSlaves(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="ether1,ether2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Mode Bonding</label>
+                    <select
+                      value={bondMode}
+                      onChange={(e) => setBondMode(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="802.3ad">802.3ad LACP (Trunk Switch)</option>
+                      <option value="balance-rr">balance-rr (Round Robin)</option>
+                      <option value="active-backup">active-backup (Failover)</option>
+                      <option value="balance-xor">balance-xor</option>
+                      <option value="broadcast">broadcast</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input
+                    type="text"
+                    value={bondIp}
+                    onChange={(e) => setBondIp(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="IP Address Interface (10.0.0.1/30)"
+                  />
+                  <select
+                    value={bondHashPolicy}
+                    onChange={(e) => setBondHashPolicy(e.target.value as any)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                  >
+                    <option value="layer-2-and-3">layer-2-and-3 (Optimal)</option>
+                    <option value="layer-2">layer-2</option>
+                    <option value="layer-3-and-4">layer-3-and-4</option>
+                  </select>
+                  {bondMode === '802.3ad' ? (
+                    <select
+                      value={bondLacpRate}
+                      onChange={(e) => setBondLacpRate(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="1sec">LACP Rate: 1 sec (Fast)</option>
+                      <option value="30sec">LACP Rate: 30 sec (Slow)</option>
+                    </select>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 26. Netwatch Notifications */}
+            {selectedToolId === 'netwatch-notifications' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Host Target IP</label>
+                    <input
+                      type="text"
+                      value={netHostIp}
+                      onChange={(e) => setNetHostIp(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Host</label>
+                    <input
+                      type="text"
+                      value={netHostName}
+                      onChange={(e) => setNetHostName(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Interval Ping</label>
+                    <input
+                      type="text"
+                      value={netInterval}
+                      onChange={(e) => setNetInterval(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Timeout</label>
+                    <input
+                      type="text"
+                      value={netTimeout}
+                      onChange={(e) => setNetTimeout(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Notifikasi Via</label>
+                    <select
+                      value={netChannel}
+                      onChange={(e) => setNetChannel(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="telegram">Telegram Bot</option>
+                      <option value="email">E-Mail</option>
+                    </select>
+                  </div>
+                </div>
+
+                {netChannel === 'telegram' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={netTgToken}
+                      onChange={(e) => setNetTgToken(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="Telegram Bot Token (dari @BotFather)"
+                    />
+                    <input
+                      type="text"
+                      value={netTgChatId}
+                      onChange={(e) => setNetTgChatId(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="Telegram Chat ID (dari @userinfobot)"
+                    />
+                  </div>
+                ) : (
+                  <input
+                    type="email"
+                    value={netEmail}
+                    onChange={(e) => setNetEmail(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Alamat Email Penerima"
+                  />
+                )}
+              </div>
+            )}
+
+            {/* 27. Rogue DHCP Protection */}
+            {selectedToolId === 'dhcp-rogue-protection' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">LAN Interface</label>
                     <input
                       type="text"
-                      value={smLanInterface}
-                      onChange={(e) => setSmLanInterface(e.target.value)}
+                      value={rdLanIface}
+                      onChange={(e) => setRdLanIface(e.target.value)}
                       className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="ether3-LAN"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target WAN</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">MAC Server Resmi</label>
                     <input
                       type="text"
-                      value={smTargetWan}
-                      onChange={(e) => setSmTargetWan(e.target.value)}
+                      value={rdValidMac}
+                      onChange={(e) => setRdValidMac(e.target.value)}
                       className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="WAN2"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target ISP Gateway</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Alert Timeout</label>
                     <input
                       type="text"
-                      value={smTargetGateway}
-                      onChange={(e) => setSmTargetGateway(e.target.value)}
+                      value={rdAlertTimeout}
+                      onChange={(e) => setRdAlertTimeout(e.target.value)}
                       className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="192.168.2.1"
+                      placeholder="1h"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Routing Mark</label>
-                    <input
-                      type="text"
-                      value={smRoutingMark}
-                      onChange={(e) => setSmRoutingMark(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                      placeholder="SOSMED_TRAFFIC"
-                    />
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Aksi Penanganan</label>
+                    <select
+                      value={rdAction}
+                      onChange={(e) => setRdAction(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="both">Catat Log & Drop Paket Liar</option>
+                      <option value="alert">Catat Log Saja</option>
+                      <option value="block">Drop Paket Liar Saja</option>
+                    </select>
                   </div>
                 </div>
+              </div>
+            )}
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-2">Platform Media Sosial & Video Streaming:</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {SOCIAL_PRESETS.map((p) => {
-                      const isChecked = smSelected.includes(p.id);
-                      return (
-                        <label
-                          key={p.id}
-                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer ${
-                            isChecked ? 'bg-rose-50 border-rose-300 text-rose-900 font-medium' : 'bg-white'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) setSmSelected([...smSelected, p.id]);
-                              else setSmSelected(smSelected.filter((id) => id !== p.id));
-                            }}
-                            className="rounded text-rose-600"
-                          />
-                          <span className="truncate">{p.name}</span>
-                        </label>
-                      );
-                    })}
+            {/* 28. Change or Random MAC Address */}
+            {selectedToolId === 'mac-random-change' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Interface Target</label>
+                    <input
+                      type="text"
+                      value={macIface}
+                      onChange={(e) => setMacIface(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">MAC Address Baru</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={macAddress}
+                        onChange={(e) => setMacAddress(e.target.value)}
+                        className="flex-1 px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGenerateRandomMac}
+                        className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200"
+                      >
+                        Acak MAC
+                      </button>
+                    </div>
                   </div>
                 </div>
+              </div>
+            )}
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Domain Tambahan (koma pisah):</label>
+            {/* 29. Hide Routerboard Ninja */}
+            {selectedToolId === 'hide-routerboard-isp' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <input
                     type="text"
-                    value={smCustomDomains}
-                    onChange={(e) => setSmCustomDomains(e.target.value)}
+                    value={ninjaWan}
+                    onChange={(e) => setNinjaWan(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="WAN Interface"
+                  />
+                  <input
+                    type="text"
+                    value={ninjaLan}
+                    onChange={(e) => setNinjaLan(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="LAN Interface"
+                  />
+                </div>
+                <div className="space-y-2 pt-1">
+                  <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={ninjaMndp}
+                      onChange={(e) => setNinjaMndp(e.target.checked)}
+                      className="rounded text-slate-800"
+                    />
+                    <span>Matikan Neighbor Discovery (MNDP, CDP, LLDP) ke arah ISP</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={ninjaMacServer}
+                      onChange={(e) => setNinjaMacServer(e.target.checked)}
+                      className="rounded text-slate-800"
+                    />
+                    <span>Batasi MAC Server & MAC Winbox hanya dari port LAN</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={ninjaBwServer}
+                      onChange={(e) => setNinjaBwServer(e.target.checked)}
+                      className="rounded text-slate-800"
+                    />
+                    <span>Nonaktifkan Bandwidth Test Server dari internet</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={ninjaNormalTTL}
+                      onChange={(e) => setNinjaNormalTTL(e.target.checked)}
+                      className="rounded text-slate-800"
+                    />
+                    <span>Samarkan TTL menjadi 64 standar PC normal</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={ninjaBlockTraceroute}
+                      onChange={(e) => setNinjaBlockTraceroute(e.target.checked)}
+                      className="rounded text-slate-800"
+                    />
+                    <span>Blokir traceroute hop probe agar router tersembunyi</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* 30. Port Knocking */}
+            {selectedToolId === 'port-knocking-icmp' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">WAN Interface</label>
+                    <input
+                      type="text"
+                      value={pkWan}
+                      onChange={(e) => setPkWan(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target Port (Winbox/SSH)</label>
+                    <input
+                      type="text"
+                      value={pkPort}
+                      onChange={(e) => setPkPort(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Durasi Akses Terbuka</label>
+                    <input
+                      type="text"
+                      value={pkDuration}
+                      onChange={(e) => setPkDuration(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Knock 1: Ping Packet Size</label>
+                    <input
+                      type="number"
+                      value={pkSize1}
+                      onChange={(e) => setPkSize1(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Knock 2: Ping Packet Size</label>
+                    <input
+                      type="number"
+                      value={pkSize2}
+                      onChange={(e) => setPkSize2(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Jeda Waktu Ketuk</label>
+                    <input
+                      type="text"
+                      value={pkTimeout}
+                      onChange={(e) => setPkTimeout(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 31. Advanced Protection */}
+            {selectedToolId === 'advanced-router-protection' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={apWan}
+                    onChange={(e) => setApWan(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="WAN Interface"
+                  />
+                  <input
+                    type="text"
+                    value={apLan}
+                    onChange={(e) => setApLan(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="LAN Interface"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+                  <label className="flex items-center gap-2 p-2 border rounded-lg text-xs bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={apDropInvalid}
+                      onChange={(e) => setApDropInvalid(e.target.checked)}
+                      className="rounded text-red-600"
+                    />
+                    <span>Drop Invalid Connections</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 border rounded-lg text-xs bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={apSynFlood}
+                      onChange={(e) => setApSynFlood(e.target.checked)}
+                      className="rounded text-red-600"
+                    />
+                    <span>Protect Against SYN Flood Attack</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 border rounded-lg text-xs bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={apPortScanners}
+                      onChange={(e) => setApPortScanners(e.target.checked)}
+                      className="rounded text-red-600"
+                    />
+                    <span>Detect & Blacklist Port Scanners</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 border rounded-lg text-xs bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={apDnsResolver}
+                      onChange={(e) => setApDnsResolver(e.target.checked)}
+                      className="rounded text-red-600"
+                    />
+                    <span>Block DNS Open-Resolver WAN Abuse</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 border rounded-lg text-xs bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={apWinboxBrute}
+                      onChange={(e) => setApWinboxBrute(e.target.checked)}
+                      className="rounded text-red-600"
+                    />
+                    <span>Blacklist Winbox Brute Force</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 border rounded-lg text-xs bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={apSshBrute}
+                      onChange={(e) => setApSshBrute(e.target.checked)}
+                      className="rounded text-red-600"
+                    />
+                    <span>Blacklist SSH Brute Force</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* 32. Block Websites Generator */}
+            {selectedToolId === 'block-websites-gen' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={bwLan}
+                    onChange={(e) => setBwLan(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="LAN Interface"
+                  />
+                  <select
+                    value={bwMethod}
+                    onChange={(e) => setBwMethod(e.target.value as any)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                  >
+                    <option value="address-list">Address List + Filter Drop</option>
+                    <option value="tls-host">TLS Host Match Drop</option>
+                    <option value="dns-static">DNS Static Sinkhole 127.0.0.1</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <label className="flex items-center gap-2 p-2 border rounded-lg text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={bwCategories.includes('gambling')}
+                      onChange={(e) => {
+                        if (e.target.checked) setBwCategories([...bwCategories, 'gambling']);
+                        else setBwCategories(bwCategories.filter((c) => c !== 'gambling'));
+                      }}
+                      className="rounded text-rose-600"
+                    />
+                    <span>Judi Online</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 border rounded-lg text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={bwCategories.includes('pornography')}
+                      onChange={(e) => {
+                        if (e.target.checked) setBwCategories([...bwCategories, 'pornography']);
+                        else setBwCategories(bwCategories.filter((c) => c !== 'pornography'));
+                      }}
+                      className="rounded text-rose-600"
+                    />
+                    <span>Pornografi</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 border rounded-lg text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={bwCategories.includes('crypto_mining')}
+                      onChange={(e) => {
+                        if (e.target.checked) setBwCategories([...bwCategories, 'crypto_mining']);
+                        else setBwCategories(bwCategories.filter((c) => c !== 'crypto_mining'));
+                      }}
+                      className="rounded text-rose-600"
+                    />
+                    <span>Web Crypto Mining</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 border rounded-lg text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={bwCategories.includes('piracy')}
+                      onChange={(e) => {
+                        if (e.target.checked) setBwCategories([...bwCategories, 'piracy']);
+                        else setBwCategories(bwCategories.filter((c) => c !== 'piracy'));
+                      }}
+                      className="rounded text-rose-600"
+                    />
+                    <span>Torrent & Bajakan</span>
+                  </label>
+                </div>
+                <input
+                  type="text"
+                  value={bwCustomDomains}
+                  onChange={(e) => setBwCustomDomains(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                  placeholder="Domain Tambahan (koma pisahkan, misal: domainjahat.com)"
+                />
+              </div>
+            )}
+
+            {/* 33. Auto Backup to Email */}
+            {selectedToolId === 'auto-backup-email' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Email Penerima</label>
+                    <input
+                      type="email"
+                      value={bkEmail}
+                      onChange={(e) => setBkEmail(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Password Enkripsi Backup</label>
+                    <input
+                      type="text"
+                      value={bkPass}
+                      onChange={(e) => setBkPass(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Interval Pengiriman</label>
+                    <select
+                      value={bkInterval}
+                      onChange={(e) => setBkInterval(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="1d">Setiap Hari (1d)</option>
+                      <option value="7d">Setiap Minggu (7d)</option>
+                      <option value="30d">Setiap Bulan (30d)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+                  <input
+                    type="text"
+                    value={bkTime}
+                    onChange={(e) => setBkTime(e.target.value)}
                     className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
-                    placeholder="threads.net, snackvideo.com"
+                    placeholder="Waktu Eksekusi (02:00:00)"
+                  />
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={bkExportRsc}
+                      onChange={(e) => setBkExportRsc(e.target.checked)}
+                      className="rounded text-indigo-600"
+                    />
+                    <span>Sertakan File Export .rsc (Script Teks Terbuka)</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* 34. Mangle Obfuscator */}
+            {selectedToolId === 'mangle-obfuscator' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tempel Skrip CLI Asli:</label>
+                  <textarea
+                    rows={4}
+                    value={obfScript}
+                    onChange={(e) => setObfScript(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg font-mono"
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={obfStripComments}
+                      onChange={(e) => setObfStripComments(e.target.checked)}
+                      className="rounded text-purple-600"
+                    />
+                    <span>Hapus Seluruh Komentar (Strip Comments)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={obfDecoyRules}
+                      onChange={(e) => setObfDecoyRules(e.target.checked)}
+                      className="rounded text-purple-600"
+                    />
+                    <span>Sisipkan Decoy Dummy Rules</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* 35. Block Social Media */}
+            {selectedToolId === 'block-social-streaming' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <input
+                    type="text"
+                    value={bsmLan}
+                    onChange={(e) => setBsmLan(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="LAN Interface"
+                  />
+                  <input
+                    type="text"
+                    value={bsmStart}
+                    onChange={(e) => setBsmStart(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Mulai (08:00:00)"
+                  />
+                  <input
+                    type="text"
+                    value={bsmEnd}
+                    onChange={(e) => setBsmEnd(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Selesai (17:00:00)"
+                  />
+                  <input
+                    type="text"
+                    value={bsmDays}
+                    onChange={(e) => setBsmDays(e.target.value)}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Hari (mon,tue,wed,thu,fri)"
+                  />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {SOCIAL_PRESETS.map((p) => (
+                    <label key={p.id} className="flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={bsmPlatforms.includes(p.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setBsmPlatforms([...bsmPlatforms, p.id]);
+                          else setBsmPlatforms(bsmPlatforms.filter((id) => id !== p.id));
+                        }}
+                        className="rounded text-rose-600"
+                      />
+                      <span className="truncate">{p.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 36. PCC Calculator */}
+            {selectedToolId === 'pcc-calculator' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Kecepatan ISP 1 (Mbps)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={pccSpeed1}
+                      onChange={(e) => setPccSpeed1(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Kecepatan ISP 2 (Mbps)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={pccSpeed2}
+                      onChange={(e) => setPccSpeed2(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Kecepatan ISP 3 (Opsional)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={pccSpeed3}
+                      onChange={(e) => setPccSpeed3(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Kecepatan ISP 4 (Opsional)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={pccSpeed4}
+                      onChange={(e) => setPccSpeed4(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 37. Indonesia NTP */}
+            {selectedToolId === 'indonesia-ntp-clock' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Zona Waktu Wilayah</label>
+                    <select
+                      value={ntpTimezone}
+                      onChange={(e) => setNtpTimezone(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="Asia/Jakarta">WIB - Waktu Indonesia Barat (GMT+7)</option>
+                      <option value="Asia/Makassar">WITA - Waktu Indonesia Tengah (GMT+8)</option>
+                      <option value="Asia/Jayapura">WIT - Waktu Indonesia Timur (GMT+9)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">NTP Server Pool</label>
+                    <input
+                      type="text"
+                      value={ntpServers}
+                      onChange={(e) => setNtpServers(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 38. IP Calculator */}
+            {selectedToolId === 'ip-calculator' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">IP Address dengan CIDR</label>
+                    <input
+                      type="text"
+                      value={calcIpCidr}
+                      onChange={(e) => setCalcIpCidr(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="192.168.10.1/24"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target Interface</label>
+                    <input
+                      type="text"
+                      value={calcIface}
+                      onChange={(e) => setCalcIface(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+
+                {ipCalcDetails && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1 text-xs">
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                      <span className="text-[11px] text-slate-500 block">Network</span>
+                      <span className="font-mono font-bold text-slate-800">{ipCalcDetails.network}</span>
+                    </div>
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                      <span className="text-[11px] text-slate-500 block">Subnet Mask</span>
+                      <span className="font-mono font-bold text-slate-800">{ipCalcDetails.netmask}</span>
+                    </div>
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                      <span className="text-[11px] text-slate-500 block">Broadcast</span>
+                      <span className="font-mono font-bold text-slate-800">{ipCalcDetails.broadcast}</span>
+                    </div>
+                    <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                      <span className="text-[11px] text-slate-500 block">Usable Host</span>
+                      <span className="font-mono font-bold text-slate-800">{ipCalcDetails.usableHosts} Host</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 39. Wifi.id Auto Login */}
+            {selectedToolId === 'wifi-id-autologin' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tipe Layanan</label>
+                    <select
+                      value={wifiLoginType}
+                      onChange={(e) => setWifiLoginType(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="wifi_id">@wifi.id Reguler</option>
+                      <option value="wms">WMS (Wifi Managed Service)</option>
+                      <option value="seamless">Seamless @wifi.id</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">WAN / WLAN Interface</label>
+                    <input
+                      type="text"
+                      value={wifiWan}
+                      onChange={(e) => setWifiWan(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Cek Interval</label>
+                    <input
+                      type="text"
+                      value={wifiInterval}
+                      onChange={(e) => setWifiInterval(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={wifiUser}
+                    onChange={(e) => setWifiUser(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Username @wifi.id / Nomor HP"
+                  />
+                  <input
+                    type="password"
+                    value={wifiPass}
+                    onChange={(e) => setWifiPass(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    placeholder="Password Akun"
                   />
                 </div>
               </div>
