@@ -132,6 +132,10 @@ export const Header: React.FC<HeaderProps> = ({
       title: 'System & Architecture Settings',
       subtitle: 'Status storage, export/import data, dan integrasi backend',
     },
+    'traffic-qos': {
+      title: 'Huawei Traffic Classifier & Behavior QoS Generator',
+      subtitle: 'Generator skrip rate-limiting QoS (CIR, PIR, CBS, PBS) otomatis untuk router & switch Huawei',
+    },
   };
 
   const current = titles[activeTab] || titles.dashboard;

@@ -16,6 +16,7 @@ import { HistoryPage } from './pages/HistoryPage';
 import { TemplatePage } from './pages/TemplatePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { UsersPage } from './pages/UsersPage';
+import { TrafficQoSPage } from './pages/TrafficQoSPage';
 import type { SuratTugasDocument, SuratTugasTemplate } from './types/suratTugas';
 import { DEFAULT_SURAT_TUGAS_TEMPLATE } from './types/suratTugas';
 import { suratTugasStorage } from './services/suratTugasStorage';
@@ -468,6 +469,10 @@ export function App() {
                 checkDraft();
               }}
             />
+          )}
+
+          {activeTab === 'traffic-qos' && (
+            <TrafficQoSPage addToast={addToast} />
           )}
         </main>
       </div>

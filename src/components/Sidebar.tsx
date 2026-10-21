@@ -15,6 +15,7 @@ import {
   ChevronDown,
   X,
   PackageCheck,
+  Network,
 } from 'lucide-react';
 import type { ActiveTab } from '../types/rfo';
 import type { UserAccount } from '../types/auth';
@@ -82,6 +83,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: null,
       show: true,
       dividerBefore: null,
+    },
+    {
+      id: 'traffic-qos' as ActiveTab,
+      label: 'Traffic QoS',
+      icon: <Network className="w-5 h-5 shrink-0" />,
+      badge: 'Baru',
+      show: true,
+      dividerBefore: 'NETWORK TOOLS',
     },
     {
       id: 'templates' as ActiveTab,

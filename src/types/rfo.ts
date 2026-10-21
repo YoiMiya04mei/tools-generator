@@ -89,4 +89,6 @@ export type ActiveTab =
   | 'templates-pm'
   | 'templates'
   | 'users'
-  | 'settings';
+  | 'settings'
+  | 'traffic-qos';
+

@@ -10,6 +10,7 @@ import {
   Sliders,
   ChevronRight,
   PackageCheck,
+  Network,
 } from 'lucide-react';
 import type { RFODocument, RFOTemplate, ActiveTab } from '../types/rfo';
 import type { SuratTugasDocument, SuratTugasTemplate } from '../types/suratTugas';
@@ -350,6 +351,37 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <ArrowRight className="w-3.5 h-3.5" />
           </div>
         </div>
+      </div>
+
+      {/* Network QoS Tool Quick Launch Banner (Tema Terang) */}
+      <div className="bg-gradient-to-r from-blue-50/70 via-white to-indigo-50/50 border border-blue-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start sm:items-center gap-3.5">
+          <div className="p-3 rounded-xl bg-blue-100/80 border border-blue-200 text-blue-700 shrink-0 shadow-xs">
+            <Network className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300 uppercase tracking-wider">
+                Fitur Baru
+              </span>
+              <span className="text-xs text-slate-500 font-mono">Huawei VRP QoS Tool</span>
+            </div>
+            <h3 className="text-base font-bold text-slate-900 mt-1">
+              Traffic Classifier & Traffic Behavior Generator
+            </h3>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Konversi otomatis bandwidth ke formula CAR (CIR, PIR, CBS, PBS) siap paste ke router/switch.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setActiveTab('traffic-qos')}
+          className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all shadow-xs flex items-center justify-center gap-2 shrink-0 cursor-pointer self-start sm:self-auto"
+        >
+          <span>Buka QoS Generator</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Unified Recent Document Activity Feed */}
