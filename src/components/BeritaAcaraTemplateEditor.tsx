@@ -62,7 +62,9 @@ export const BeritaAcaraTemplateEditor: React.FC<BeritaAcaraTemplateEditorProps>
   const [isDraggingSig, setIsDraggingSig] = useState<boolean>(false);
   const [isDraggingStamp, setIsDraggingStamp] = useState<boolean>(false);
   const [isDraggingHeader, setIsDraggingHeader] = useState<boolean>(false);
-  const [previewZoom, setPreviewZoom] = useState<number>(80);
+  const [previewZoom, setPreviewZoom] = useState<number>(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 45 : 80
+  );
 
   const signatureInputRef = useRef<HTMLInputElement>(null);
   const stampInputRef = useRef<HTMLInputElement>(null);
@@ -1004,11 +1006,23 @@ export const BeritaAcaraTemplateEditor: React.FC<BeritaAcaraTemplateEditorProps>
             <span className="text-xs font-semibold text-slate-500">
               Live Preview Kop & Format Berita Acara
             </span>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setPreviewZoom(45)}
+                className={`px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors cursor-pointer ${
+                  previewZoom === 45
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
+                }`}
+                title="Sesuaikan dengan layar HP (Fit)"
+              >
+                Fit
+              </button>
               <div className="flex items-center bg-white border border-slate-200 rounded-lg px-1 py-0.5 shadow-xs">
                 <button
                   type="button"
-                  onClick={() => setPreviewZoom((z) => Math.max(50, z - 10))}
+                  onClick={() => setPreviewZoom((z) => Math.max(30, z - 10))}
                   className="p-1 hover:text-slate-900 text-slate-400 cursor-pointer"
                   title="Perkecil"
                 >

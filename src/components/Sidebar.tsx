@@ -13,6 +13,7 @@ import {
   ClipboardList,
   FileText,
   ChevronDown,
+  X,
 } from 'lucide-react';
 import type { ActiveTab } from '../types/rfo';
 import type { UserAccount } from '../types/auth';
@@ -25,6 +26,7 @@ interface SidebarProps {
   setCollapsed: (collapsed: boolean) => void;
   hasDraft?: boolean;
   currentUser?: UserAccount | null;
+  onCloseMobile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -34,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setCollapsed,
   hasDraft = false,
   currentUser,
+  onCloseMobile,
 }) => {
   const canCreate = currentUser ? ROLE_PERMISSIONS[currentUser.role]?.canCreateRFO : true;
   const isAdmin = currentUser?.role === 'admin';
@@ -106,30 +109,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`no-print relative bg-white border-r border-slate-200 transition-all duration-300 flex flex-col justify-between shrink-0 z-20 ${
-        collapsed ? 'w-20' : 'w-64'
+      className={`no-print relative bg-white border-r border-slate-200 transition-all duration-300 flex flex-col justify-between shrink-0 z-20 h-full overflow-y-auto ${
+        collapsed ? 'w-20' : 'w-72 max-w-[85vw] md:w-64'
       }`}
     >
       {/* Top Branding */}
       <div>
-        <div className="h-20 flex items-center px-4 border-b border-slate-200 gap-3">
-          {/* Logo Icon */}
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
-            <svg className="w-7 h-7" viewBox="0 0 140 100" fill="none">
-              <path d="M38 18L10 50L38 82L48 72L28 50L48 28L38 18Z" fill="#ffffff" />
-              <path d="M50 28L32 50L50 72L58 64L46 50L58 36L50 28Z" fill="#93c5fd" />
-            </svg>
+        <div className="h-16 md:h-20 flex items-center justify-between px-4 border-b border-slate-200 gap-3">
+          <div className="flex items-center gap-3 overflow-hidden">
+            {/* Logo Icon */}
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+              <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 140 100" fill="none">
+                <path d="M38 18L10 50L38 82L48 72L28 50L48 28L38 18Z" fill="#ffffff" />
+                <path d="M50 28L32 50L50 72L58 64L46 50L58 36L50 28Z" fill="#93c5fd" />
+              </svg>
+            </div>
+
+            {!collapsed && (
+              <div className="flex flex-col overflow-hidden">
+                <span className="font-extrabold text-sm text-slate-900 tracking-wide truncate">
+                  GENERATOR TOOLS
+                </span>
+                <span className="text-[10px] font-bold text-blue-600 tracking-wider uppercase truncate">
+                  PT Jembatan Data Pangrango
+                </span>
+              </div>
+            )}
           </div>
 
-          {!collapsed && (
-            <div className="flex flex-col overflow-hidden">
-              <span className="font-extrabold text-sm text-slate-900 tracking-wide truncate">
-                GENERATOR TOOLS
-              </span>
-              <span className="text-[10px] font-bold text-blue-600 tracking-wider uppercase truncate">
-                PT Jembatan Data Pangrango
-              </span>
-            </div>
+          {/* Close button on mobile */}
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              aria-label="Tutup Menu"
+              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           )}
         </div>
 

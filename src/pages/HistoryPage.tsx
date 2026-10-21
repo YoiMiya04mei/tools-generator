@@ -16,7 +16,6 @@ import {
   Layers,
   UserCheck,
   RotateCcw,
-  Plus,
   Clock,
   Loader2,
 } from 'lucide-react';
@@ -69,7 +68,7 @@ interface HistoryPageProps {
   template: RFOTemplate;
   suratTugasTemplate?: SuratTugasTemplate;
   beritaAcaraTemplate?: BeritaAcaraTemplate;
-  setActiveTab: (tab: ActiveTab) => void;
+  setActiveTab?: (tab: ActiveTab) => void;
   onEditRFO: (rfo: RFODocument) => void;
   onDuplicateRFO: (rfo: RFODocument) => void;
   onEditSuratTugas: (doc: SuratTugasDocument) => void;
@@ -85,7 +84,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   template,
   suratTugasTemplate,
   beritaAcaraTemplate,
-  setActiveTab,
+  setActiveTab: _setActiveTab,
   onEditRFO,
   onDuplicateRFO,
   onEditSuratTugas,
@@ -566,11 +565,11 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   };
 
   return (
-    <div className="flex-1 p-4 lg:p-6 space-y-6 overflow-y-auto bg-slate-50">
+    <div className="flex-1 p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 overflow-y-auto bg-slate-50">
       {/* Main archive page content (hidden when printing modal) */}
-      <div className="no-print space-y-6">
-        {/* 1. Header Banner & Quick Create Buttons */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+      <div className="no-print space-y-4 sm:space-y-6">
+        {/* 1. Header Banner */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs">
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
@@ -585,119 +584,95 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
               Akses riwayat terpusat untuk dokumen Reason For Outage (RFO), Surat Tugas Visit, dan Berita Acara Visit.
             </p>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              onClick={() => setActiveTab('create')}
-              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Buat RFO</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('create-st')}
-              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Buat Surat Tugas</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('create-ba')}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Buat Berita Acara</span>
-            </button>
-          </div>
         </div>
 
         {/* 2. Interactive Document Type Filter Tabs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
           <button
             onClick={() => setTypeFilter('all')}
-            className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+            className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
               typeFilter === 'all'
                 ? 'bg-white border-blue-600 shadow-xs ring-2 ring-blue-500/20'
                 : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-xs'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
-                <Layers className="w-5 h-5" />
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+                <Layers className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">Semua Dokumen</p>
-                <p className="text-lg font-black text-slate-900">{counts.all}</p>
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">Semua Dokumen</p>
+                <p className="text-base sm:text-lg font-black text-slate-900">{counts.all}</p>
               </div>
             </div>
             {typeFilter === 'all' && (
-              <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+              <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
             )}
           </button>
 
           <button
             onClick={() => setTypeFilter('rfo')}
-            className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+            className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
               typeFilter === 'rfo'
                 ? 'bg-white border-amber-600 shadow-xs ring-2 ring-amber-500/20'
                 : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-xs'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
-                <AlertCircle className="w-5 h-5" />
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">Reason For Outage</p>
-                <p className="text-lg font-black text-amber-700">{counts.rfo}</p>
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">RFO</p>
+                <p className="text-base sm:text-lg font-black text-amber-700">{counts.rfo}</p>
               </div>
             </div>
             {typeFilter === 'rfo' && (
-              <span className="w-2 h-2 rounded-full bg-amber-600"></span>
+              <span className="w-2 h-2 rounded-full bg-amber-600 shrink-0"></span>
             )}
           </button>
 
           <button
             onClick={() => setTypeFilter('surat-tugas')}
-            className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+            className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
               typeFilter === 'surat-tugas'
                 ? 'bg-white border-blue-600 shadow-xs ring-2 ring-blue-500/20'
                 : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-xs'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
-                <ClipboardList className="w-5 h-5" />
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+                <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">Surat Tugas Visit</p>
-                <p className="text-lg font-black text-blue-700">{counts.suratTugas}</p>
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">Surat Tugas</p>
+                <p className="text-base sm:text-lg font-black text-blue-700">{counts.suratTugas}</p>
               </div>
             </div>
             {typeFilter === 'surat-tugas' && (
-              <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+              <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
             )}
           </button>
 
           <button
             onClick={() => setTypeFilter('berita-acara')}
-            className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+            className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
               typeFilter === 'berita-acara'
                 ? 'bg-white border-emerald-600 shadow-xs ring-2 ring-emerald-500/20'
                 : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-xs'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
-                <FileText className="w-5 h-5" />
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">Berita Acara Visit</p>
-                <p className="text-lg font-black text-emerald-700">{counts.beritaAcara}</p>
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">Berita Acara</p>
+                <p className="text-base sm:text-lg font-black text-emerald-700">{counts.beritaAcara}</p>
               </div>
             </div>
             {typeFilter === 'berita-acara' && (
-              <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
             )}
           </button>
         </div>
@@ -903,7 +878,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                   </div>
 
                   {/* Right Actions */}
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end pt-2 border-t border-slate-100 md:border-0 md:pt-0">
                     <button
                       onClick={() => handlePreview(item)}
                       className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-xs transition-colors cursor-pointer"
@@ -974,23 +949,23 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
 
       {/* ================= MODAL PREVIEW RFO ================= */}
       {selectedRFO && (
-        <div className="print-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="print-modal-container relative bg-white border border-slate-200 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+        <div className="print-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="print-modal-container relative bg-white border border-slate-200 rounded-2xl w-full max-w-4xl max-h-[96vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
             {/* Modal Header */}
-            <div className="no-print px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
-              <div className="flex items-center gap-2.5">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+            <div className="no-print px-3.5 py-2.5 sm:px-5 sm:py-4 border-b border-slate-200 flex items-center justify-between gap-2 bg-white shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
                   RFO Preview
                 </span>
-                <span className="font-mono text-sm text-slate-900 font-bold">
+                <span className="font-mono text-xs sm:text-sm text-slate-900 font-bold truncate">
                   {selectedRFO.ticketNo || selectedRFO.id}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   onClick={() => window.print()}
-                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-xs text-slate-700 border border-slate-200 font-medium shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-xs text-slate-700 border border-slate-200 font-medium shadow-xs flex items-center gap-1.5 cursor-pointer"
                   title="Cetak Dokumen"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -1001,15 +976,16 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                     const item = unifiedItems.find((u) => u.id === selectedRFO.id && u.type === 'rfo');
                     if (item) handleDownloadPDF(item);
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
                   title="Unduh PDF Resmi"
                 >
                   <FileDown className="w-3.5 h-3.5" />
-                  <span>Ekspor PDF</span>
+                  <span className="hidden sm:inline">Ekspor PDF</span>
+                  <span className="sm:hidden font-semibold">PDF</span>
                 </button>
                 <button
                   onClick={() => setSelectedRFO(null)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer ml-1"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer ml-0.5 sm:ml-1"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1017,21 +993,21 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             </div>
 
             {/* Modal Subheader: Metadata Waktu Pembuatan & Pembuat */}
-            <div className="no-print px-5 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-600 shrink-0">
+            <div className="no-print px-3.5 py-2 sm:px-5 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-1 text-[11px] sm:text-xs text-slate-600 shrink-0">
               <span className="flex items-center gap-1.5 text-blue-700 font-medium">
                 <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span>Waktu Pembuatan: <strong className="text-slate-900 font-semibold">{formatCreationTimestamp(selectedRFO.createdAt)}</strong></span>
+                <span>Waktu: <strong className="text-slate-900 font-semibold">{formatCreationTimestamp(selectedRFO.createdAt)}</strong></span>
               </span>
               <span className="text-slate-300 hidden sm:inline">•</span>
               <span className="flex items-center gap-1.5 text-slate-600">
                 <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Dibuat Oleh: <strong className="text-slate-900 font-semibold">{selectedRFO.createdByName || 'Staff NOC'}</strong> {selectedRFO.createdByRole ? `(${selectedRFO.createdByRole})` : ''}</span>
+                <span>Oleh: <strong className="text-slate-900 font-semibold">{selectedRFO.createdByName || 'Staff NOC'}</strong> {selectedRFO.createdByRole ? `(${selectedRFO.createdByRole})` : ''}</span>
               </span>
             </div>
 
             {/* Modal Body: A4 Paper Document */}
-            <div className="print-modal-body p-4 lg:p-8 overflow-y-auto bg-slate-100/70 flex justify-center">
-              <div id="history-rfo-preview-modal-doc" className="print-modal-doc-wrapper w-full max-w-[210mm] shadow-lg shadow-slate-300/60 rounded-sm">
+            <div className="print-modal-body p-2 sm:p-4 lg:p-8 overflow-auto bg-slate-100/70 flex justify-start sm:justify-center">
+              <div id="history-rfo-preview-modal-doc" className="print-modal-doc-wrapper w-full max-w-[210mm] min-w-[210mm] sm:min-w-0 shadow-lg shadow-slate-300/60 rounded-sm">
                 <RFOPaperDocument
                   rfo={selectedRFO}
                   template={template}
@@ -1045,23 +1021,23 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
 
       {/* ================= MODAL PREVIEW SURAT TUGAS ================= */}
       {selectedSuratTugas && (
-        <div className="print-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="print-modal-container relative bg-white border border-slate-200 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+        <div className="print-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="print-modal-container relative bg-white border border-slate-200 rounded-2xl w-full max-w-4xl max-h-[96vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
             {/* Modal Header */}
-            <div className="no-print px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
-              <div className="flex items-center gap-2.5">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                  Surat Tugas Preview
+            <div className="no-print px-3.5 py-2.5 sm:px-5 sm:py-4 border-b border-slate-200 flex items-center justify-between gap-2 bg-white shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
+                  Surat Tugas
                 </span>
-                <span className="font-mono text-sm text-slate-900 font-bold">
+                <span className="font-mono text-xs sm:text-sm text-slate-900 font-bold truncate">
                   {selectedSuratTugas.letterNumber}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   onClick={() => window.print()}
-                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-xs text-slate-700 border border-slate-200 font-medium shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-xs text-slate-700 border border-slate-200 font-medium shadow-xs flex items-center gap-1.5 cursor-pointer"
                   title="Cetak Dokumen"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -1072,15 +1048,16 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                     const item = unifiedItems.find((u) => u.id === selectedSuratTugas.id && u.type === 'surat-tugas');
                     if (item) handleDownloadPDF(item);
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
                   title="Unduh PDF Resmi"
                 >
                   <FileDown className="w-3.5 h-3.5" />
-                  <span>Ekspor PDF</span>
+                  <span className="hidden sm:inline">Ekspor PDF</span>
+                  <span className="sm:hidden font-semibold">PDF</span>
                 </button>
                 <button
                   onClick={() => setSelectedSuratTugas(null)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer ml-1"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer ml-0.5 sm:ml-1"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1088,21 +1065,21 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             </div>
 
             {/* Modal Subheader: Metadata Waktu Pembuatan & Pembuat */}
-            <div className="no-print px-5 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-600 shrink-0">
+            <div className="no-print px-3.5 py-2 sm:px-5 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-1 text-[11px] sm:text-xs text-slate-600 shrink-0">
               <span className="flex items-center gap-1.5 text-blue-700 font-medium">
                 <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span>Waktu Pembuatan: <strong className="text-slate-900 font-semibold">{formatCreationTimestamp(selectedSuratTugas.createdAt)}</strong></span>
+                <span>Waktu: <strong className="text-slate-900 font-semibold">{formatCreationTimestamp(selectedSuratTugas.createdAt)}</strong></span>
               </span>
               <span className="text-slate-300 hidden sm:inline">•</span>
               <span className="flex items-center gap-1.5 text-slate-600">
                 <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Dibuat Oleh: <strong className="text-slate-900 font-semibold">{selectedSuratTugas.createdByName || 'Staff NOC'}</strong> {selectedSuratTugas.createdByRole ? `(${selectedSuratTugas.createdByRole})` : ''}</span>
+                <span>Oleh: <strong className="text-slate-900 font-semibold">{selectedSuratTugas.createdByName || 'Staff NOC'}</strong> {selectedSuratTugas.createdByRole ? `(${selectedSuratTugas.createdByRole})` : ''}</span>
               </span>
             </div>
 
             {/* Modal Body: A4 Paper Document */}
-            <div className="print-modal-body p-4 lg:p-8 overflow-y-auto bg-slate-100/70 flex justify-center">
-              <div id="history-surat-tugas-modal-doc" className="print-modal-doc-wrapper w-full max-w-[210mm] shadow-lg shadow-slate-300/60 rounded-sm">
+            <div className="print-modal-body p-2 sm:p-4 lg:p-8 overflow-auto bg-slate-100/70 flex justify-start sm:justify-center">
+              <div id="history-surat-tugas-modal-doc" className="print-modal-doc-wrapper w-full max-w-[210mm] min-w-[210mm] sm:min-w-0 shadow-lg shadow-slate-300/60 rounded-sm">
                 <SuratTugasPaperDocument
                   doc={selectedSuratTugas}
                   template={suratTugasTemplate}
@@ -1116,24 +1093,24 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
 
       {/* ================= MODAL PREVIEW BERITA ACARA ================= */}
       {selectedBeritaAcara && (
-        <div className="print-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="print-modal-container relative bg-white border border-slate-200 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+        <div className="print-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="print-modal-container relative bg-white border border-slate-200 rounded-2xl w-full max-w-5xl max-h-[96vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
             {/* Modal Header */}
-            <div className="no-print px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
-              <div className="flex items-center gap-2.5">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Berita Acara Preview
+            <div className="no-print px-3.5 py-2.5 sm:px-5 sm:py-4 border-b border-slate-200 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 bg-white shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                  Berita Acara
                 </span>
-                <span className="font-mono text-sm text-slate-900 font-bold">
+                <span className="font-mono text-xs sm:text-sm text-slate-900 font-bold truncate">
                   {selectedBeritaAcara.letterNumber}
                 </span>
               </div>
 
               {/* Multi-page tabs */}
-              <div className="hidden md:flex items-center gap-1 bg-slate-100 border border-slate-200 rounded-lg p-1 text-xs">
+              <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 rounded-lg p-0.5 sm:p-1 text-[11px] sm:text-xs overflow-x-auto no-scrollbar order-3 sm:order-2 w-full sm:w-auto justify-center">
                 <button
                   onClick={() => setBaModalPageTab('all')}
-                  className={`px-2.5 py-1 rounded cursor-pointer font-medium ${
+                  className={`px-2 sm:px-2.5 py-1 rounded cursor-pointer font-medium whitespace-nowrap ${
                     baModalPageTab === 'all'
                       ? 'bg-blue-600 text-white font-semibold shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -1143,7 +1120,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                 </button>
                 <button
                   onClick={() => setBaModalPageTab(1)}
-                  className={`px-2.5 py-1 rounded cursor-pointer font-medium ${
+                  className={`px-2 sm:px-2.5 py-1 rounded cursor-pointer font-medium whitespace-nowrap ${
                     baModalPageTab === 1
                       ? 'bg-blue-600 text-white font-semibold shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -1154,7 +1131,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                 {selectedBeritaAcara.attachments && selectedBeritaAcara.attachments.length > 0 && (
                   <button
                     onClick={() => setBaModalPageTab(2)}
-                    className={`px-2.5 py-1 rounded cursor-pointer font-medium ${
+                    className={`px-2 sm:px-2.5 py-1 rounded cursor-pointer font-medium whitespace-nowrap ${
                       baModalPageTab === 2
                         ? 'bg-blue-600 text-white font-semibold shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
@@ -1165,13 +1142,13 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 order-2 sm:order-3">
                 <button
                   onClick={() => {
                     setBaModalPageTab('all');
                     setTimeout(() => window.print(), 100);
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-xs text-slate-700 border border-slate-200 font-medium shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-xs text-slate-700 border border-slate-200 font-medium shadow-xs flex items-center gap-1.5 cursor-pointer"
                   title="Cetak Dokumen"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -1182,15 +1159,16 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                     const item = unifiedItems.find((u) => u.id === selectedBeritaAcara.id && u.type === 'berita-acara');
                     if (item) handleDownloadPDF(item);
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
                   title="Unduh PDF Resmi"
                 >
                   <FileDown className="w-3.5 h-3.5" />
-                  <span>Ekspor PDF</span>
+                  <span className="hidden sm:inline">Ekspor PDF</span>
+                  <span className="sm:hidden font-semibold">PDF</span>
                 </button>
                 <button
                   onClick={() => setSelectedBeritaAcara(null)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer ml-1"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer ml-0.5 sm:ml-1"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1198,21 +1176,21 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             </div>
 
             {/* Modal Subheader: Metadata Waktu Pembuatan & Pembuat */}
-            <div className="no-print px-5 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-600 shrink-0">
+            <div className="no-print px-3.5 py-2 sm:px-5 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-1 text-[11px] sm:text-xs text-slate-600 shrink-0">
               <span className="flex items-center gap-1.5 text-blue-700 font-medium">
                 <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span>Waktu Pembuatan: <strong className="text-slate-900 font-semibold">{formatCreationTimestamp(selectedBeritaAcara.createdAt)}</strong></span>
+                <span>Waktu: <strong className="text-slate-900 font-semibold">{formatCreationTimestamp(selectedBeritaAcara.createdAt)}</strong></span>
               </span>
               <span className="text-slate-300 hidden sm:inline">•</span>
               <span className="flex items-center gap-1.5 text-slate-600">
                 <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Dibuat Oleh: <strong className="text-slate-900 font-semibold">{selectedBeritaAcara.createdByName || 'Staff NOC'}</strong> {selectedBeritaAcara.createdByRole ? `(${selectedBeritaAcara.createdByRole})` : ''}</span>
+                <span>Oleh: <strong className="text-slate-900 font-semibold">{selectedBeritaAcara.createdByName || 'Staff NOC'}</strong> {selectedBeritaAcara.createdByRole ? `(${selectedBeritaAcara.createdByRole})` : ''}</span>
               </span>
             </div>
 
             {/* Modal Body: A4 Paper Document */}
-            <div className="print-modal-body p-4 lg:p-8 overflow-y-auto bg-slate-100/70 flex justify-center">
-              <div id="history-berita-acara-modal-doc" className="print-modal-doc-wrapper w-full max-w-[210mm] shadow-lg shadow-slate-300/60 rounded-sm">
+            <div className="print-modal-body p-2 sm:p-4 lg:p-8 overflow-auto bg-slate-100/70 flex justify-start sm:justify-center">
+              <div id="history-berita-acara-modal-doc" className="print-modal-doc-wrapper w-full max-w-[210mm] min-w-[210mm] sm:min-w-0 shadow-lg shadow-slate-300/60 rounded-sm">
                 <BeritaAcaraPaperDocument
                   doc={selectedBeritaAcara}
                   template={beritaAcaraTemplate || template}

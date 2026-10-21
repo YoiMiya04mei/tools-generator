@@ -175,9 +175,9 @@ export const UsersPage: React.FC<UsersPageProps> = ({
   };
 
   return (
-    <div className="flex-1 p-4 lg:p-6 space-y-6 overflow-y-auto bg-slate-50">
+    <div className="flex-1 p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 overflow-y-auto bg-slate-50">
       {/* Top Banner */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Users className="w-5 h-5 text-blue-600" />
@@ -191,7 +191,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({
         {isAdmin && (
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer whitespace-nowrap active:scale-95"
+            className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer whitespace-nowrap active:scale-95"
           >
             <UserPlus className="w-4 h-4" />
             <span>+ Tambah Akun Baru</span>
@@ -262,7 +262,7 @@ export const UsersPage: React.FC<UsersPageProps> = ({
 
       {/* Users Table */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-white">
+        <div className="p-3.5 sm:p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 bg-white">
           <div className="flex items-center gap-2">
             <UserCheck className="w-4 h-4 text-blue-600" />
             <h3 className="text-sm font-bold text-slate-900">
@@ -370,8 +370,8 @@ export const UsersPage: React.FC<UsersPageProps> = ({
 
       {/* Modal Add New User */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-5 animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 w-full max-w-md max-h-[92vh] overflow-y-auto shadow-2xl space-y-4 sm:space-y-5 animate-scale-up my-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-blue-600" />
@@ -497,8 +497,8 @@ export const UsersPage: React.FC<UsersPageProps> = ({
 
       {/* Modal Edit User & Password */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-5 animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 w-full max-w-md max-h-[92vh] overflow-y-auto shadow-2xl space-y-4 sm:space-y-5 animate-scale-up my-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-600">

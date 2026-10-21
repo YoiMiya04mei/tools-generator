@@ -278,6 +278,7 @@ export function App() {
           setCollapsed={setSidebarCollapsed}
           hasDraft={hasDraft}
           currentUser={currentUser}
+          onCloseMobile={() => setMobileMenuOpen(false)}
         />
       </div>
 

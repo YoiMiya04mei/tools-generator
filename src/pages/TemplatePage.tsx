@@ -74,7 +74,9 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   const [isDraggingSig, setIsDraggingSig] = useState<boolean>(false);
   const [isDraggingStamp, setIsDraggingStamp] = useState<boolean>(false);
   const [isDraggingHeader, setIsDraggingHeader] = useState<boolean>(false);
-  const [previewZoom, setPreviewZoom] = useState<number>(80);
+  const [previewZoom, setPreviewZoom] = useState<number>(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 45 : 80
+  );
 
   const signatureInputRef = useRef<HTMLInputElement>(null);
   const stampInputRef = useRef<HTMLInputElement>(null);
@@ -367,12 +369,12 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-50">
       {/* Top Template Navigation Switcher */}
-      <div className="no-print bg-white border-b border-slate-200 px-6 py-2.5 flex items-center justify-between gap-3 shrink-0 shadow-xs">
-        <div className="flex items-center gap-2">
+      <div className="no-print bg-white border-b border-slate-200 px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-3 shrink-0 shadow-xs overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setActiveSubTab('rfo')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 ${
               activeSubTab === 'rfo'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900'
@@ -385,7 +387,7 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
           <button
             type="button"
             onClick={() => setActiveSubTab('surat-tugas')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 ${
               activeSubTab === 'surat-tugas'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900'
@@ -398,7 +400,7 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
           <button
             type="button"
             onClick={() => setActiveSubTab('berita-acara')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 ${
               activeSubTab === 'berita-acara'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900'
@@ -1043,11 +1045,23 @@ export const TemplatePage: React.FC<TemplatePageProps> = ({
                 <span className="text-xs font-semibold text-slate-600">
                   Live Preview Kop & Format Surat
                 </span>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewZoom(45)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-semibold border transition-colors cursor-pointer ${
+                      previewZoom === 45
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
+                    }`}
+                    title="Sesuaikan dengan layar HP (Fit)"
+                  >
+                    Fit
+                  </button>
                   <div className="flex items-center bg-white border border-slate-200 rounded-lg px-1 py-0.5 shadow-xs">
                     <button
                       type="button"
-                      onClick={() => setPreviewZoom((z) => Math.max(50, z - 10))}
+                      onClick={() => setPreviewZoom((z) => Math.max(30, z - 10))}
                       className="p-1 hover:text-slate-900 text-slate-500 cursor-pointer"
                       title="Perkecil"
                     >

@@ -49,71 +49,68 @@ export const CreateUnifiedDocumentPage: React.FC<CreateUnifiedDocumentPageProps>
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-slate-50">
       {/* Top Document Type Selector Header Bar */}
-      <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0 z-10 shadow-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">
+      <div className="bg-white border-b border-slate-200 px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-3 shrink-0 z-10 shadow-xs overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden md:inline shrink-0">
             Pilih Jenis Dokumen:
           </span>
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 border border-slate-200 rounded-xl">
+          <div className="flex items-center gap-1 sm:gap-1.5 p-1 bg-slate-100 border border-slate-200 rounded-xl overflow-x-auto no-scrollbar shrink-0">
             {/* 1. RFO Switcher */}
             <button
               type="button"
               onClick={() => setActiveTab('create')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 ${
                 activeTab === 'create'
                   ? 'bg-white text-blue-700 border border-slate-200 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
               }`}
             >
               <AlertCircle className={`w-3.5 h-3.5 ${activeTab === 'create' ? 'text-blue-600' : 'text-slate-400'}`} />
-              <span>RFO (Reason For Outage)</span>
+              <span className="sm:hidden">RFO</span>
+              <span className="hidden sm:inline">RFO (Reason For Outage)</span>
             </button>
 
             {/* 2. Surat Tugas Switcher */}
             <button
               type="button"
               onClick={() => setActiveTab('create-st')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 ${
                 activeTab === 'create-st'
                   ? 'bg-white text-blue-700 border border-slate-200 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
               }`}
             >
               <ClipboardList className={`w-3.5 h-3.5 ${activeTab === 'create-st' ? 'text-blue-600' : 'text-slate-400'}`} />
-              <span>Surat Tugas Visit</span>
+              <span className="sm:hidden">Surat Tugas</span>
+              <span className="hidden sm:inline">Surat Tugas Visit</span>
             </button>
 
             {/* 3. Berita Acara Switcher */}
             <button
               type="button"
               onClick={() => setActiveTab('create-ba')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 ${
                 activeTab === 'create-ba'
                   ? 'bg-white text-blue-700 border border-slate-200 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
               }`}
             >
               <FileText className={`w-3.5 h-3.5 ${activeTab === 'create-ba' ? 'text-blue-600' : 'text-slate-400'}`} />
-              <span>Berita Acara Visit</span>
+              <span className="sm:hidden">Berita Acara</span>
+              <span className="hidden sm:inline">Berita Acara Visit</span>
             </button>
           </div>
         </div>
 
         {/* Author & Creation Date Indicator */}
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 text-xs shrink-0">
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
             <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span>Dibuat Oleh: <strong className="text-slate-900 font-bold">{currentUser?.name || 'Staff NOC'}</strong></span>
-            {currentUser?.role && (
-              <span className="text-[10px] uppercase font-bold text-slate-700 bg-slate-200/70 px-1.5 py-0.5 rounded border border-slate-300">
-                {currentUser.role}
-              </span>
-            )}
+            <span>Dibuat: <strong className="text-slate-900 font-bold">{currentUser?.name || 'Staff NOC'}</strong></span>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+          <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
             <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-            <span className="hidden md:inline text-slate-500">Tanggal:</span>
-            <span className="font-mono font-bold text-slate-900">{formatIndonesianDateOnly(new Date())}</span>
+            <span className="font-mono font-bold text-slate-900 text-[11px] sm:text-xs">{formatIndonesianDateOnly(new Date())}</span>
           </div>
         </div>
       </div>

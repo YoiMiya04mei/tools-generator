@@ -14,6 +14,15 @@
   }
 }
 
+/* Utility: Hide scrollbar for Chrome, Safari, Edge, and Firefox */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Official Letter Typography - Calibri */
 .rfo-document-container,
 .rfo-document-container *,

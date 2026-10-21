@@ -15,6 +15,7 @@ import {
   ZoomOut,
   UserCheck,
   FileText,
+  ChevronLeft,
 } from 'lucide-react';
 import type {
   SuratTugasDocument,
@@ -101,7 +102,10 @@ export const CreateSuratTugasPage: React.FC<CreateSuratTugasPageProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // UI state
-  const [previewZoom, setPreviewZoom] = useState<number>(90);
+  const [mobileTab, setMobileTab] = useState<'form' | 'preview'>('form');
+  const [previewZoom, setPreviewZoom] = useState<number>(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 45 : 90
+  );
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // 1. Calculate auto-generated official number based on sequenceNumber + createdDate
@@ -375,8 +379,36 @@ export const CreateSuratTugasPage: React.FC<CreateSuratTugasPageProps> = ({
 
   return (
     <div className="flex-1 flex flex-col xl:flex-row min-h-0 overflow-y-auto xl:overflow-hidden bg-slate-50">
+      {/* Mobile Tab Switcher (< xl) */}
+      <div className="xl:hidden bg-white border-b border-slate-200 p-2 flex items-center justify-center gap-2 shrink-0 z-10 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setMobileTab('form')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            mobileTab === 'form'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>Isi Formulir</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('preview')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            mobileTab === 'preview'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <Eye className="w-4 h-4" />
+          <span>Pratinjau A4</span>
+        </button>
+      </div>
+
       {/* LEFT COLUMN: Input Form */}
-      <div className="w-full xl:w-[48%] flex flex-col border-r border-slate-200 bg-white p-4 lg:p-6 overflow-y-auto">
+      <div className={`w-full xl:w-[48%] flex flex-col border-r border-slate-200 bg-white p-3 sm:p-4 lg:p-6 overflow-y-auto ${mobileTab === 'preview' ? 'hidden xl:flex' : 'flex'}`}>
         <div className="space-y-6 max-w-2xl mx-auto w-full">
           {/* Header Title with quick badge */}
           <div className="flex items-center justify-between">
@@ -800,30 +832,69 @@ export const CreateSuratTugasPage: React.FC<CreateSuratTugasPageProps> = ({
               <p className="text-[11px] text-rose-500 font-medium">{validationErrors.personnel}</p>
             )}
           </div>
+
+          {/* Mobile Sticky Bottom Action Bar (< xl) */}
+          <div className="xl:hidden sticky bottom-0 -mx-3 -mb-3 sm:-mx-4 sm:-mb-4 lg:-mx-6 lg:-mb-6 p-3 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg z-20 flex items-center justify-between gap-2 mt-6">
+            <button
+              type="button"
+              onClick={() => setMobileTab('preview')}
+              className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <Eye className="w-3.5 h-3.5 text-blue-600" />
+              <span>Preview</span>
+            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleCopyWhatsApp}
+                className="p-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs font-semibold flex items-center gap-1 cursor-pointer active:scale-95"
+                title="Salin Format WhatsApp"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer active:scale-95"
+              >
+                <Save className="w-4 h-4" />
+                <span>Simpan Surat</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* RIGHT COLUMN: Interactive Live A4 Preview & Action Bar */}
-      <div className="w-full xl:w-[52%] flex flex-col h-full min-h-0 bg-slate-100/70 overflow-hidden">
+      <div className={`w-full xl:w-[52%] flex flex-col h-full min-h-0 bg-slate-100/70 overflow-hidden ${mobileTab === 'form' ? 'hidden xl:flex' : 'flex'}`}>
         {/* Top Floating Action Bar */}
-        <div className="no-print p-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-2.5 z-10 shrink-0 shadow-xs">
+        <div className="no-print p-2.5 sm:p-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 z-10 shrink-0 shadow-xs">
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMobileTab('form')}
+              className="xl:hidden px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Form</span>
+            </button>
+
             <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
               <Eye className="w-4 h-4 text-blue-600" />
-              <span>Live A4 Preview</span>
+              <span className="hidden sm:inline">Live A4 Preview</span>
             </span>
 
             {/* Zoom Controls */}
-            <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg ml-2">
+            <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg ml-1 sm:ml-2">
               <button
                 type="button"
-                onClick={() => setPreviewZoom((z) => Math.max(50, z - 10))}
+                onClick={() => setPreviewZoom((z) => Math.max(30, z - 10))}
                 className="p-1 hover:text-slate-900 text-slate-500 cursor-pointer hover:bg-slate-200/50 rounded-l-lg transition-colors"
                 title="Perkecil"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
-              <span className="text-[11px] font-mono px-2 text-slate-700 font-semibold">
+              <span className="text-[11px] font-mono px-1.5 sm:px-2 text-slate-700 font-semibold">
                 {previewZoom}%
               </span>
               <button
@@ -835,6 +906,15 @@ export const CreateSuratTugasPage: React.FC<CreateSuratTugasPageProps> = ({
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setPreviewZoom(typeof window !== 'undefined' && window.innerWidth < 768 ? 45 : 90)}
+              className="px-2 py-1 text-[11px] font-semibold text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg cursor-pointer"
+              title="Paskan ke Layar"
+            >
+              Fit
+            </button>
           </div>
 
           {/* Action Buttons */}

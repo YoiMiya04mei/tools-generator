@@ -102,9 +102,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   return (
-    <div className="flex-1 p-4 lg:p-6 space-y-6 overflow-y-auto max-w-5xl bg-slate-50">
+    <div className="flex-1 p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 overflow-y-auto max-w-5xl bg-slate-50">
       {/* Top Banner */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs">
         <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
           <Settings className="w-5 h-5 text-blue-600" />
           Pengaturan Sistem & Kesiapan Backend
@@ -115,8 +115,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </div>
 
       {/* Role Simulation */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-blue-600" />
             <h3 className="text-sm font-bold text-slate-900">Simulasi Role Pengguna</h3>
@@ -159,8 +159,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </div>
 
       {/* Future Backend & Architecture Readiness */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <Server className="w-4 h-4 text-blue-600" />
             <h3 className="text-sm font-bold text-slate-900">Backend & Database Abstraction</h3>
@@ -174,7 +174,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           Seluruh interaksi data menggunakan abstraction layer <code className="text-blue-700 font-mono bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 font-semibold">storageService.ts</code>. Untuk menghubungkan ke backend PostgreSQL atau MySQL, cukup buat implementasi <code className="text-blue-700 font-mono bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 font-semibold">ApiStorageProvider</code> tanpa perlu memodifikasi komponen antarmuka.
         </p>
 
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono text-[11px] text-slate-700 space-y-1 shadow-inner">
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono text-[11px] text-slate-700 space-y-1 shadow-inner overflow-x-auto no-scrollbar">
           <div className="text-slate-400 font-medium">// REST API Endpoints Contract Ready:</div>
           <div><span className="text-emerald-600 font-bold">GET</span>    /api/v1/rfos                 <span className="text-slate-400">// List & search history</span></div>
           <div><span className="text-blue-600 font-bold">POST</span>   /api/v1/rfos                 <span className="text-slate-400">// Save new RFO</span></div>
@@ -186,22 +186,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </div>
 
       {/* Backup & Data Management */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
         <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
           <Database className="w-4 h-4 text-emerald-600" />
           <h3 className="text-sm font-bold text-slate-900">Manajemen Data & Backup</h3>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
           <button
             onClick={handleExportBackup}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-300 shadow-xs transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-300 shadow-xs transition-colors cursor-pointer"
           >
             <Download className="w-4 h-4 text-blue-600" />
             <span>Ekspor Backup JSON</span>
           </button>
 
-          <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-300 shadow-xs transition-colors cursor-pointer">
+          <label className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-300 shadow-xs transition-colors cursor-pointer">
             <Upload className="w-4 h-4 text-emerald-600" />
             <span>Impor Data Backup</span>
             <input
@@ -214,7 +214,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
           <button
             onClick={handleClearAll}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-xs transition-colors ml-auto cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-xs transition-colors sm:ml-auto cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
             <span>Bersihkan Semua Data Lokal</span>

@@ -176,9 +176,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }
 
   return (
-    <div className="flex-1 p-4 lg:p-6 space-y-6 overflow-y-auto bg-slate-50">
+    <div className="flex-1 p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 overflow-y-auto bg-slate-50">
       {/* Top Banner with Unified Branding */}
-      <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-6 shadow-xs">
+      <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-4 sm:p-6 shadow-xs">
         <div className="relative z-10 space-y-1.5 max-w-3xl">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
@@ -188,7 +188,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               Official Document Generator System
             </span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
             GENERATOR TOOLS
           </h1>
           <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
@@ -202,7 +202,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       </div>
 
       {/* 4 Core Balanced KPI Cards: Total Docs, Surat Tugas, Berita Acara, RFO */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Card 1: Total Dokumen */}
         <div
           onClick={() => setActiveTab('history')}
@@ -301,7 +301,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
 
       {/* Unified Recent Document Activity Feed */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+      <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -323,7 +323,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
 
         {/* Filter Chips inside feed */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs">
           <button
             onClick={() => setFeedFilter('all')}
             className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer shrink-0 ${
