@@ -17,6 +17,7 @@ import { TemplatePage } from './pages/TemplatePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { UsersPage } from './pages/UsersPage';
 import { TrafficQoSPage } from './pages/TrafficQoSPage';
+import { MikroTikToolsPage } from './pages/MikroTikToolsPage';
 import type { SuratTugasDocument, SuratTugasTemplate } from './types/suratTugas';
 import { DEFAULT_SURAT_TUGAS_TEMPLATE } from './types/suratTugas';
 import { suratTugasStorage } from './services/suratTugasStorage';
@@ -473,6 +474,10 @@ export function App() {
 
           {activeTab === 'traffic-qos' && (
             <TrafficQoSPage addToast={addToast} />
+          )}
+
+          {activeTab === 'mikrotik-tools' && (
+            <MikroTikToolsPage addToast={addToast} />
           )}
         </main>
       </div>

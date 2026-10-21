@@ -90,5 +90,6 @@ export type ActiveTab =
   | 'templates'
   | 'users'
   | 'settings'
-  | 'traffic-qos';
+  | 'traffic-qos'
+  | 'mikrotik-tools';
 

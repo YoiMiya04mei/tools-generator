@@ -136,6 +136,10 @@ export const Header: React.FC<HeaderProps> = ({
       title: 'Huawei Traffic Classifier & Behavior QoS Generator',
       subtitle: 'Generator skrip rate-limiting QoS (CIR, PIR, CBS, PBS) otomatis untuk router & switch Huawei',
     },
+    'mikrotik-tools': {
+      title: 'MikroTik Script Generator (Route, Mangle, NAT & VPN)',
+      subtitle: '16 Generator skrip RouterOS v6 & v7: Load Balancing PCC/NTH/ECMP, Failover Recursive, Game/Sosmed Routing, DST-NAT, dan VPN',
+    },
   };
 
   const current = titles[activeTab] || titles.dashboard;

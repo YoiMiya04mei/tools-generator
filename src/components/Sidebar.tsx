@@ -16,6 +16,7 @@ import {
   X,
   PackageCheck,
   Network,
+  Server,
 } from 'lucide-react';
 import type { ActiveTab } from '../types/rfo';
 import type { UserAccount } from '../types/auth';
@@ -91,6 +92,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: 'Baru',
       show: true,
       dividerBefore: 'NETWORK TOOLS',
+    },
+    {
+      id: 'mikrotik-tools' as ActiveTab,
+      label: 'MikroTik Tools',
+      icon: <Server className="w-5 h-5 shrink-0" />,
+      badge: '16 Tools',
+      show: true,
+      dividerBefore: null,
     },
     {
       id: 'templates' as ActiveTab,
