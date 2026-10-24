@@ -35,6 +35,13 @@ import type {
   BlockSocialMediaConfig,
   IndonesiaNTPConfig,
   WifiIdAutoLoginConfig,
+  BurstLimitConfig,
+  PCQBurstQueueSizeConfig,
+  SimpleQueueTokenBucketConfig,
+  SimpleQueueSharedUpToConfig,
+  QueueTreeSharedUpToConfig,
+  PCQTreeSimpleConfig,
+  QoSPriorityConfig,
 } from '../types/mikrotikTools';
 
 // Game Port Presets Database
@@ -1671,7 +1678,7 @@ export function generateBlockSocialMediaScript(config: BlockSocialMediaConfig): 
   lines.push('# 1. Address List Platform yang Diblokir');
   lines.push('/ip firewall address-list');
 
-  selectedPlatforms.forEach((plat) => {
+  selectedPlatforms.forEach((plat: string) => {
     const p = SOCIAL_PRESETS.find((x) => x.id === plat);
     if (p) {
       p.domains.forEach((d) => {
@@ -1688,7 +1695,7 @@ export function generateBlockSocialMediaScript(config: BlockSocialMediaConfig): 
   );
 
   // TLS Host deep blocking for HTTPS
-  selectedPlatforms.forEach((plat) => {
+  selectedPlatforms.forEach((plat: string) => {
     const p = SOCIAL_PRESETS.find((x) => x.id === plat);
     if (p) {
       p.domains.slice(0, 2).forEach((d) => {
@@ -1906,3 +1913,712 @@ export function generateWifiIdAutoLoginScript(config: WifiIdAutoLoginConfig): st
 
   return lines.join('\n');
 }
+
+// ==============================================================================
+// 40. Burst Limit Calculator Helper & Script Generator
+// ==============================================================================
+export function parseBandwidthToKbps(val: string): number {
+  if (!val) return 0;
+  const clean = val.trim().toUpperCase().replace(',', '.');
+  const numMatch = clean.match(/[0-9.]+/);
+  if (!numMatch) return 0;
+  const num = parseFloat(numMatch[0]);
+  if (isNaN(num) || num <= 0) return 0;
+
+  if (clean.endsWith('G') || clean.endsWith('GBPS')) {
+    return Math.round(num * 1000 * 1000);
+  }
+  if (clean.endsWith('M') || clean.endsWith('MBPS')) {
+    return Math.round(num * 1000);
+  }
+  return Math.round(num);
+}
+
+export function formatKbpsToSpeed(kbps: number): string {
+  if (kbps <= 0) return '0';
+  if (kbps >= 1000000 && kbps % 1000000 === 0) {
+    return `${kbps / 1000000}M`;
+  }
+  if (kbps >= 1000 && kbps % 1000 === 0) {
+    return `${kbps / 1000}M`;
+  }
+  if (kbps >= 1000) {
+    const m = (kbps / 1000).toFixed(1).replace('.0', '');
+    return `${m}M`;
+  }
+  return `${kbps}K`;
+}
+
+export interface BurstCalculationResult {
+  upMaxKbps: number;
+  upBurstKbps: number;
+  upThresholdKbps: number;
+  upLimitAtKbps: number;
+  upBurstTime: number;
+  upActualDuration: number;
+
+  downMaxKbps: number;
+  downBurstKbps: number;
+  downThresholdKbps: number;
+  downLimitAtKbps: number;
+  downBurstTime: number;
+  downActualDuration: number;
+
+  rateLimitString: string;
+}
+
+export function calculateBurstMetrics(
+  upMaxStr: string,
+  upBurstStr: string,
+  upDuration: number,
+  downMaxStr: string,
+  downBurstStr: string,
+  downDuration: number
+): BurstCalculationResult {
+  const upMaxKbps = parseBandwidthToKbps(upMaxStr) || 1000;
+  const upBurstKbps = Math.max(parseBandwidthToKbps(upBurstStr) || 2000, upMaxKbps);
+  const upThresholdKbps = Math.max(1, Math.round(upMaxKbps * 0.75));
+  const upLimitAtKbps = Math.max(1, Math.round(upMaxKbps * 0.125));
+  const upBurstTime = Math.max(1, Math.ceil(((upDuration || 15) * upBurstKbps) / upThresholdKbps));
+  const upActualDuration = Math.round((upThresholdKbps * upBurstTime) / upBurstKbps);
+
+  const downMaxKbps = parseBandwidthToKbps(downMaxStr) || 2000;
+  const downBurstKbps = Math.max(parseBandwidthToKbps(downBurstStr) || 4000, downMaxKbps);
+  const downThresholdKbps = Math.max(1, Math.round(downMaxKbps * 0.75));
+  const downLimitAtKbps = Math.max(1, Math.round(downMaxKbps * 0.125));
+  const downBurstTime = Math.max(1, Math.ceil(((downDuration || 15) * downBurstKbps) / downThresholdKbps));
+  const downActualDuration = Math.round((downThresholdKbps * downBurstTime) / downBurstKbps);
+
+  const rateLimitString = `${formatKbpsToSpeed(upMaxKbps)}/${formatKbpsToSpeed(downMaxKbps)} ${formatKbpsToSpeed(upBurstKbps)}/${formatKbpsToSpeed(downBurstKbps)} ${formatKbpsToSpeed(upThresholdKbps)}/${formatKbpsToSpeed(downThresholdKbps)} ${upBurstTime}/${downBurstTime} 8 ${formatKbpsToSpeed(upLimitAtKbps)}/${formatKbpsToSpeed(downLimitAtKbps)}`;
+
+  return {
+    upMaxKbps,
+    upBurstKbps,
+    upThresholdKbps,
+    upLimitAtKbps,
+    upBurstTime,
+    upActualDuration,
+    downMaxKbps,
+    downBurstKbps,
+    downThresholdKbps,
+    downLimitAtKbps,
+    downBurstTime,
+    downActualDuration,
+    rateLimitString,
+  };
+}
+
+export function generateBurstLimitScript(config: BurstLimitConfig): string {
+  const { rosVersion, upMaxLimit, upBurstLimit, upBonusDuration, downMaxLimit, downBurstLimit, downBonusDuration, targetSubnet, queueName } = config;
+  const metrics = calculateBurstMetrics(upMaxLimit, upBurstLimit, upBonusDuration, downMaxLimit, downBurstLimit, downBonusDuration);
+  const lines: string[] = [headerBanner('MikroTik Burst Limit Calculator & Traffic Shaper', rosVersion)];
+
+  lines.push('# ==========================================================');
+  lines.push('# TAB GENERAL & ADVANCED PARAMETERS:');
+  lines.push(`# Upload   : Max-Limit=${formatKbpsToSpeed(metrics.upMaxKbps)}, Burst-Limit=${formatKbpsToSpeed(metrics.upBurstKbps)}, Burst-Threshold=${formatKbpsToSpeed(metrics.upThresholdKbps)}, Burst-Time=${metrics.upBurstTime}s, Limit-At=${formatKbpsToSpeed(metrics.upLimitAtKbps)}`);
+  lines.push(`# Download : Max-Limit=${formatKbpsToSpeed(metrics.downMaxKbps)}, Burst-Limit=${formatKbpsToSpeed(metrics.downBurstKbps)}, Burst-Threshold=${formatKbpsToSpeed(metrics.downThresholdKbps)}, Burst-Time=${metrics.downBurstTime}s, Limit-At=${formatKbpsToSpeed(metrics.downLimitAtKbps)}`);
+  lines.push(`# Actual Bonus Duration: Up approx ${metrics.upActualDuration}s, Down approx ${metrics.downActualDuration}s`);
+  lines.push('# ==========================================================');
+  lines.push('');
+
+  lines.push('# 1. Konfigurasi Simple Queue');
+  lines.push('/queue simple');
+  lines.push(
+    `add name="${queueName || 'Burst-Client'}" target="${targetSubnet || '192.168.88.0/24'}" max-limit=${formatKbpsToSpeed(metrics.upMaxKbps)}/${formatKbpsToSpeed(metrics.downMaxKbps)} burst-limit=${formatKbpsToSpeed(metrics.upBurstKbps)}/${formatKbpsToSpeed(metrics.downBurstKbps)} burst-threshold=${formatKbpsToSpeed(metrics.upThresholdKbps)}/${formatKbpsToSpeed(metrics.downThresholdKbps)} burst-time=${metrics.upBurstTime}/${metrics.downBurstTime} limit-at=${formatKbpsToSpeed(metrics.upLimitAtKbps)}/${formatKbpsToSpeed(metrics.downLimitAtKbps)} priority=8/8 comment="Burst Limit Config by buananet.com"`
+  );
+  lines.push('');
+
+  lines.push('# 2. String Rate-Limit untuk Hotspot User Profile');
+  lines.push(`/ip hotspot user profile`);
+  lines.push(`add name="Burst-${formatKbpsToSpeed(metrics.downMaxKbps)}" rate-limit="${metrics.rateLimitString}"`);
+  lines.push('');
+
+  lines.push('# 3. String Rate-Limit untuk PPPoE Profile');
+  lines.push(`/ppp profile`);
+  lines.push(`add name="Burst-PPPoE-${formatKbpsToSpeed(metrics.downMaxKbps)}" rate-limit="${metrics.rateLimitString}"`);
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 41. PCQ Burst Rate + Queue Size Calculator Helper & Script Generator
+// ==============================================================================
+export interface PCQCalculationResult {
+  rateKbps: number;
+  burstRateKbps: number;
+  burstThresholdKbps: number;
+  burstTime: number;
+  actualDuration: number;
+  totalQueueSize: number;
+  estimatedRamMb: number;
+}
+
+export function calculatePCQMetrics(
+  totalClient: number,
+  queueSize: number,
+  maxRateStr: string,
+  burstRateStr: string,
+  actualBurstTimeSec: number
+): PCQCalculationResult {
+  const rateKbps = parseBandwidthToKbps(maxRateStr) || 512;
+  const burstRateKbps = Math.max(parseBandwidthToKbps(burstRateStr) || 1000, rateKbps);
+  const burstThresholdKbps = Math.max(1, Math.round(rateKbps * 0.75));
+  const burstTime = Math.max(1, Math.ceil(((actualBurstTimeSec || 6) * burstRateKbps) / burstThresholdKbps));
+  const actualDuration = Math.round((burstThresholdKbps * burstTime) / burstRateKbps);
+  const totalQueueSize = Math.max(1, (totalClient || 40) * (queueSize || 50));
+  const estimatedRamMb = parseFloat(((totalQueueSize * 1500) / (1024 * 1024)).toFixed(1));
+
+  return {
+    rateKbps,
+    burstRateKbps,
+    burstThresholdKbps,
+    burstTime,
+    actualDuration,
+    totalQueueSize,
+    estimatedRamMb,
+  };
+}
+
+export function generatePCQBurstQueueSizeScript(config: PCQBurstQueueSizeConfig): string {
+  const { rosVersion, totalClient, queueSize, maxRate, burstRate, actualBurstTime, queueName } = config;
+  const metrics = calculatePCQMetrics(totalClient, queueSize, maxRate, burstRate, actualBurstTime);
+  const name = queueName || 'pcq-custom-rate';
+  const lines: string[] = [headerBanner('PCQ Burst Rate & Queue Size Calculator', rosVersion)];
+
+  lines.push('# ==========================================================');
+  lines.push(`# Sub-Queue Clients: ${totalClient} user | Queue Limit: ${queueSize} packets/client`);
+  lines.push(`# Total Queue Size: ${metrics.totalQueueSize} packets (Perkiraan konsumsi RAM: ~${metrics.estimatedRamMb} MB)`);
+  lines.push(`# Rate: ${formatKbpsToSpeed(metrics.rateKbps)} | Burst-Rate: ${formatKbpsToSpeed(metrics.burstRateKbps)} | Threshold: ${formatKbpsToSpeed(metrics.burstThresholdKbps)} | Burst-Time: ${metrics.burstTime}s`);
+  lines.push(`# Durasi Bonus: Setiap client mendapatkan bonus speed ${formatKbpsToSpeed(metrics.burstRateKbps)} selama ${metrics.actualDuration} detik`);
+  lines.push('# ==========================================================');
+  lines.push('');
+
+  lines.push('/queue type');
+  lines.push(
+    `add kind=pcq name="${name}-download" pcq-classifier=dst-address pcq-rate=${formatKbpsToSpeed(metrics.rateKbps)} pcq-limit=${queueSize} pcq-total-limit=${metrics.totalQueueSize} pcq-burst-rate=${formatKbpsToSpeed(metrics.burstRateKbps)} pcq-burst-threshold=${formatKbpsToSpeed(metrics.burstThresholdKbps)} pcq-burst-time=${metrics.burstTime}s`
+  );
+  lines.push(
+    `add kind=pcq name="${name}-upload" pcq-classifier=src-address pcq-rate=${formatKbpsToSpeed(metrics.rateKbps)} pcq-limit=${queueSize} pcq-total-limit=${metrics.totalQueueSize} pcq-burst-rate=${formatKbpsToSpeed(metrics.burstRateKbps)} pcq-burst-threshold=${formatKbpsToSpeed(metrics.burstThresholdKbps)} pcq-burst-time=${metrics.burstTime}s`
+  );
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 42. Simple Queue + Token Bucket
+// ==============================================================================
+export function generateSimpleQueueTokenBucketScript(config: SimpleQueueTokenBucketConfig): string {
+  const {
+    rosVersion,
+    parentName,
+    parentTarget,
+    parentUpMax,
+    parentDownMax,
+    clientPrefix,
+    clientInitial,
+    startIp,
+    endIp,
+    clientUpMax,
+    clientDownMax,
+    bucketSizeUp,
+    bucketSizeDown,
+  } = config;
+
+  const lines: string[] = [headerBanner('Simple Queue + Token Bucket Generator', rosVersion)];
+
+  lines.push('# 1. Parent Queue');
+  lines.push('/queue simple');
+  lines.push(
+    `add name="${parentName || 'Global-Connection'}" target="${parentTarget || '192.168.88.0/24'}" max-limit=${parentUpMax}/${parentDownMax} comment="Parent Queue - buananet.com"`
+  );
+  lines.push('');
+
+  lines.push('# 2. Child Queues dengan Token Bucket');
+  const startParts = startIp.split('.').map((p) => parseInt(p, 10));
+  const endParts = endIp.split('.').map((p) => parseInt(p, 10));
+
+  if (startParts.length === 4 && endParts.length === 4 && !isNaN(startParts[3]) && !isNaN(endParts[3])) {
+    const baseSubnet = `${startParts[0]}.${startParts[1]}.${startParts[2]}`;
+    const fromOctet = Math.min(startParts[3], endParts[3]);
+    const toOctet = Math.max(startParts[3], endParts[3]);
+    let initialNum = clientInitial || 1;
+
+    for (let octet = fromOctet; octet <= toOctet; octet++) {
+      const clientIp = `${baseSubnet}.${octet}/32`;
+      const clientName = `${clientPrefix || 'Client-'}${initialNum}`;
+      lines.push(
+        `add name="${clientName}" target="${clientIp}" parent="${parentName || 'Global-Connection'}" max-limit=${clientUpMax}/${clientDownMax} bucket-size=${bucketSizeUp || 0.1}/${bucketSizeDown || 0.1} priority=8/8 comment="Client Token Bucket"`
+      );
+      initialNum++;
+    }
+  } else {
+    lines.push(
+      `add name="${clientPrefix || 'Client-'}1" target="${startIp}/32" parent="${parentName || 'Global-Connection'}" max-limit=${clientUpMax}/${clientDownMax} bucket-size=${bucketSizeUp}/${bucketSizeDown} priority=8/8`
+    );
+  }
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 43. Simple Queue + Bandwidth Shared Up-To
+// ==============================================================================
+export function generateSimpleQueueSharedUpToScript(config: SimpleQueueSharedUpToConfig): string {
+  const {
+    rosVersion,
+    parentName,
+    parentTarget,
+    parentUpMax,
+    parentDownMax,
+    clientPrefix,
+    clientInitial,
+    startIp,
+    endIp,
+    clientUpMax,
+    clientDownMax,
+    limitAtUp,
+    limitAtDown,
+    autoShared,
+  } = config;
+
+  const lines: string[] = [headerBanner('Simple Queue + Bandwidth Shared (Up-To)', rosVersion)];
+
+  lines.push('# 1. Parent Queue');
+  lines.push('/queue simple');
+  lines.push(
+    `add name="${parentName || 'Global-Connection'}" target="${parentTarget || '192.168.88.0/24'}" max-limit=${parentUpMax}/${parentDownMax} comment="Parent Queue Shared - buananet.com"`
+  );
+  lines.push('');
+
+  const startParts = startIp.split('.').map((p) => parseInt(p, 10));
+  const endParts = endIp.split('.').map((p) => parseInt(p, 10));
+
+  let finalLimitAtUp = limitAtUp;
+  let finalLimitAtDown = limitAtDown;
+
+  if (startParts.length === 4 && endParts.length === 4 && !isNaN(startParts[3]) && !isNaN(endParts[3])) {
+    const fromOctet = Math.min(startParts[3], endParts[3]);
+    const toOctet = Math.max(startParts[3], endParts[3]);
+    const totalClients = Math.max(1, toOctet - fromOctet + 1);
+
+    if (autoShared) {
+      const pUpKbps = parseBandwidthToKbps(parentUpMax);
+      const pDownKbps = parseBandwidthToKbps(parentDownMax);
+      const autoUp = Math.max(32, Math.floor(pUpKbps / totalClients));
+      const autoDown = Math.max(64, Math.floor(pDownKbps / totalClients));
+      finalLimitAtUp = formatKbpsToSpeed(autoUp);
+      finalLimitAtDown = formatKbpsToSpeed(autoDown);
+    }
+
+    lines.push(`# 2. Sub-Queue Clients (Total ${totalClients} Client, Limit-At Guaranteed = ${finalLimitAtUp}/${finalLimitAtDown})`);
+    const baseSubnet = `${startParts[0]}.${startParts[1]}.${startParts[2]}`;
+    let initialNum = clientInitial || 1;
+
+    for (let octet = fromOctet; octet <= toOctet; octet++) {
+      const clientIp = `${baseSubnet}.${octet}/32`;
+      const clientName = `${clientPrefix || 'Client-'}${initialNum}`;
+      lines.push(
+        `add name="${clientName}" target="${clientIp}" parent="${parentName || 'Global-Connection'}" max-limit=${clientUpMax}/${clientDownMax} limit-at=${finalLimitAtUp}/${finalLimitAtDown} priority=8/8 comment="Shared Client (Up-To)"`
+      );
+      initialNum++;
+    }
+  } else {
+    lines.push(
+      `add name="${clientPrefix || 'Client-'}1" target="${startIp}/32" parent="${parentName || 'Global-Connection'}" max-limit=${clientUpMax}/${clientDownMax} limit-at=${finalLimitAtUp}/${finalLimitAtDown} priority=8/8`
+    );
+  }
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 44. Queue Tree + Bandwidth Shared Up-To
+// ==============================================================================
+export function generateQueueTreeSharedUpToScript(config: QueueTreeSharedUpToConfig): string {
+  const {
+    rosVersion,
+    parentName,
+    subQueueUpload,
+    subQueueDownload,
+    parentUpMax,
+    parentDownMax,
+    clientPrefix,
+    clientInitial,
+    startIp,
+    endIp,
+    clientUpMax,
+    clientDownMax,
+    limitAtUp,
+    limitAtDown,
+    autoShared,
+  } = config;
+
+  const lines: string[] = [headerBanner('Queue Tree + Bandwidth Shared (Up-To)', rosVersion)];
+
+  const startParts = startIp.split('.').map((p) => parseInt(p, 10));
+  const endParts = endIp.split('.').map((p) => parseInt(p, 10));
+  let finalLimitAtUp = limitAtUp;
+  let finalLimitAtDown = limitAtDown;
+  let totalClients = 1;
+
+  if (startParts.length === 4 && endParts.length === 4 && !isNaN(startParts[3]) && !isNaN(endParts[3])) {
+    const fromOctet = Math.min(startParts[3], endParts[3]);
+    const toOctet = Math.max(startParts[3], endParts[3]);
+    totalClients = Math.max(1, toOctet - fromOctet + 1);
+
+    if (autoShared) {
+      const pUpKbps = parseBandwidthToKbps(parentUpMax);
+      const pDownKbps = parseBandwidthToKbps(parentDownMax);
+      const autoUp = Math.max(32, Math.floor(pUpKbps / totalClients));
+      const autoDown = Math.max(64, Math.floor(pDownKbps / totalClients));
+      finalLimitAtUp = formatKbpsToSpeed(autoUp);
+      finalLimitAtDown = formatKbpsToSpeed(autoDown);
+    }
+  }
+
+  lines.push('# 1. Queue Tree Parents');
+  lines.push('/queue tree');
+  lines.push(`add name="${parentName || 'Global-Connection'}" parent=global comment="Parent Global Queue"`);
+  lines.push(
+    `add name="${subQueueUpload || 'Upload'}" parent="${parentName || 'Global-Connection'}" max-limit=${parentUpMax} comment="Parent Upload"`
+  );
+  lines.push(
+    `add name="${subQueueDownload || 'Download'}" parent="${parentName || 'Global-Connection'}" max-limit=${parentDownMax} comment="Parent Download"`
+  );
+  lines.push('');
+
+  lines.push('# 2. Queue Tree Child Queues');
+  if (startParts.length === 4 && endParts.length === 4) {
+    const fromOctet = Math.min(startParts[3], endParts[3]);
+    const toOctet = Math.max(startParts[3], endParts[3]);
+    let initialNum = clientInitial || 1;
+
+    for (let octet = fromOctet; octet <= toOctet; octet++) {
+      const cName = `${clientPrefix || 'Client-'}${initialNum}`;
+      lines.push(
+        `add name="${cName}-UP" parent="${subQueueUpload || 'Upload'}" packet-mark="${cName}-UP" max-limit=${clientUpMax} limit-at=${finalLimitAtUp} priority=8 queue=default`
+      );
+      lines.push(
+        `add name="${cName}-DOWN" parent="${subQueueDownload || 'Download'}" packet-mark="${cName}-DOWN" max-limit=${clientDownMax} limit-at=${finalLimitAtDown} priority=8 queue=default`
+      );
+      initialNum++;
+    }
+  }
+  lines.push('');
+
+  lines.push('# 3. IP Firewall Mangle (Mark Connection & Packet)');
+  lines.push('/ip firewall mangle');
+  if (startParts.length === 4 && endParts.length === 4) {
+    const fromOctet = Math.min(startParts[3], endParts[3]);
+    const toOctet = Math.max(startParts[3], endParts[3]);
+    const baseSubnet = `${startParts[0]}.${startParts[1]}.${startParts[2]}`;
+    let initialNum = clientInitial || 1;
+
+    for (let octet = fromOctet; octet <= toOctet; octet++) {
+      const ip = `${baseSubnet}.${octet}`;
+      const cName = `${clientPrefix || 'Client-'}${initialNum}`;
+      lines.push(
+        `add action=mark-connection chain=forward src-address=${ip} new-connection-mark="${cName}-conn" passthrough=yes comment="Mark conn ${cName}"`
+      );
+      lines.push(
+        `add action=mark-packet chain=forward connection-mark="${cName}-conn" src-address=${ip} new-packet-mark="${cName}-UP" passthrough=no`
+      );
+      lines.push(
+        `add action=mark-packet chain=forward connection-mark="${cName}-conn" dst-address=${ip} new-packet-mark="${cName}-DOWN" passthrough=no`
+      );
+      initialNum++;
+    }
+  }
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 45. PCQ for Queue Tree & Queue Simple
+// ==============================================================================
+export function generatePCQTreeSimpleScript(config: PCQTreeSimpleConfig): string {
+  const {
+    rosVersion,
+    queueOption,
+    parentName,
+    subQueueUpload,
+    subQueueDownload,
+    parentUpMax,
+    parentDownMax,
+    pcqUploadName,
+    pcqDownloadName,
+    pcqUpLimit,
+    pcqDownLimit,
+    autoShared,
+    localSubnets,
+  } = config;
+
+  const lines: string[] = [headerBanner(`MikroTik PCQ Generator for ${queueOption === 'queue-tree' ? 'Queue Tree' : 'Queue Simple'}`, rosVersion)];
+
+  const rateUp = autoShared ? '0' : pcqUpLimit;
+  const rateDown = autoShared ? '0' : pcqDownLimit;
+
+  lines.push('# 1. Definisi Queue Type PCQ');
+  lines.push('/queue type');
+  lines.push(`add kind=pcq name="${pcqUploadName || 'PCQ-Up'}" pcq-classifier=src-address pcq-rate=${rateUp}`);
+  lines.push(`add kind=pcq name="${pcqDownloadName || 'PCQ-Down'}" pcq-classifier=dst-address pcq-rate=${rateDown}`);
+  lines.push('');
+
+  if (queueOption === 'queue-simple') {
+    lines.push('# 2. Konfigurasi Queue Simple PCQ');
+    lines.push('/queue simple');
+    lines.push(
+      `add name="${parentName || 'GLOBAL-CONNECTION'}" target="${localSubnets || '192.168.0.0/16,172.16.0.0/12,10.0.0.0/8'}" comment="PCQ Generator by buananet.com"`
+    );
+    lines.push(
+      `add max-limit="${parentUpMax}/${parentUpMax}" name="${subQueueUpload || 'Upload-Client'}" packet-marks="upload-client" parent="${parentName || 'GLOBAL-CONNECTION'}" queue="${pcqUploadName || 'PCQ-Up'}/${pcqDownloadName || 'PCQ-Down'}" target="${localSubnets || '192.168.0.0/16,172.16.0.0/12,10.0.0.0/8'}"`
+    );
+    lines.push(
+      `add max-limit="${parentDownMax}/${parentDownMax}" name="${subQueueDownload || 'Download-Client'}" packet-marks="download-client" parent="${parentName || 'GLOBAL-CONNECTION'}" queue="${pcqUploadName || 'PCQ-Up'}/${pcqDownloadName || 'PCQ-Down'}" target="${localSubnets || '192.168.0.0/16,172.16.0.0/12,10.0.0.0/8'}"`
+    );
+  } else {
+    lines.push('# 2. Konfigurasi Queue Tree PCQ');
+    lines.push('/queue tree');
+    lines.push(`add name="${parentName || 'GLOBAL-CONNECTION'}" parent=global comment="PCQ Generator by buananet.com"`);
+    lines.push(
+      `add max-limit="${parentUpMax}" name="${subQueueUpload || 'Upload-Client'}" packet-mark="upload-client" parent="${parentName || 'GLOBAL-CONNECTION'}" queue="${pcqUploadName || 'PCQ-Up'}"`
+    );
+    lines.push(
+      `add max-limit="${parentDownMax}" name="${subQueueDownload || 'Download-Client'}" packet-mark="download-client" parent="${parentName || 'GLOBAL-CONNECTION'}" queue="${pcqDownloadName || 'PCQ-Down'}"`
+    );
+  }
+  lines.push('');
+
+  lines.push('# 3. Mangle Traffic Classifier (Connection & Packet Mark)');
+  lines.push('/ip firewall mangle');
+  lines.push(
+    `add action=mark-connection chain=forward new-connection-mark="global-conn" passthrough=yes src-address-list=LOCAL-IP comment="PCQ Classifier by buananet.com"`
+  );
+  lines.push(
+    `add action=mark-packet chain=forward connection-mark="global-conn" src-address-list=LOCAL-IP new-packet-mark="upload-client" passthrough=no`
+  );
+  lines.push(
+    `add action=mark-packet chain=forward connection-mark="global-conn" dst-address-list=LOCAL-IP new-packet-mark="download-client" passthrough=no`
+  );
+  lines.push('');
+
+  lines.push('# 4. Address List Subnet Lokal');
+  lines.push('/ip firewall address-list');
+  const subs = (localSubnets || '192.168.0.0/16,172.16.0.0/12,10.0.0.0/8')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  subs.forEach((sub) => {
+    lines.push(`add address=${sub} list=LOCAL-IP`);
+  });
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ==============================================================================
+// 46. QoS Priority Youtube, Tiktok, WA, FB, etc.
+// ==============================================================================
+export interface QoSServiceItem {
+  id: string;
+  name: string;
+  category: 'Streaming' | 'Social Media' | 'E-Commerce' | 'Video Conference' | 'Other List IP';
+  domains: string[];
+}
+
+export const QOS_SERVICE_PRESETS: QoSServiceItem[] = [
+  // Streaming
+  { id: 'Youtube', name: 'Youtube', category: 'Streaming', domains: ['youtube.com', 'googlevideo.com', 'ytimg.com', 'youtu.be'] },
+  { id: 'Tiktok', name: 'Tiktok', category: 'Streaming', domains: ['tiktok.com', 'tiktokv.com', 'tiktokcdn.com', 'byteoversea.com', 'ibyteimg.com'] },
+  { id: 'Vidio', name: 'Vidio', category: 'Streaming', domains: ['vidio.com', 'cdn.vidio.com'] },
+  { id: 'Iflix', name: 'Iflix', category: 'Streaming', domains: ['iflix.com'] },
+  { id: 'Netflix', name: 'Netflix', category: 'Streaming', domains: ['netflix.com', 'nflxvideo.net', 'nflxext.com', 'nflximg.net'] },
+  { id: 'Spotify', name: 'Spotify', category: 'Streaming', domains: ['spotify.com', 'audio-ak-spotify-com.akamaized.net', 'cdn.spotify.com', 'spoti.fi'] },
+  { id: 'Wetv', name: 'Wetv', category: 'Streaming', domains: ['wetv.vip'] },
+  { id: 'Vimeo', name: 'Vimeo', category: 'Streaming', domains: ['vimeo.com', 'vimeocdn.com'] },
+  { id: 'Twitch', name: 'Twitch', category: 'Streaming', domains: ['twitch.tv', 'ttvnw.net', 'jtvnw.net'] },
+
+  // Social Media
+  { id: 'Facebook', name: 'Facebook', category: 'Social Media', domains: ['facebook.com', 'fbcdn.net', 'fbsbx.com', 'fb.me', 'm.facebook.com'] },
+  { id: 'Instagram', name: 'Instagram', category: 'Social Media', domains: ['instagram.com', 'cdninstagram.com', 'igcdn.com'] },
+  { id: 'WhatsApp', name: 'WhatsApp', category: 'Social Media', domains: ['whatsapp.com', 'whatsapp.net', 'fna.whatsapp.net'] },
+  { id: 'Twitter-X', name: 'Twitter / X', category: 'Social Media', domains: ['twitter.com', 'x.com', 'twimg.com', 't.co'] },
+  { id: 'Telegram', name: 'Telegram', category: 'Social Media', domains: ['telegram.org', 't.me', 'telesco.pe'] },
+  { id: 'Threads', name: 'Threads', category: 'Social Media', domains: ['threads.net'] },
+  { id: 'Imo', name: 'Imo.im', category: 'Social Media', domains: ['imo.im'] },
+  { id: 'Snapchat', name: 'Snapchat', category: 'Social Media', domains: ['snapchat.com', 'sc-cdn.net'] },
+  { id: 'Linkedin', name: 'Linkedin', category: 'Social Media', domains: ['linkedin.com', 'licdn.com'] },
+  { id: 'Pinterest', name: 'Pinterest', category: 'Social Media', domains: ['pinterest.com', 'pinimg.com'] },
+
+  // E-Commerce
+  { id: 'Shopee', name: 'Shopee', category: 'E-Commerce', domains: ['shopee.co.id', 'shopee.com', 'shopeemobile.com', 'spx.co.id'] },
+  { id: 'Tokopedia', name: 'Tokopedia', category: 'E-Commerce', domains: ['tokopedia.com', 'tokopedia.net', 'tokocdn.net'] },
+  { id: 'Bukalapak', name: 'Bukalapak', category: 'E-Commerce', domains: ['bukalapak.com', 'bukalapak.net'] },
+  { id: 'Lazada', name: 'Lazada', category: 'E-Commerce', domains: ['lazada.co.id', 'lazada.com', 'alicdn.com'] },
+  { id: 'Blibli', name: 'Blibli', category: 'E-Commerce', domains: ['blibli.com', 'static-src.com'] },
+  { id: 'Amazon', name: 'Amazon', category: 'E-Commerce', domains: ['amazon.com', 'media-amazon.com', 'ssl-images-amazon.com'] },
+  { id: 'Alibaba', name: 'Alibaba', category: 'E-Commerce', domains: ['alibaba.com', 'alicdn.com', 'aliexpress.com'] },
+  { id: 'Etsy', name: 'Etsy', category: 'E-Commerce', domains: ['etsy.com', 'etsystatic.com'] },
+  { id: 'Rakuten', name: 'Rakuten', category: 'E-Commerce', domains: ['rakuten.com'] },
+  { id: 'Shopify', name: 'Shopify', category: 'E-Commerce', domains: ['shopify.com', 'myshopify.com'] },
+  { id: 'Wish', name: 'Wish', category: 'E-Commerce', domains: ['wish.com'] },
+  { id: 'Temu', name: 'Temu', category: 'E-Commerce', domains: ['temu.com'] },
+  { id: 'Ralali', name: 'Ralali', category: 'E-Commerce', domains: ['ralali.com'] },
+  { id: 'Olx', name: 'Olx', category: 'E-Commerce', domains: ['olx.co.id', 'olx.com'] },
+
+  // Video Conference
+  { id: 'Zoom', name: 'Zoom Meeting', category: 'Video Conference', domains: ['zoom.us', 'zoomgov.com', 'zoom.com'] },
+  { id: 'Teams', name: 'Microsoft Teams', category: 'Video Conference', domains: ['teams.microsoft.com', 'skype.com', 'live.com'] },
+  { id: 'Google-Meet', name: 'Google Meet', category: 'Video Conference', domains: ['meet.google.com'] },
+  { id: 'Discord', name: 'Discord', category: 'Video Conference', domains: ['discord.gg', 'discord.com', 'discordapp.com', 'discordapp.net'] },
+  { id: 'Webex', name: 'Webex', category: 'Video Conference', domains: ['webex.com'] },
+  { id: 'Skype', name: 'Skype', category: 'Video Conference', domains: ['skype.com'] },
+  { id: 'Jitsi', name: 'Jitsi', category: 'Video Conference', domains: ['meet.jit.si', 'jitsi.org'] },
+  { id: 'Whereby', name: 'Whereby', category: 'Video Conference', domains: ['whereby.com'] },
+
+  // Other List IP
+  { id: 'Meta', name: 'Meta Ecosystem', category: 'Other List IP', domains: ['meta.com', 'fb.com'] },
+  { id: 'Google', name: 'Google Ecosystem', category: 'Other List IP', domains: ['google.com', 'google.co.id', 'gstatic.com'] },
+  { id: 'Speedtest', name: 'Speedtest Ookla', category: 'Other List IP', domains: ['speedtest.net', 'ooklaserver.net'] },
+  { id: 'GGC', name: 'GGC (Google Global Cache)', category: 'Other List IP', domains: ['c.android.clients.google.com', '1e100.net'] },
+  { id: 'NICE-OIXP', name: 'Nice IIX or OIXP (Indonesia)', category: 'Other List IP', domains: ['oixp.co.id', 'iix.net.id'] },
+  { id: 'Bank-Indonesia', name: 'All Indonesian Bank', category: 'Other List IP', domains: ['klikbca.com', 'ib.bri.co.id', 'bankmandiri.co.id', 'bni.co.id'] },
+];
+
+export interface QoSPriorityScriptResult {
+  step1: string;
+  step2: string;
+  offlineScript: string;
+  fullScript: string;
+}
+
+export function generateQoSPriorityScript(config: QoSPriorityConfig): QoSPriorityScriptResult {
+  const { rosVersion, queueOption, service, queueName, priority, maxLimit, matchFilter, localSubnets } = config;
+  const svcItem = QOS_SERVICE_PRESETS.find((s) => s.id === service) || QOS_SERVICE_PRESETS[0];
+  const listName = `Mikrotik-${svcItem.id}`;
+  const rscFile = `Mikrotik-${svcItem.id}.rsc`;
+
+  // Step 1: Download from BuanaNET database
+  const step1Lines = [
+    `## STEP 1 - Download IP / RAW Database ke Storage Router`,
+    `/file remove "${rscFile}"`,
+    `/tool fetch url="https://buananet.com/mikrotik-routeros-rsc/${matchFilter}/${rscFile}" dst-path="${rscFile}"`,
+  ];
+
+  // Step 2: Import & Queue Configuration
+  const step2Lines = [
+    `## STEP 2 - Import Database & Buat Queue QoS Priority`,
+    `/import file-name="${rscFile}"`,
+    `/file remove "${rscFile}"`,
+    '',
+  ];
+
+  if (queueOption === 'queue-simple') {
+    step2Lines.push(
+      `/queue simple add priority=${priority}/${priority} max-limit="${maxLimit}/${maxLimit}" name="${queueName || `-> ${svcItem.name.toUpperCase()}`}" packet-marks="${svcItem.id}-Up,${svcItem.id}-Down" target="${localSubnets || '192.168.0.0/16,172.16.0.0/12,10.0.0.0/8'}" comment="QoS Priority ${svcItem.name}"`
+    );
+  } else {
+    step2Lines.push(
+      `/queue tree add parent=global priority=${priority} max-limit="${maxLimit}" name="${queueName || `-> ${svcItem.name.toUpperCase()}`} UP" packet-mark="${svcItem.id}-Up" comment="QoS Priority Up"`
+    );
+    step2Lines.push(
+      `/queue tree add parent=global priority=${priority} max-limit="${maxLimit}" name="${queueName || `-> ${svcItem.name.toUpperCase()}`} DOWN" packet-mark="${svcItem.id}-Down" comment="QoS Priority Down"`
+    );
+  }
+  step2Lines.push('');
+
+  step2Lines.push('<b>/ip firewall mangle</b>');
+  step2Lines.push(
+    `add action=mark-connection chain=prerouting new-connection-mark="${svcItem.id}-conn" dst-address-list="${listName}" passthrough=yes src-address-list=LOCAL-IP comment="${svcItem.name} Mangle - QoS Priority"`
+  );
+  step2Lines.push(
+    `add action=mark-packet chain=prerouting connection-mark="${svcItem.id}-conn" src-address-list=LOCAL-IP new-packet-mark="${svcItem.id}-Up" passthrough=no`
+  );
+  step2Lines.push(
+    `add action=mark-packet chain=postrouting connection-mark="${svcItem.id}-conn" dst-address-list=LOCAL-IP new-packet-mark="${svcItem.id}-Down" passthrough=no`
+  );
+  step2Lines.push('');
+
+  step2Lines.push('<b>/ip firewall address-list</b>');
+  const subs = (localSubnets || '192.168.0.0/16,172.16.0.0/12,10.0.0.0/8')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  subs.forEach((sub) => {
+    step2Lines.push(`add address=${sub} list=LOCAL-IP comment="LOCAL IP Subnet"`);
+  });
+
+  // Offline Standalone Version (uses local TLS host or content rules instead of remote RSC fetch)
+  const offlineLines = [headerBanner(`QoS Priority ${svcItem.name} (Direct / Offline Mode)`, rosVersion)];
+  offlineLines.push('# 1. Address List Subnet Lokal');
+  offlineLines.push('/ip firewall address-list');
+  subs.forEach((sub) => {
+    offlineLines.push(`add address=${sub} list=LOCAL-IP comment="LOCAL IP Subnet"`);
+  });
+  offlineLines.push('');
+
+  offlineLines.push('# 2. RAW Rule untuk Mendeteksi Domain / TLS-Host');
+  offlineLines.push('/ip firewall raw');
+  svcItem.domains.forEach((dom) => {
+    if (matchFilter === 'content') {
+      offlineLines.push(
+        `add action=add-dst-to-address-list address-list="${listName}" address-list-timeout=1d chain=prerouting content="${dom}" comment="Match ${dom}"`
+      );
+    } else {
+      offlineLines.push(
+        `add action=add-dst-to-address-list address-list="${listName}" address-list-timeout=1d chain=prerouting tls-host="*.${dom}" comment="Match *.${dom}"`
+      );
+      offlineLines.push(
+        `add action=add-dst-to-address-list address-list="${listName}" address-list-timeout=1d chain=prerouting tls-host="${dom}" comment="Match ${dom}"`
+      );
+    }
+  });
+  offlineLines.push('');
+
+  offlineLines.push('# 3. Mangle Packet Mark');
+  offlineLines.push('/ip firewall mangle');
+  offlineLines.push(
+    `add action=mark-connection chain=prerouting new-connection-mark="${svcItem.id}-conn" dst-address-list="${listName}" passthrough=yes src-address-list=LOCAL-IP comment="${svcItem.name} Connection"`
+  );
+  offlineLines.push(
+    `add action=mark-packet chain=prerouting connection-mark="${svcItem.id}-conn" src-address-list=LOCAL-IP new-packet-mark="${svcItem.id}-Up" passthrough=no`
+  );
+  offlineLines.push(
+    `add action=mark-packet chain=postrouting connection-mark="${svcItem.id}-conn" dst-address-list=LOCAL-IP new-packet-mark="${svcItem.id}-Down" passthrough=no`
+  );
+  offlineLines.push('');
+
+  offlineLines.push('# 4. Queue Limit & Priority');
+  if (queueOption === 'queue-simple') {
+    offlineLines.push('/queue simple');
+    offlineLines.push(
+      `add priority=${priority}/${priority} max-limit="${maxLimit}/${maxLimit}" name="${queueName || `-> ${svcItem.name.toUpperCase()}`}" packet-marks="${svcItem.id}-Up,${svcItem.id}-Down" target="${localSubnets || '192.168.0.0/16,172.16.0.0/12,10.0.0.0/8'}" comment="QoS Priority ${svcItem.name}"`
+    );
+  } else {
+    offlineLines.push('/queue tree');
+    offlineLines.push(
+      `add parent=global priority=${priority} max-limit="${maxLimit}" name="${queueName || `-> ${svcItem.name.toUpperCase()}`} UP" packet-mark="${svcItem.id}-Up" comment="QoS Priority Up"`
+    );
+    offlineLines.push(
+      `add parent=global priority=${priority} max-limit="${maxLimit}" name="${queueName || `-> ${svcItem.name.toUpperCase()}`} DOWN" packet-mark="${svcItem.id}-Down" comment="QoS Priority Down"`
+    );
+  }
+  offlineLines.push('');
+
+  const step1Text = step1Lines.join('\n');
+  const step2Text = step2Lines.map((l) => l.replace(/<\/?b>/g, '')).join('\n');
+  const fullText = [headerBanner(`QoS Priority ${svcItem.name} (${queueOption === 'queue-simple' ? 'Simple Queue' : 'Queue Tree'})`, rosVersion), step1Text, '', step2Text].join('\n');
+
+  return {
+    step1: step1Text,
+    step2: step2Text,
+    offlineScript: offlineLines.join('\n'),
+    fullScript: fullText,
+  };
+}
+

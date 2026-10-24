@@ -19,6 +19,15 @@ export type MikroTikToolId =
   | 'vpn-remote-client'
   | 'social-media-routing'
 
+  // SIMPLE QUEUE // QUEUE TREE // QUEUE TYPE (7 tools)
+  | 'burst-limit-calc'
+  | 'pcq-burst-queue-size-calc'
+  | 'simple-queue-token-bucket'
+  | 'simple-queue-shared-upto'
+  | 'queue-tree-shared-upto'
+  | 'pcq-tree-simple-gen'
+  | 'queue-qos-priority'
+
   // HOTSPOT // PPPOE // PPP (7 tools)
   | 'hotspot-qr-code'
   | 'hotspot-user-gen'
@@ -52,6 +61,7 @@ export type MikroTikToolId =
 
 export type ToolCategory =
   | 'route-mangle-nat-vpn'
+  | 'simple-queue-tree-type'
   | 'hotspot-pppoe-ppp'
   | 'dns-netwatch-dhcp'
   | 'protection-block-backup'
@@ -475,3 +485,111 @@ export interface WifiIdAutoLoginConfig {
   wanInterface: string;
   checkInterval: string; // 2m
 }
+
+// 40. Burst Limit Calculator Config
+export interface BurstLimitConfig {
+  rosVersion: RouterOSVersion;
+  upMaxLimit: string;
+  upBurstLimit: string;
+  upBonusDuration: number;
+  downMaxLimit: string;
+  downBurstLimit: string;
+  downBonusDuration: number;
+  targetSubnet?: string;
+  queueName?: string;
+}
+
+// 41. PCQ Burst Rate + Queue Size Calculator Config
+export interface PCQBurstQueueSizeConfig {
+  rosVersion: RouterOSVersion;
+  totalClient: number;
+  queueSize: number;
+  maxRate: string;
+  burstRate: string;
+  actualBurstTime: number;
+  queueName?: string;
+}
+
+// 42. Simple Queue + Token Bucket Config
+export interface SimpleQueueTokenBucketConfig {
+  rosVersion: RouterOSVersion;
+  parentName: string;
+  parentTarget: string;
+  parentUpMax: string;
+  parentDownMax: string;
+  clientPrefix: string;
+  clientInitial: number;
+  startIp: string;
+  endIp: string;
+  clientUpMax: string;
+  clientDownMax: string;
+  bucketSizeUp: number;
+  bucketSizeDown: number;
+}
+
+// 43. Simple Queue + Bandwidth Shared Up-To Config
+export interface SimpleQueueSharedUpToConfig {
+  rosVersion: RouterOSVersion;
+  parentName: string;
+  parentTarget: string;
+  parentUpMax: string;
+  parentDownMax: string;
+  clientPrefix: string;
+  clientInitial: number;
+  startIp: string;
+  endIp: string;
+  clientUpMax: string;
+  clientDownMax: string;
+  limitAtUp: string;
+  limitAtDown: string;
+  autoShared: boolean;
+}
+
+// 44. Queue Tree + Bandwidth Shared Up-To Config
+export interface QueueTreeSharedUpToConfig {
+  rosVersion: RouterOSVersion;
+  parentName: string;
+  subQueueUpload: string;
+  subQueueDownload: string;
+  parentUpMax: string;
+  parentDownMax: string;
+  clientPrefix: string;
+  clientInitial: number;
+  startIp: string;
+  endIp: string;
+  clientUpMax: string;
+  clientDownMax: string;
+  limitAtUp: string;
+  limitAtDown: string;
+  autoShared: boolean;
+}
+
+// 45. PCQ for Queue Tree & Queue Simple Config
+export interface PCQTreeSimpleConfig {
+  rosVersion: RouterOSVersion;
+  queueOption: 'queue-tree' | 'queue-simple';
+  parentName: string;
+  subQueueUpload: string;
+  subQueueDownload: string;
+  parentUpMax: string;
+  parentDownMax: string;
+  pcqUploadName: string;
+  pcqDownloadName: string;
+  pcqUpLimit: string;
+  pcqDownLimit: string;
+  autoShared: boolean;
+  localSubnets: string;
+}
+
+// 46. QoS Priority Youtube, Tiktok, WA, FB, etc. Config
+export interface QoSPriorityConfig {
+  rosVersion: RouterOSVersion;
+  queueOption: 'queue-simple' | 'queue-tree';
+  service: string;
+  queueName: string;
+  priority: number;
+  maxLimit: string;
+  matchFilter: 'tls-host' | 'content';
+  localSubnets: string;
+}
+

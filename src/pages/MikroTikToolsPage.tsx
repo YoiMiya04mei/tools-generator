@@ -41,6 +41,10 @@ import {
   Calculator,
   Wifi,
   Search,
+  Zap,
+  FolderTree,
+  Coins,
+  Activity,
 } from 'lucide-react';
 import type {
   MikroTikToolId,
@@ -89,9 +93,20 @@ import {
   generateIndonesiaNTPScript,
   calculateMikroTikIP,
   generateWifiIdAutoLoginScript,
+  formatKbpsToSpeed,
+  calculateBurstMetrics,
+  generateBurstLimitScript,
+  calculatePCQMetrics,
+  generatePCQBurstQueueSizeScript,
+  generateSimpleQueueTokenBucketScript,
+  generateSimpleQueueSharedUpToScript,
+  generateQueueTreeSharedUpToScript,
+  generatePCQTreeSimpleScript,
+  generateQoSPriorityScript,
   GAME_PRESETS,
   WEBSITE_PRESETS,
   SOCIAL_PRESETS,
+  QOS_SERVICE_PRESETS,
 } from '../utils/mikrotikGenerators';
 
 interface MikroTikToolsPageProps {
@@ -107,6 +122,57 @@ interface ToolItem {
 }
 
 export const TOOLS_LIST: ToolItem[] = [
+  // Category: SIMPLE QUEUE // QUEUE TREE // QUEUE TYPE (7 tools)
+  {
+    id: 'burst-limit-calc',
+    name: 'Burst Limit Calculator',
+    category: 'simple-queue-tree-type',
+    shortDesc: 'Kalkulator threshold, limit-at, burst-time & bonus durasi detik',
+    icon: <Zap className="w-4 h-4 text-amber-500" />,
+  },
+  {
+    id: 'pcq-burst-queue-size-calc',
+    name: 'PCQ Burst Rate + Queue Size Calculator',
+    category: 'simple-queue-tree-type',
+    shortDesc: 'Kalkulator ukuran buffer antrian total client & estimasi RAM',
+    icon: <Calculator className="w-4 h-4 text-blue-600" />,
+  },
+  {
+    id: 'simple-queue-token-bucket',
+    name: 'Simple Queue + Token Bucket',
+    category: 'simple-queue-tree-type',
+    shortDesc: 'Manajemen antrian token bucket size (bursting data instan)',
+    icon: <Coins className="w-4 h-4 text-emerald-600" />,
+  },
+  {
+    id: 'simple-queue-shared-upto',
+    name: 'Simple Queue + Bandwidth Shared Up-To',
+    category: 'simple-queue-tree-type',
+    shortDesc: 'Pembagian bandwidth bertingkat parent-child simple queue',
+    icon: <Sliders className="w-4 h-4 text-indigo-600" />,
+  },
+  {
+    id: 'queue-tree-shared-upto',
+    name: 'Queue Tree + Bandwidth Shared Up-To',
+    category: 'simple-queue-tree-type',
+    shortDesc: 'Antrian hirarkis Queue Tree parent-child dengan packet marking mangle',
+    icon: <FolderTree className="w-4 h-4 text-purple-600" />,
+  },
+  {
+    id: 'pcq-tree-simple-gen',
+    name: 'PCQ for Queue Tree and Queue Simple',
+    category: 'simple-queue-tree-type',
+    shortDesc: 'Per Connection Queueing otomatis bagi rata bandwidth dinamis',
+    icon: <Layers className="w-4 h-4 text-cyan-600" />,
+  },
+  {
+    id: 'queue-qos-priority',
+    name: 'QoS Priority Youtube, Tiktok, WA, FB, etc.',
+    category: 'simple-queue-tree-type',
+    shortDesc: 'Prioritas bandwidth 8 tingkat (Game, Sosmed, Video, Browsing, Download)',
+    icon: <Activity className="w-4 h-4 text-rose-600" />,
+  },
+
   // Category 1: Route, Mangle, NAT & VPN (16 tools)
   {
     id: 'lb-pcc',
@@ -682,6 +748,114 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
   const [wifiWan, setWifiWan] = useState<string>('wlan1');
   const [wifiInterval, setWifiInterval] = useState<string>('2m');
 
+  // === Category: Simple Queue // Queue Tree // Queue Type (7 tools) ===
+  // 1. Burst Limit Calculator state
+  const [burstTargetName, setBurstTargetName] = useState<string>('Client-1');
+  const [burstTargetIp, setBurstTargetIp] = useState<string>('192.168.88.10');
+  const [burstMaxLimitUp, setBurstMaxLimitUp] = useState<string>('1M');
+  const [burstMaxLimitDown, setBurstMaxLimitDown] = useState<string>('5M');
+  const [burstBonusDurationUp, setBurstBonusDurationUp] = useState<number>(8);
+  const [burstBonusDurationDown, setBurstBonusDurationDown] = useState<number>(16);
+  const [burstLimitUp, setBurstLimitUp] = useState<string>('2M');
+  const [burstLimitDown, setBurstLimitDown] = useState<string>('10M');
+
+  // 2. PCQ Burst Rate + Queue Size state
+  const [pcqCalcName, setPcqCalcName] = useState<string>('pcq-clients');
+  const [pcqCalcTotalClient, setPcqCalcTotalClient] = useState<number>(50);
+  const [pcqCalcRate, setPcqCalcRate] = useState<string>('5M');
+  const [pcqCalcBurstRate, setPcqCalcBurstRate] = useState<string>('10M');
+  const [pcqCalcActualDuration, setPcqCalcActualDuration] = useState<number>(16);
+
+  // 3. Simple Queue + Token Bucket state
+  const [sqtbQueueName, setSqtbQueueName] = useState<string>('Client-TokenBucket');
+  const [sqtbTargetIp, setSqtbTargetIp] = useState<string>('192.168.88.20');
+  const [sqtbMaxLimitUp, setSqtbMaxLimitUp] = useState<string>('2M');
+  const [sqtbMaxLimitDown, setSqtbMaxLimitDown] = useState<string>('10M');
+  const [sqtbBucketSizeUp, setSqtbBucketSizeUp] = useState<number>(0.1);
+  const [sqtbBucketSizeDown, setSqtbBucketSizeDown] = useState<number>(0.1);
+  const [sqtbQueueType, setSqtbQueueType] = useState<string>('default-small');
+
+  // 4. Simple Queue + Bandwidth Shared Up-To state
+  const [sqsuParentName, setSqsuParentName] = useState<string>('Total-Bandwidth-Kantor');
+  const [sqsuTargetSubnet, setSqsuTargetSubnet] = useState<string>('192.168.88.0/24');
+  const [sqsuTotalParentUpload, setSqsuTotalParentUpload] = useState<string>('20M');
+  const [sqsuTotalParentDownload, setSqsuTotalParentDownload] = useState<string>('100M');
+  const [sqsuTotalClients, setSqsuTotalClients] = useState<number>(20);
+  const [sqsuClientPrefix, setSqsuClientPrefix] = useState<string>('Client');
+  const [sqsuClientSubnetPrefix, setSqsuClientSubnetPrefix] = useState<string>('192.168.88.');
+  const [sqsuClientStartIp, setSqsuClientStartIp] = useState<number>(2);
+  const [sqsuAutoLimitAt, setSqsuAutoLimitAt] = useState<boolean>(true);
+
+  // 5. Queue Tree + Bandwidth Shared Up-To state
+  const [qtsuParentUpload, setQtsuParentUpload] = useState<string>('20M');
+  const [qtsuParentDownload, setQtsuParentDownload] = useState<string>('100M');
+  const [qtsuWanInterface, setQtsuWanInterface] = useState<string>('ether1-ISP1');
+  const [qtsuLanInterface, setQtsuLanInterface] = useState<string>('bridge-LAN');
+  const [qtsuTotalClients, setQtsuTotalClients] = useState<number>(10);
+  const [qtsuClientSubnetPrefix, setQtsuClientSubnetPrefix] = useState<string>('192.168.88.');
+  const [qtsuClientStartIp, setQtsuClientStartIp] = useState<number>(2);
+  const [qtsuAutoLimitAt, setQtsuAutoLimitAt] = useState<boolean>(true);
+
+  // 6. PCQ for Queue Tree & Queue Simple state
+  const [pcqTargetType, setPcqTargetType] = useState<'queue-tree' | 'queue-simple'>('queue-tree');
+  const [pcqParentDownload, setPcqParentDownload] = useState<string>('50M');
+  const [pcqParentUpload, setPcqParentUpload] = useState<string>('10M');
+  const [pcqLanInterface, setPcqLanInterface] = useState<string>('bridge-LAN');
+  const [pcqWanInterface, setPcqWanInterface] = useState<string>('ether1-ISP1');
+  const [pcqClientSubnet, setPcqClientSubnet] = useState<string>('192.168.88.0/24');
+  const [pcqRateMode, setPcqRateMode] = useState<'auto-equal' | 'fixed'>('auto-equal');
+  const [pcqRateDownload, setPcqRateDownload] = useState<string>('5M');
+  const [pcqRateUpload, setPcqRateUpload] = useState<string>('1M');
+
+  // 7. QoS Priority state
+  const [qosLanInterface, setQosLanInterface] = useState<string>('bridge-LAN');
+  const [qosWanInterface, setQosWanInterface] = useState<string>('ether1-ISP1');
+  const [qosTotalDownload, setQosTotalDownload] = useState<string>('50M');
+  const [qosTotalUpload, setQosTotalUpload] = useState<string>('10M');
+  const [qosSelectedServices, setQosSelectedServices] = useState<string[]>([
+    'whatsapp',
+    'game_mobile_legends',
+    'game_free_fire',
+    'youtube',
+    'tiktok',
+    'facebook',
+    'instagram',
+    'zoom',
+  ]);
+  const [qosMode, setQosMode] = useState<'complete' | 'step1_fetch' | 'step2_import'>('complete');
+  const [qosGithubRawUrl, setQosGithubRawUrl] = useState<string>(
+    'https://raw.githubusercontent.com/buananetpbun/mikrotik-script/main/qos-address-list.rsc'
+  );
+
+  // Memoized live calculation results for instant UI updates
+  const burstCalcResult = useMemo(() => {
+    return calculateBurstMetrics(
+      burstMaxLimitUp,
+      burstLimitUp,
+      burstBonusDurationUp,
+      burstMaxLimitDown,
+      burstLimitDown,
+      burstBonusDurationDown
+    );
+  }, [
+    burstMaxLimitUp,
+    burstMaxLimitDown,
+    burstBonusDurationUp,
+    burstBonusDurationDown,
+    burstLimitUp,
+    burstLimitDown,
+  ]);
+
+  const pcqCalcResult = useMemo(() => {
+    return calculatePCQMetrics(
+      pcqCalcTotalClient,
+      50,
+      pcqCalcRate,
+      pcqCalcBurstRate,
+      pcqCalcActualDuration
+    );
+  }, [pcqCalcTotalClient, pcqCalcRate, pcqCalcBurstRate, pcqCalcActualDuration]);
+
   // Helper functions
   const handleAddWan = () => {
     const nextIdx = wans.length + 1;
@@ -732,6 +906,123 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
   // Generate output script dynamically based on active tool
   const generatedScript = useMemo<string>(() => {
     switch (selectedToolId) {
+      // 0. Simple Queue // Queue Tree // Queue Type (7 tools)
+      case 'burst-limit-calc':
+        return generateBurstLimitScript({
+          rosVersion,
+          upMaxLimit: burstMaxLimitUp,
+          upBurstLimit: burstLimitUp,
+          upBonusDuration: burstBonusDurationUp,
+          downMaxLimit: burstMaxLimitDown,
+          downBurstLimit: burstLimitDown,
+          downBonusDuration: burstBonusDurationDown,
+          targetSubnet: burstTargetIp,
+          queueName: burstTargetName,
+        });
+
+      case 'pcq-burst-queue-size-calc':
+        return generatePCQBurstQueueSizeScript({
+          rosVersion,
+          totalClient: pcqCalcTotalClient,
+          queueSize: 50,
+          maxRate: pcqCalcRate,
+          burstRate: pcqCalcBurstRate,
+          actualBurstTime: pcqCalcActualDuration,
+          queueName: pcqCalcName,
+        });
+
+      case 'simple-queue-token-bucket':
+        return generateSimpleQueueTokenBucketScript({
+          rosVersion,
+          parentName: 'Total-Bandwidth',
+          parentTarget: '192.168.88.0/24',
+          parentUpMax: '20M',
+          parentDownMax: '100M',
+          clientPrefix: sqtbQueueName,
+          clientInitial: 1,
+          startIp: sqtbTargetIp,
+          endIp: sqtbTargetIp,
+          clientUpMax: sqtbMaxLimitUp,
+          clientDownMax: sqtbMaxLimitDown,
+          bucketSizeUp: sqtbBucketSizeUp,
+          bucketSizeDown: sqtbBucketSizeDown,
+        });
+
+      case 'simple-queue-shared-upto': {
+        const endHost = sqsuClientStartIp + sqsuTotalClients - 1;
+        return generateSimpleQueueSharedUpToScript({
+          rosVersion,
+          parentName: sqsuParentName,
+          parentTarget: sqsuTargetSubnet,
+          parentUpMax: sqsuTotalParentUpload,
+          parentDownMax: sqsuTotalParentDownload,
+          clientPrefix: sqsuClientPrefix,
+          clientInitial: 1,
+          startIp: `${sqsuClientSubnetPrefix}${sqsuClientStartIp}`,
+          endIp: `${sqsuClientSubnetPrefix}${endHost}`,
+          clientUpMax: sqsuTotalParentUpload,
+          clientDownMax: sqsuTotalParentDownload,
+          limitAtUp: '512k',
+          limitAtDown: '2M',
+          autoShared: sqsuAutoLimitAt,
+        });
+      }
+
+      case 'queue-tree-shared-upto': {
+        const endHost = qtsuClientStartIp + qtsuTotalClients - 1;
+        return generateQueueTreeSharedUpToScript({
+          rosVersion,
+          parentName: 'Total-Bandwidth',
+          subQueueUpload: 'Upload-Shared',
+          subQueueDownload: 'Download-Shared',
+          parentUpMax: qtsuParentUpload,
+          parentDownMax: qtsuParentDownload,
+          clientPrefix: 'Client-',
+          clientInitial: 1,
+          startIp: `${qtsuClientSubnetPrefix}${qtsuClientStartIp}`,
+          endIp: `${qtsuClientSubnetPrefix}${endHost}`,
+          clientUpMax: qtsuParentUpload,
+          clientDownMax: qtsuParentDownload,
+          limitAtUp: '512k',
+          limitAtDown: '2M',
+          autoShared: qtsuAutoLimitAt,
+        });
+      }
+
+      case 'pcq-tree-simple-gen':
+        return generatePCQTreeSimpleScript({
+          rosVersion,
+          queueOption: pcqTargetType,
+          parentName: 'GLOBAL-CONNECTION',
+          subQueueUpload: 'Upload-Client',
+          subQueueDownload: 'Download-Client',
+          parentUpMax: pcqParentUpload,
+          parentDownMax: pcqParentDownload,
+          pcqUploadName: 'PCQ-Upload',
+          pcqDownloadName: 'PCQ-Download',
+          pcqUpLimit: pcqRateUpload,
+          pcqDownLimit: pcqRateDownload,
+          autoShared: pcqRateMode === 'auto-equal',
+          localSubnets: pcqClientSubnet,
+        });
+
+      case 'queue-qos-priority': {
+        const svc = qosSelectedServices[0] || 'Youtube';
+        const res = generateQoSPriorityScript({
+          rosVersion,
+          queueOption: 'queue-tree',
+          service: svc,
+          queueName: `-> ${svc.toUpperCase()}`,
+          priority: 3,
+          maxLimit: qosTotalDownload,
+          matchFilter: 'tls-host',
+          localSubnets: '192.168.0.0/16,172.16.0.0/12,10.0.0.0/8',
+        });
+        if (qosMode === 'step1_fetch') return res.step1;
+        if (qosMode === 'step2_import') return res.step2;
+        return res.offlineScript;
+      }
+
       // 1-16: Route, Mangle, NAT, VPN
       case 'lb-pcc':
         return generatePCCScript({
@@ -1378,6 +1669,59 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
     wifiPass,
     wifiWan,
     wifiInterval,
+    burstTargetName,
+    burstTargetIp,
+    burstMaxLimitUp,
+    burstMaxLimitDown,
+    burstBonusDurationUp,
+    burstBonusDurationDown,
+    burstLimitUp,
+    burstLimitDown,
+    pcqCalcName,
+    pcqCalcTotalClient,
+    pcqCalcRate,
+    pcqCalcBurstRate,
+    pcqCalcActualDuration,
+    sqtbQueueName,
+    sqtbTargetIp,
+    sqtbMaxLimitUp,
+    sqtbMaxLimitDown,
+    sqtbBucketSizeUp,
+    sqtbBucketSizeDown,
+    sqtbQueueType,
+    sqsuParentName,
+    sqsuTargetSubnet,
+    sqsuTotalParentUpload,
+    sqsuTotalParentDownload,
+    sqsuTotalClients,
+    sqsuClientPrefix,
+    sqsuClientSubnetPrefix,
+    sqsuClientStartIp,
+    sqsuAutoLimitAt,
+    qtsuParentUpload,
+    qtsuParentDownload,
+    qtsuWanInterface,
+    qtsuLanInterface,
+    qtsuTotalClients,
+    qtsuClientSubnetPrefix,
+    qtsuClientStartIp,
+    qtsuAutoLimitAt,
+    pcqTargetType,
+    pcqParentDownload,
+    pcqParentUpload,
+    pcqLanInterface,
+    pcqWanInterface,
+    pcqClientSubnet,
+    pcqRateMode,
+    pcqRateDownload,
+    pcqRateUpload,
+    qosLanInterface,
+    qosWanInterface,
+    qosTotalDownload,
+    qosTotalUpload,
+    qosSelectedServices,
+    qosMode,
+    qosGithubRawUrl,
   ]);
 
   const handleCopyScript = () => {
@@ -1443,14 +1787,14 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                   MikroTik Script Generator Suite
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
-                  39 Network Tools
+                  46 Network Tools
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                  HOTSPOT // PPPOE // DNS // NETWATCH // MANGLE // NAT // VPN
+                  QUEUE // QOS // HOTSPOT // PPPOE // DNS // NETWATCH // MANGLE // NAT // VPN
                 </span>
               </div>
               <p className="text-sm text-slate-500 mt-1">
-                Koleksi generator skrip RouterOS lengkap: Load Balancing, Anti-Tethering Hotspot, DoH Encrypted DNS, Netwatch Telegram, Firewall Ninja Protection, IP Subnet Calculator, hingga Wifi.id Keepalive.
+                Koleksi generator skrip RouterOS lengkap: Burst Limit, PCQ Buffer Size, Simple Queue & Queue Tree Shared Up-To, QoS Priority 8 Level, Load Balancing, Anti-Tethering Hotspot, DoH, Netwatch, hingga Firewall Protection.
               </p>
             </div>
           </div>
@@ -1501,7 +1845,18 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Semua (39)
+              Semua (46)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCategoryFilter('simple-queue-tree-type')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                categoryFilter === 'simple-queue-tree-type'
+                  ? 'bg-orange-600 text-white shadow-sm font-semibold'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              Queue / QoS (7)
             </button>
             <button
               type="button"
@@ -1645,6 +2000,875 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
             </div>
 
             {/* Dynamic Form per Tool */}
+
+            {/* ============================================================== */}
+            {/* Category: Simple Queue // Queue Tree // Queue Type (7 tools) */}
+            {/* ============================================================== */}
+
+            {/* 0.1 Burst Limit Calculator */}
+            {selectedToolId === 'burst-limit-calc' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target Name</label>
+                    <input
+                      type="text"
+                      value={burstTargetName}
+                      onChange={(e) => setBurstTargetName(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="Client-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target IP Address</label>
+                    <input
+                      type="text"
+                      value={burstTargetIp}
+                      onChange={(e) => setBurstTargetIp(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="192.168.88.10"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Sliders className="w-4 h-4 text-orange-600" /> Pengaturan Kecepatan Bandwidth & Durasi
+                  </span>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Max Limit (Normal)</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <input
+                          type="text"
+                          value={burstMaxLimitUp}
+                          onChange={(e) => setBurstMaxLimitUp(e.target.value)}
+                          className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                          placeholder="Up (1M)"
+                          title="Upload Max Limit"
+                        />
+                        <input
+                          type="text"
+                          value={burstMaxLimitDown}
+                          onChange={(e) => setBurstMaxLimitDown(e.target.value)}
+                          className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                          placeholder="Down (5M)"
+                          title="Download Max Limit"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400">Format: 512k, 1M, 5M</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Burst Limit (Kecepatan Lonjakan)</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <input
+                          type="text"
+                          value={burstLimitUp}
+                          onChange={(e) => setBurstLimitUp(e.target.value)}
+                          className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white text-emerald-700 font-semibold"
+                          placeholder="Up (2M)"
+                          title="Upload Burst Limit"
+                        />
+                        <input
+                          type="text"
+                          value={burstLimitDown}
+                          onChange={(e) => setBurstLimitDown(e.target.value)}
+                          className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white text-emerald-700 font-semibold"
+                          placeholder="Down (10M)"
+                          title="Download Burst Limit"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400">Kecepatan saat lonjakan aktif</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Bonus Durasi Diinginkan (detik)</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <input
+                          type="number"
+                          value={burstBonusDurationUp}
+                          onChange={(e) => setBurstBonusDurationUp(Number(e.target.value) || 1)}
+                          className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                          placeholder="8"
+                          title="Upload Bonus Duration"
+                          min="1"
+                        />
+                        <input
+                          type="number"
+                          value={burstBonusDurationDown}
+                          onChange={(e) => setBurstBonusDurationDown(Number(e.target.value) || 1)}
+                          className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                          placeholder="16"
+                          title="Download Bonus Duration"
+                          min="1"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400">Lama waktu user menikmati burst</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calculation Breakdown Table / Cards */}
+                <div className="p-4 bg-gradient-to-br from-amber-50/70 to-orange-50/50 border border-amber-200/80 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                      <Calculator className="w-4 h-4 text-amber-600" /> Hasil Perhitungan Parameter Burst MikroTik
+                    </span>
+                    <span className="text-[11px] font-mono text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded">
+                      Rumus Standar MikroTik RouterOS
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
+                    <div className="p-2.5 bg-white/90 rounded-lg border border-amber-200/60 shadow-xs">
+                      <span className="text-[11px] text-slate-500 block">Burst Threshold (75%)</span>
+                      <span className="text-sm font-bold text-slate-800 font-mono">
+                        {formatKbpsToSpeed(burstCalcResult.upThresholdKbps)} / {formatKbpsToSpeed(burstCalcResult.downThresholdKbps)}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Ambang batas lonjakan</span>
+                    </div>
+
+                    <div className="p-2.5 bg-white/90 rounded-lg border border-amber-200/60 shadow-xs">
+                      <span className="text-[11px] text-slate-500 block">Burst Time (Input Router)</span>
+                      <span className="text-sm font-bold text-orange-600 font-mono">
+                        {burstCalcResult.upBurstTime}s / {burstCalcResult.downBurstTime}s
+                      </span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Parameter waktu di MikroTik</span>
+                    </div>
+
+                    <div className="p-2.5 bg-white/90 rounded-lg border border-amber-200/60 shadow-xs">
+                      <span className="text-[11px] text-slate-500 block">Actual Duration (Durasi Riil)</span>
+                      <span className="text-sm font-bold text-emerald-700 font-mono">
+                        ~{burstCalcResult.upActualDuration}s / ~{burstCalcResult.downActualDuration}s
+                      </span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Lama lonjakan dinikmati client</span>
+                    </div>
+
+                    <div className="p-2.5 bg-white/90 rounded-lg border border-amber-200/60 shadow-xs">
+                      <span className="text-[11px] text-slate-500 block">Limit-At (Min. Guaranteed 12.5%)</span>
+                      <span className="text-sm font-bold text-indigo-700 font-mono">
+                        {formatKbpsToSpeed(burstCalcResult.upLimitAtKbps)} / {formatKbpsToSpeed(burstCalcResult.downLimitAtKbps)}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Jaminan bandwidth saat sibuk</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 bg-white rounded-lg border border-slate-200 font-mono text-[11px] text-slate-700 overflow-x-auto">
+                    <span className="text-slate-400 block text-[10px] uppercase font-sans font-semibold mb-0.5">String Rate Limit Simple Queue:</span>
+                    <span className="text-orange-700 font-bold">{burstCalcResult.rateLimitString}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 0.2 PCQ Burst Rate + Queue Size Calculator */}
+            {selectedToolId === 'pcq-burst-queue-size-calc' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Queue Type</label>
+                    <input
+                      type="text"
+                      value={pcqCalcName}
+                      onChange={(e) => setPcqCalcName(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="pcq-clients"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Estimasi Total Client Aktif ({pcqCalcTotalClient} user)
+                    </label>
+                    <input
+                      type="range"
+                      min="5"
+                      max="500"
+                      step="5"
+                      value={pcqCalcTotalClient}
+                      onChange={(e) => setPcqCalcTotalClient(Number(e.target.value))}
+                      className="w-full accent-orange-600"
+                    />
+                    <div className="flex justify-between text-[10px] text-slate-400">
+                      <span>5 User</span>
+                      <span>50 User</span>
+                      <span>200 User</span>
+                      <span>500 User</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">PCQ Rate (Normal)</label>
+                    <input
+                      type="text"
+                      value={pcqCalcRate}
+                      onChange={(e) => setPcqCalcRate(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                      placeholder="5M"
+                    />
+                    <span className="text-[10px] text-slate-400">Kecepatan max per client</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">PCQ Burst Rate</label>
+                    <input
+                      type="text"
+                      value={pcqCalcBurstRate}
+                      onChange={(e) => setPcqCalcBurstRate(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white text-emerald-700 font-semibold"
+                      placeholder="10M"
+                    />
+                    <span className="text-[10px] text-slate-400">Kecepatan lonjakan burst</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target Burst Duration (detik)</label>
+                    <input
+                      type="number"
+                      value={pcqCalcActualDuration}
+                      onChange={(e) => setPcqCalcActualDuration(Number(e.target.value) || 1)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                      placeholder="16"
+                      min="1"
+                    />
+                    <span className="text-[10px] text-slate-400">Durasi bonus lonjakan</span>
+                  </div>
+                </div>
+
+                {/* Calculation Cards */}
+                <div className="p-4 bg-gradient-to-br from-blue-50/70 to-indigo-50/50 border border-blue-200/80 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
+                      <Calculator className="w-4 h-4 text-blue-600" /> Hasil Rekomendasi Buffer & Queue Size
+                    </span>
+                    <span className="text-[11px] font-mono text-blue-800 bg-blue-100/80 px-2 py-0.5 rounded">
+                      Kapasitas RAM RouterBoard
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
+                    <div className="p-2.5 bg-white rounded-lg border border-blue-200/60 shadow-xs">
+                      <span className="text-[11px] text-slate-500 block">Queue Size per Sub-Stream</span>
+                      <span className="text-sm font-bold text-slate-800 font-mono">
+                        50 KiB
+                      </span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Buffer paket per client</span>
+                    </div>
+
+                    <div className="p-2.5 bg-white rounded-lg border border-blue-200/60 shadow-xs">
+                      <span className="text-[11px] text-slate-500 block">Total Buffer Queue Size</span>
+                      <span className="text-sm font-bold text-indigo-700 font-mono">
+                        {pcqCalcResult.totalQueueSize} KiB
+                      </span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Buffer seluruh {pcqCalcTotalClient} client</span>
+                    </div>
+
+                    <div className="p-2.5 bg-white rounded-lg border border-blue-200/60 shadow-xs">
+                      <span className="text-[11px] text-slate-500 block">Estimasi Pemakaian RAM</span>
+                      <span className="text-sm font-bold text-emerald-700 font-mono">
+                        {pcqCalcResult.estimatedRamMb} MB
+                      </span>
+                      <span className="text-[10px] text-emerald-600 font-medium block mt-0.5">Sangat aman untuk RB & CCR</span>
+                    </div>
+
+                    <div className="p-2.5 bg-white rounded-lg border border-blue-200/60 shadow-xs">
+                      <span className="text-[11px] text-slate-500 block">Burst Time RouterOS</span>
+                      <span className="text-sm font-bold text-orange-600 font-mono">
+                        {pcqCalcResult.burstTime}s
+                      </span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Threshold: {formatKbpsToSpeed(pcqCalcResult.burstThresholdKbps)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 0.3 Simple Queue + Token Bucket */}
+            {selectedToolId === 'simple-queue-token-bucket' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Queue Name</label>
+                    <input
+                      type="text"
+                      value={sqtbQueueName}
+                      onChange={(e) => setSqtbQueueName(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="Client-TokenBucket"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target IP / Subnet</label>
+                    <input
+                      type="text"
+                      value={sqtbTargetIp}
+                      onChange={(e) => setSqtbTargetIp(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="192.168.88.20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Queue Type</label>
+                    <select
+                      value={sqtbQueueType}
+                      onChange={(e) => setSqtbQueueType(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="default-small">default-small (Standard)</option>
+                      <option value="default">default</option>
+                      <option value="ethernet-default">ethernet-default</option>
+                      <option value="wireless-default">wireless-default</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Max Limit (Upload / Download)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={sqtbMaxLimitUp}
+                        onChange={(e) => setSqtbMaxLimitUp(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                        placeholder="2M"
+                        title="Upload"
+                      />
+                      <input
+                        type="text"
+                        value={sqtbMaxLimitDown}
+                        onChange={(e) => setSqtbMaxLimitDown(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                        placeholder="10M"
+                        title="Download"
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-400">Kecepatan stabil setelah burst habis</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Bucket Size (0.05s s/d 2.0s): {sqtbBucketSizeDown}s
+                    </label>
+                    <input
+                      type="range"
+                      min="0.05"
+                      max="2.0"
+                      step="0.05"
+                      value={sqtbBucketSizeDown}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setSqtbBucketSizeDown(val);
+                        setSqtbBucketSizeUp(val);
+                      }}
+                      className="w-full accent-emerald-600"
+                    />
+                    <div className="flex justify-between text-[10px] text-slate-400">
+                      <span>0.05s (Ketat)</span>
+                      <span>0.1s (Standar MikroTik)</span>
+                      <span>1.0s (Longgar)</span>
+                      <span>2.0s (Maks)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs space-y-2">
+                  <div className="flex items-center gap-1.5 font-bold text-emerald-950">
+                    <Coins className="w-4 h-4 text-emerald-600" /> Bagaimana Token Bucket Bekerja?
+                  </div>
+                  <p className="text-slate-600 leading-relaxed text-[11px]">
+                    MikroTik mengimplementasikan algoritma <b>Token Bucket</b> pada Simple Queue. Dengan mengatur <code className="bg-emerald-100/80 px-1 py-0.5 rounded font-mono">bucket-size={sqtbBucketSizeDown}</code>, client diizinkan mengirim sejumlah paket pertama secepat kemampuan fisik kabel (wire-speed) sebelum antrian mulai menahan dan menurunkannya kembali ke <code className="bg-emerald-100/80 px-1 py-0.5 rounded font-mono">{sqtbMaxLimitDown}</code>. Hal ini membuat loading awal website / gambar terasa sangat instan tanpa membebani total kuota bandwidth.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 0.4 Simple Queue + Bandwidth Shared Up-To */}
+            {selectedToolId === 'simple-queue-shared-upto' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Queue Parent</label>
+                    <input
+                      type="text"
+                      value={sqsuParentName}
+                      onChange={(e) => setSqsuParentName(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="Total-Bandwidth-Kantor"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target Subnet Parent</label>
+                    <input
+                      type="text"
+                      value={sqsuTargetSubnet}
+                      onChange={(e) => setSqsuTargetSubnet(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="192.168.88.0/24"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Total Bandwidth Induk (Upload / Download)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={sqsuTotalParentUpload}
+                        onChange={(e) => setSqsuTotalParentUpload(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                        placeholder="20M"
+                        title="Total Parent Upload"
+                      />
+                      <input
+                        type="text"
+                        value={sqsuTotalParentDownload}
+                        onChange={(e) => setSqsuTotalParentDownload(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                        placeholder="100M"
+                        title="Total Parent Download"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Jumlah User Client Anak ({sqsuTotalClients} User)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="254"
+                      value={sqsuTotalClients}
+                      onChange={(e) => setSqsuTotalClients(Math.max(1, Number(e.target.value) || 1))}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Prefix Nama Client</label>
+                    <input
+                      type="text"
+                      value={sqsuClientPrefix}
+                      onChange={(e) => setSqsuClientPrefix(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="Client"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Prefix IP Subnet Client</label>
+                    <input
+                      type="text"
+                      value={sqsuClientSubnetPrefix}
+                      onChange={(e) => setSqsuClientSubnetPrefix(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="192.168.88."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Mulai Dari IP Terakhir</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="254"
+                      value={sqsuClientStartIp}
+                      onChange={(e) => setSqsuClientStartIp(Number(e.target.value) || 2)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                  <input
+                    type="checkbox"
+                    id="sqsuAutoLimitAt"
+                    checked={sqsuAutoLimitAt}
+                    onChange={(e) => setSqsuAutoLimitAt(e.target.checked)}
+                    className="w-4 h-4 rounded text-orange-600 accent-orange-600"
+                  />
+                  <label htmlFor="sqsuAutoLimitAt" className="text-xs text-slate-700 select-none cursor-pointer">
+                    <b>Aktifkan Auto Limit-At (Jaminan Garansi Minimum Adil):</b> Setiap client mendapatkan jaminan minimum (CIR) saat trafik padat, dan otomatis bisa loncat (Up-To) hingga batas maksimal parent saat pengguna lain sedang sepi.
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* 0.5 Queue Tree + Bandwidth Shared Up-To */}
+            {selectedToolId === 'queue-tree-shared-upto' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">WAN Interface (Jalur Upload)</label>
+                    <input
+                      type="text"
+                      value={qtsuWanInterface}
+                      onChange={(e) => setQtsuWanInterface(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="ether1-ISP1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">LAN Interface (Jalur Download)</label>
+                    <input
+                      type="text"
+                      value={qtsuLanInterface}
+                      onChange={(e) => setQtsuLanInterface(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="bridge-LAN"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Total Bandwidth Induk (Upload / Download)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={qtsuParentUpload}
+                        onChange={(e) => setQtsuParentUpload(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                        placeholder="20M"
+                      />
+                      <input
+                        type="text"
+                        value={qtsuParentDownload}
+                        onChange={(e) => setQtsuParentDownload(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                        placeholder="100M"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Jumlah Client Tree ({qtsuTotalClients} Client)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={qtsuTotalClients}
+                      onChange={(e) => setQtsuTotalClients(Math.max(1, Number(e.target.value) || 1))}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Subnet Prefix IP Client</label>
+                    <input
+                      type="text"
+                      value={qtsuClientSubnetPrefix}
+                      onChange={(e) => setQtsuClientSubnetPrefix(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="192.168.88."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Mulai Dari Host IP Terakhir</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="254"
+                      value={qtsuClientStartIp}
+                      onChange={(e) => setQtsuClientStartIp(Number(e.target.value) || 2)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 p-3 bg-purple-50/70 border border-purple-200 rounded-xl">
+                  <input
+                    type="checkbox"
+                    id="qtsuAutoLimitAt"
+                    checked={qtsuAutoLimitAt}
+                    onChange={(e) => setQtsuAutoLimitAt(e.target.checked)}
+                    className="w-4 h-4 rounded text-purple-600 accent-purple-600"
+                  />
+                  <label htmlFor="qtsuAutoLimitAt" className="text-xs text-slate-700 select-none cursor-pointer">
+                    <b>Aktifkan Auto Limit-At (Jaminan Garansi Minimum Adil):</b> Otomatis membagi parent limit ke setiap cabang tree secara merata.
+                  </label>
+                </div>
+
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs space-y-1">
+                  <span className="font-bold text-purple-900 flex items-center gap-1.5">
+                    <FolderTree className="w-4 h-4 text-purple-700" /> Otomatis Dibuatkan Mangle Packet Mark
+                  </span>
+                  <p className="text-slate-600 text-[11px] leading-relaxed">
+                    Queue Tree pada MikroTik hanya dapat mengenali paket berdasarkan <b>packet-mark</b>. Skrip ini secara otomatis membuat aturan <code className="bg-purple-100 px-1 py-0.5 rounded font-mono">/ip firewall mangle</code> untuk menandai koneksi (connection-mark) dan paket (packet-mark) per IP client, lalu mengaitkannya langsung ke struktur Queue Tree hierarkis parent-child.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 0.6 PCQ for Queue Tree & Queue Simple */}
+            {selectedToolId === 'pcq-tree-simple-gen' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Metode Antrian</label>
+                    <select
+                      value={pcqTargetType}
+                      onChange={(e) => setPcqTargetType(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="queue-tree">Queue Tree (Parent Global + Mangle)</option>
+                      <option value="queue-simple">Simple Queue (Target Subnet)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Model Pembagian Bandwidth</label>
+                    <select
+                      value={pcqRateMode}
+                      onChange={(e) => setPcqRateMode(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="auto-equal">Dynamic Shared Rata Otomatis (pcq-rate=0)</option>
+                      <option value="fixed">Fixed Max Limit Per User (pcq-rate=X)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">LAN Interface</label>
+                    <input
+                      type="text"
+                      value={pcqLanInterface}
+                      onChange={(e) => setPcqLanInterface(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                      placeholder="bridge-LAN"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">WAN Interface</label>
+                    <input
+                      type="text"
+                      value={pcqWanInterface}
+                      onChange={(e) => setPcqWanInterface(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                      placeholder="ether1-ISP1"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Total Bandwidth Induk (Upload / Download)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={pcqParentUpload}
+                        onChange={(e) => setPcqParentUpload(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                        placeholder="10M"
+                      />
+                      <input
+                        type="text"
+                        value={pcqParentDownload}
+                        onChange={(e) => setPcqParentDownload(e.target.value)}
+                        className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                        placeholder="50M"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Target Client Subnet</label>
+                    <input
+                      type="text"
+                      value={pcqClientSubnet}
+                      onChange={(e) => setPcqClientSubnet(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                      placeholder="192.168.88.0/24"
+                    />
+                  </div>
+                </div>
+
+                {pcqRateMode === 'fixed' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-amber-50/70 border border-amber-200 rounded-xl">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Maksimal Upload Per User</label>
+                      <input
+                        type="text"
+                        value={pcqRateUpload}
+                        onChange={(e) => setPcqRateUpload(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                        placeholder="1M"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Maksimal Download Per User</label>
+                      <input
+                        type="text"
+                        value={pcqRateDownload}
+                        onChange={(e) => setPcqRateDownload(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono bg-white"
+                        placeholder="5M"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 0.7 QoS Priority Youtube, Tiktok, WA, FB, etc. */}
+            {selectedToolId === 'queue-qos-priority' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Mode Implementasi</label>
+                    <select
+                      value={qosMode}
+                      onChange={(e) => setQosMode(e.target.value as any)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-white"
+                    >
+                      <option value="complete">Skrip Mandiri Lengkap (Offline / Standalone)</option>
+                      <option value="step1_fetch">Step 1: Download File via /tool fetch</option>
+                      <option value="step2_import">Step 2: Import & Terapkan Antrian</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Total Download ISP</label>
+                    <input
+                      type="text"
+                      value={qosTotalDownload}
+                      onChange={(e) => setQosTotalDownload(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="50M"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Total Upload ISP</label>
+                    <input
+                      type="text"
+                      value={qosTotalUpload}
+                      onChange={(e) => setQosTotalUpload(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="10M"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">LAN Interface (Lokal)</label>
+                    <input
+                      type="text"
+                      value={qosLanInterface}
+                      onChange={(e) => setQosLanInterface(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="bridge-LAN"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">WAN Interface (Publik)</label>
+                    <input
+                      type="text"
+                      value={qosWanInterface}
+                      onChange={(e) => setQosWanInterface(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="ether1-ISP1"
+                    />
+                  </div>
+                </div>
+
+                {qosMode !== 'complete' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">GitHub / Server RSC URL</label>
+                    <input
+                      type="text"
+                      value={qosGithubRawUrl}
+                      onChange={(e) => setQosGithubRawUrl(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg font-mono"
+                      placeholder="https://raw.githubusercontent.com/..."
+                    />
+                  </div>
+                )}
+
+                {/* Service Selection Box */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Activity className="w-4 h-4 text-rose-600" />
+                      Pilih Layanan & Game Yang Diprioritaskan ({qosSelectedServices.length} aktif)
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setQosSelectedServices(QOS_SERVICE_PRESETS.map((p) => p.id))}
+                        className="px-2 py-0.5 text-[11px] font-semibold text-orange-700 bg-orange-100 hover:bg-orange-200 rounded"
+                      >
+                        Pilih Semua
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setQosSelectedServices([])}
+                        className="px-2 py-0.5 text-[11px] font-semibold text-slate-600 bg-slate-200 hover:bg-slate-300 rounded"
+                      >
+                        Batal Semua
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-56 overflow-y-auto p-1">
+                    {QOS_SERVICE_PRESETS.map((preset) => {
+                      const isChecked = qosSelectedServices.includes(preset.id);
+                      return (
+                        <label
+                          key={preset.id}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                            isChecked
+                              ? 'bg-rose-50 border-rose-300 text-rose-950 font-semibold'
+                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setQosSelectedServices([...qosSelectedServices, preset.id]);
+                              } else {
+                                setQosSelectedServices(qosSelectedServices.filter((id) => id !== preset.id));
+                              }
+                            }}
+                            className="w-3.5 h-3.5 accent-rose-600 rounded"
+                          />
+                          <span className="truncate">{preset.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Priority Hierarchy Breakdown */}
+                <div className="p-3 bg-rose-50/70 border border-rose-200 rounded-xl text-xs space-y-1.5">
+                  <div className="font-bold text-rose-950 flex items-center gap-1.5">
+                    <Shield className="w-4 h-4 text-rose-700" /> Hirarki Tingkat Prioritas Antrian (Priority 1 - 8)
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] pt-1">
+                    <div className="p-2 bg-white rounded border border-rose-100">
+                      <b className="text-red-700">Priority 1:</b> DNS, ICMP Ping, Game Ping ACK
+                    </div>
+                    <div className="p-2 bg-white rounded border border-rose-100">
+                      <b className="text-amber-700">Priority 2:</b> Game Online (MLBB, FF, Valorant)
+                    </div>
+                    <div className="p-2 bg-white rounded border border-rose-100">
+                      <b className="text-emerald-700">Priority 3:</b> WhatsApp, Zoom, Medsos
+                    </div>
+                    <div className="p-2 bg-white rounded border border-rose-100">
+                      <b className="text-blue-700">Priority 4:</b> YouTube, TikTok Streaming
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 1. PCC & 2. NTH & 3. ECMP WAN Table */}
             {(selectedToolId === 'lb-pcc' || selectedToolId === 'lb-nth' || selectedToolId === 'lb-ecmp') && (
