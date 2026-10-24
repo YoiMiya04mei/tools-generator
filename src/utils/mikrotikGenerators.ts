@@ -1,5 +1,6 @@
 import type {
   RouterOSVersion,
+  WanLine,
   PCCConfig,
   NTHConfig,
   ECMPConfig,
@@ -211,13 +212,72 @@ function headerBanner(title: string, rosVersion: RouterOSVersion): string {
 `;
 }
 
+// Helper function to calculate PCC Divisor and proportional slot distribution from WAN bandwidth speeds
+export function computePCCRatio(wans: WanLine[]): {
+  totalSlots: number;
+  overallGcd: number;
+  allocations: {
+    wan: WanLine;
+    speed: number;
+    slots: number;
+    percentage: string;
+    ratios: string[];
+  }[];
+} {
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+
+  const speeds = wans.map((w) => {
+    if (typeof w.speed === 'number' && w.speed > 0) return Math.round(w.speed);
+    if (typeof w.weight === 'number' && w.weight > 0) return Math.round(w.weight);
+    return 100;
+  });
+
+  let overallGcd = speeds[0] || 1;
+  for (let i = 1; i < speeds.length; i++) {
+    overallGcd = gcd(overallGcd, speeds[i]);
+  }
+  if (!overallGcd || overallGcd <= 0) overallGcd = 1;
+
+  const normalizedSlots = speeds.map((s) => Math.max(1, Math.round(s / overallGcd)));
+  const totalSlots = normalizedSlots.reduce((a, b) => a + b, 0);
+
+  let currentSlot = 0;
+  const allocations = wans.map((w, idx) => {
+    const slots = normalizedSlots[idx];
+    const ratios: string[] = [];
+    for (let s = 0; s < slots; s++) {
+      ratios.push(`${totalSlots}/${currentSlot}`);
+      currentSlot++;
+    }
+    const percentage = ((slots / totalSlots) * 100).toFixed(1);
+    return {
+      wan: w,
+      speed: speeds[idx],
+      slots,
+      percentage,
+      ratios,
+    };
+  });
+
+  return {
+    totalSlots,
+    overallGcd,
+    allocations,
+  };
+}
+
 // 1. PCC (Per Connection Classifier)
 export function generatePCCScript(config: PCCConfig): string {
   const { rosVersion, lanInterface, lanSubnet, pccClassifier, wans, addDefaultRoute, addNatMasquerade, addLocalAcceptRule } = config;
   const count = wans.length;
   if (count < 2) return '# Error: Minimal 2 WAN line diperlukan untuk Load Balancing PCC.';
 
+  const ratioInfo = computePCCRatio(wans);
+  const ratioDetails = ratioInfo.allocations.map((a) => `${a.wan.name}: ${a.speed}Mbps (${a.slots} slot)`).join(' : ');
+
   const lines: string[] = [headerBanner(`Load Balancing PCC (${count} WAN Lines)`, rosVersion)];
+  lines.push(`# Rasio Bandwidth & Slot Divisor: ${ratioDetails} | Total Divisor: ${ratioInfo.totalSlots}`);
+  lines.push('');
 
   if (addLocalAcceptRule) {
     lines.push('# 1. Address List Jaringan Lokal (RFC6890 / RFC1918)');
@@ -252,17 +312,19 @@ export function generatePCCScript(config: PCCConfig): string {
     lines.push(`add chain=output connection-mark="${w.name}_conn" action=mark-routing new-routing-mark="to_${w.name}" passthrough=no comment="${w.name} Output Reply"`);
   });
 
-  // Prerouting PCC classifier rules
-  wans.forEach((w, index) => {
-    const lanCondition = lanInterface ? `in-interface="${lanInterface}"` : `src-address="${lanSubnet || '192.168.88.0/24'}"`;
-    lines.push(
-      `add chain=prerouting ${lanCondition} connection-state=new dst-address-type=!local per-connection-classifier=${pccClassifier}:${count}/${index} action=mark-connection new-connection-mark="${w.name}_conn" passthrough=yes comment="PCC Classifier ${w.name}"`
-    );
+  // Prerouting PCC classifier rules with proportional bandwidth slot allocations
+  const lanCondition = lanInterface ? `in-interface="${lanInterface}"` : `src-address="${lanSubnet || '192.168.88.0/24'}"`;
+  ratioInfo.allocations.forEach((alloc) => {
+    alloc.ratios.forEach((ratio, slotIdx) => {
+      const partInfo = alloc.ratios.length > 1 ? ` (${slotIdx + 1}/${alloc.ratios.length})` : '';
+      lines.push(
+        `add chain=prerouting ${lanCondition} connection-state=new dst-address-type=!local per-connection-classifier=${pccClassifier}:${ratio} action=mark-connection new-connection-mark="${alloc.wan.name}_conn" passthrough=yes comment="PCC Classifier ${alloc.wan.name}${partInfo}"`
+      );
+    });
   });
 
   // Prerouting mark routing based on connection mark
   wans.forEach((w) => {
-    const lanCondition = lanInterface ? `in-interface="${lanInterface}"` : `src-address="${lanSubnet || '192.168.88.0/24'}"`;
     lines.push(
       `add chain=prerouting ${lanCondition} connection-mark="${w.name}_conn" action=mark-routing new-routing-mark="to_${w.name}" passthrough=no comment="Route to ${w.name}"`
     );

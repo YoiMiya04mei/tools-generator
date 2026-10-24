@@ -56,6 +56,7 @@ import type {
 } from '../types/mikrotikTools';
 import type { ToastMessage } from '../components/Toast';
 import {
+  computePCCRatio,
   generatePCCScript,
   generateNTHScript,
   generateECMPScript,
@@ -467,8 +468,8 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
 
   // Common Multi-WAN State (used by PCC, NTH, ECMP)
   const [wans, setWans] = useState<WanLine[]>([
-    { id: '1', name: 'WAN1', interface: 'ether1-ISP1', gateway: '192.168.1.1', distance: 1, weight: 1, targetDns: '8.8.8.8' },
-    { id: '2', name: 'WAN2', interface: 'ether2-ISP2', gateway: '192.168.2.1', distance: 2, weight: 1, targetDns: '1.1.1.1' },
+    { id: '1', name: 'WAN1', interface: 'ether1-ISP1', gateway: '192.168.1.1', distance: 1, weight: 1, speed: 100, targetDns: '8.8.8.8' },
+    { id: '2', name: 'WAN2', interface: 'ether2-ISP2', gateway: '192.168.2.1', distance: 2, weight: 1, speed: 200, targetDns: '1.1.1.1' },
   ]);
 
   // PCC state
@@ -866,6 +867,7 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
       gateway: `192.168.${nextIdx}.1`,
       distance: nextIdx,
       weight: 1,
+      speed: 100,
       targetDns: nextIdx === 3 ? '208.67.222.222' : '9.9.9.9',
     };
     setWans([...wans, newWan]);
@@ -902,6 +904,9 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
     setMacAddress(mac);
     addToast?.('info', 'MAC Diperbarui', `MAC Address baru: ${mac}`);
   };
+
+  // PCC Bandwidth Ratio & Divisor Calculation
+  const pccRatioInfo = useMemo(() => computePCCRatio(wans), [wans]);
 
   // Generate output script dynamically based on active tool
   const generatedScript = useMemo<string>(() => {
@@ -2874,7 +2879,12 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
             {(selectedToolId === 'lb-pcc' || selectedToolId === 'lb-nth' || selectedToolId === 'lb-ecmp') && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-700">Daftar WAN Lines (Koneksi ISP):</label>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700">Daftar WAN Lines (Koneksi ISP):</label>
+                    {selectedToolId === 'lb-pcc' && (
+                      <p className="text-[11px] text-slate-500">Tentukan bandwidth/kecepatan (Mbps) tiap ISP untuk menghitung rasio PCC.</p>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={handleAddWan}
@@ -2887,9 +2897,12 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                 <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 text-xs">
                   <div className="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 font-semibold text-slate-600">
                     <div className="col-span-2">Name</div>
-                    <div className="col-span-4">Interface</div>
-                    <div className="col-span-4">Gateway IP</div>
-                    <div className="col-span-2 text-center">Aksi</div>
+                    <div className={selectedToolId === 'lb-pcc' ? 'col-span-3' : 'col-span-4'}>Interface</div>
+                    <div className={selectedToolId === 'lb-pcc' ? 'col-span-3' : 'col-span-4'}>Gateway IP</div>
+                    {selectedToolId === 'lb-pcc' && (
+                      <div className="col-span-3">Bandwidth / Kecepatan</div>
+                    )}
+                    <div className={selectedToolId === 'lb-pcc' ? 'col-span-1 text-center' : 'col-span-2 text-center'}>Aksi</div>
                   </div>
                   {wans.map((w) => (
                     <div key={w.id} className="grid grid-cols-12 gap-2 px-3 py-2.5 items-center bg-white hover:bg-slate-50/60">
@@ -2901,7 +2914,7 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                           className="w-full px-2 py-1 text-xs border border-slate-200 rounded-md font-mono"
                         />
                       </div>
-                      <div className="col-span-4">
+                      <div className={selectedToolId === 'lb-pcc' ? 'col-span-3' : 'col-span-4'}>
                         <input
                           type="text"
                           value={w.interface}
@@ -2909,7 +2922,7 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                           className="w-full px-2 py-1 text-xs border border-slate-200 rounded-md font-mono"
                         />
                       </div>
-                      <div className="col-span-4">
+                      <div className={selectedToolId === 'lb-pcc' ? 'col-span-3' : 'col-span-4'}>
                         <input
                           type="text"
                           value={w.gateway}
@@ -2917,7 +2930,25 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                           className="w-full px-2 py-1 text-xs border border-slate-200 rounded-md font-mono"
                         />
                       </div>
-                      <div className="col-span-2 text-center">
+                      {selectedToolId === 'lb-pcc' && (
+                        <div className="col-span-3">
+                          <div className="flex items-center">
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={w.speed ?? 100}
+                              onChange={(e) => handleUpdateWan(w.id, 'speed', Math.max(1, parseInt(e.target.value, 10) || 1))}
+                              className="w-full px-2 py-1 text-xs border border-slate-200 rounded-l-md font-mono text-right"
+                              placeholder="100"
+                            />
+                            <span className="px-2 py-1 text-[11px] bg-slate-100 border border-l-0 border-slate-200 rounded-r-md text-slate-600 font-medium">
+                              Mbps
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      <div className={selectedToolId === 'lb-pcc' ? 'col-span-1 text-center' : 'col-span-2 text-center'}>
                         <button
                           type="button"
                           onClick={() => handleRemoveWan(w.id)}
@@ -2930,6 +2961,52 @@ export const MikroTikToolsPage: React.FC<MikroTikToolsPageProps> = ({ addToast }
                     </div>
                   ))}
                 </div>
+
+                {selectedToolId === 'lb-pcc' && (
+                  <div className="p-3.5 bg-gradient-to-r from-orange-50/70 to-amber-50/50 border border-orange-200 rounded-xl text-xs space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                        <span className="font-semibold text-slate-800">
+                          Kalkulasi Rasio PCC (Per Connection Classifier):
+                        </span>
+                        <span className="px-2 py-0.5 bg-orange-100 text-orange-800 rounded font-mono font-bold text-[11px]">
+                          Divisor: {pccRatioInfo.totalSlots}
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono text-slate-600 bg-white/80 px-2 py-0.5 rounded border border-orange-200/60">
+                        Perbandingan: {pccRatioInfo.allocations.map((a) => `${a.wan.name} (${a.slots})`).join(' : ')}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-0.5">
+                      {pccRatioInfo.allocations.map((alloc) => (
+                        <div key={alloc.wan.id} className="bg-white p-2.5 rounded-lg border border-orange-200/60 shadow-xs flex flex-col justify-between">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-800">{alloc.wan.name}</span>
+                            <span className="px-1.5 py-0.5 bg-orange-50 text-orange-700 font-mono font-semibold text-[10px] rounded border border-orange-100">
+                              {alloc.speed} Mbps
+                            </span>
+                          </div>
+                          <div className="mt-1.5 flex items-baseline justify-between text-[11px]">
+                            <span className="text-slate-500">Porsi Trafik:</span>
+                            <span className="font-semibold text-orange-600">{alloc.percentage}%</span>
+                          </div>
+                          <div className="mt-1 flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                            <span>Slot PCC:</span>
+                            <span className="font-semibold text-slate-700 bg-slate-100 px-1 rounded truncate max-w-[120px]" title={alloc.ratios.join(', ')}>
+                              {alloc.ratios.join(', ')}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      Sistem menghitung rasio bandwidth ISP menggunakan rumus FPB / GCD (Greatest Common Divisor). Mangle prerouting otomatis dipecah menjadi <b className="text-slate-800">{pccRatioInfo.allocations.map((a) => `${a.wan.name}: ${a.slots} slot`).join(', ')}</b> sehingga beban traffic didistribusikan seimbang sesuai kapasitas masing-masing link ISP.
+                    </p>
+                  </div>
+                )}
 
                 {selectedToolId === 'lb-pcc' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">

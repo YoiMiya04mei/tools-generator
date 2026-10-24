@@ -74,6 +74,7 @@ export interface WanLine {
   gateway: string; // e.g. 192.168.1.1
   distance: number;
   weight?: number; // for PCC / ECMP ratio
+  speed?: number; // bandwidth speed in Mbps for PCC ratio (e.g. 100, 200)
   targetDns?: string; // for recursive failover, e.g. 8.8.8.8
 }
 

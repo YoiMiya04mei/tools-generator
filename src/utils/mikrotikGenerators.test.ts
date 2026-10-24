@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  computePCCRatio,
   generatePCCScript,
   generateNTHScript,
   generateECMPScript,
@@ -74,6 +75,36 @@ describe('MikroTik Script Generators', () => {
     expect(v7Script).toContain('/routing table');
     expect(v7Script).toContain('add name="to_WAN1" fib');
     expect(v7Script).toContain('routing-table="to_WAN1"');
+  });
+
+  it('1b. PCC Generator calculates bandwidth ratio correctly (e.g. WAN1 100Mbps, WAN2 200Mbps)', () => {
+    const ratioWans = [
+      { id: '1', name: 'WAN1', interface: 'ether1-ISP1', gateway: '192.168.1.1', distance: 1, speed: 100 },
+      { id: '2', name: 'WAN2', interface: 'ether2-ISP2', gateway: '192.168.2.1', distance: 2, speed: 200 },
+    ];
+
+    const ratioInfo = computePCCRatio(ratioWans);
+    expect(ratioInfo.totalSlots).toBe(3);
+    expect(ratioInfo.allocations[0].slots).toBe(1);
+    expect(ratioInfo.allocations[0].ratios).toEqual(['3/0']);
+    expect(ratioInfo.allocations[1].slots).toBe(2);
+    expect(ratioInfo.allocations[1].ratios).toEqual(['3/1', '3/2']);
+
+    const script = generatePCCScript({
+      rosVersion: 'v7',
+      lanInterface: 'ether3-LAN',
+      lanSubnet: '192.168.88.0/24',
+      pccClassifier: 'both-addresses-and-ports',
+      wans: ratioWans,
+      addDefaultRoute: true,
+      addNatMasquerade: true,
+      addLocalAcceptRule: true,
+    });
+
+    expect(script).toContain('per-connection-classifier=both-addresses-and-ports:3/0');
+    expect(script).toContain('per-connection-classifier=both-addresses-and-ports:3/1');
+    expect(script).toContain('per-connection-classifier=both-addresses-and-ports:3/2');
+    expect(script).toContain('Total Divisor: 3');
   });
 
   it('2. NTH Generator produces round-robin rules', () => {
