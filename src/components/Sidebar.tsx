@@ -17,6 +17,7 @@ import {
   PackageCheck,
   Network,
   Server,
+  Terminal,
 } from 'lucide-react';
 import type { ActiveTab } from '../types/rfo';
 import type { UserAccount } from '../types/auth';
@@ -99,6 +100,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: <Server className="w-5 h-5 shrink-0" />,
       badge: '16 Tools',
       show: true,
+      dividerBefore: null,
+    },
+    {
+      id: 'huawei-activation' as ActiveTab,
+      label: 'Aktivasi Huawei',
+      icon: <Terminal className="w-5 h-5 shrink-0" />,
+      badge: 'Super Admin',
+      show: isAdmin,
       dividerBefore: null,
     },
     {

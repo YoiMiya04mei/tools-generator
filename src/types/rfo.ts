@@ -91,5 +91,6 @@ export type ActiveTab =
   | 'users'
   | 'settings'
   | 'traffic-qos'
-  | 'mikrotik-tools';
+  | 'mikrotik-tools'
+  | 'huawei-activation';
 
