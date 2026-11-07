@@ -87,6 +87,8 @@ export type ActiveTab =
   | 'create-pm'
   | 'history-pm'
   | 'templates-pm'
+  | 'create-bpv'
+  | 'history-bpv'
   | 'templates'
   | 'users'
   | 'settings'

@@ -19,11 +19,14 @@ import {
   Clock,
   Loader2,
   PackageCheck,
+  CreditCard,
+  FileSpreadsheet,
 } from 'lucide-react';
 import type { RFODocument, RFOTemplate, ActiveTab } from '../types/rfo';
 import type { SuratTugasDocument, SuratTugasTemplate } from '../types/suratTugas';
 import type { BeritaAcaraDocument, BeritaAcaraTemplate } from '../types/beritaAcara';
 import type { PermitBarangDocument, PermitBarangTemplate } from '../types/permitBarang';
+import type { BankPaymentVoucherDocument } from '../types/bankPaymentVoucher';
 import type { UserAccount } from '../types/auth';
 import type { ToastMessage } from '../components/Toast';
 import { authService } from '../services/authService';
@@ -31,12 +34,14 @@ import { storageService } from '../services/storageService';
 import { suratTugasStorage } from '../services/suratTugasStorage';
 import { beritaAcaraStorage } from '../services/beritaAcaraStorage';
 import { permitBarangStorage } from '../services/permitBarangStorage';
+import { bankPaymentVoucherStorage } from '../services/bankPaymentVoucherStorage';
 import { RFOService } from '../services/rfoService';
 import { PDFService } from '../services/pdfService';
 import { RFOPaperDocument } from '../components/RFOPaperDocument';
 import { SuratTugasPaperDocument } from '../components/SuratTugasPaperDocument';
 import { BeritaAcaraPaperDocument } from '../components/BeritaAcaraPaperDocument';
 import { PermitBarangPaperDocument } from '../components/PermitBarangPaperDocument';
+import { BankPaymentVoucherPaperDocument } from '../components/BankPaymentVoucherPaperDocument';
 import { formatIndonesianDateOnly, formatCreationTimestamp } from '../utils/dateFormatter';
 import {
   formatSuratTugasExecutionDate,
@@ -54,8 +59,14 @@ import {
   generatePermitBarangFileName,
   isPermitBarangMultiPage,
 } from '../utils/permitBarangUtils';
+import {
+  formatRupiahFull,
+  generateBankPaymentVoucherWhatsAppText,
+  generateBankPaymentVoucherFileName,
+} from '../utils/bankPaymentVoucherUtils';
+import { downloadBankPaymentVoucherExcel } from '../services/bankPaymentVoucherExcelService';
 
-export type UnifiedDocType = 'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang';
+export type UnifiedDocType = 'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang' | 'bank-voucher';
 
 export interface UnifiedDocumentItem {
   id: string;
@@ -73,6 +84,7 @@ export interface UnifiedDocumentItem {
   rawSuratTugas?: SuratTugasDocument;
   rawBeritaAcara?: BeritaAcaraDocument;
   rawPermitBarang?: PermitBarangDocument;
+  rawBankPaymentVoucher?: BankPaymentVoucherDocument;
 }
 
 interface HistoryPageProps {
@@ -89,9 +101,11 @@ interface HistoryPageProps {
   onDuplicateBeritaAcara: (doc: BeritaAcaraDocument) => void;
   onEditPermitBarang?: (doc: PermitBarangDocument) => void;
   onDuplicatePermitBarang?: (doc: PermitBarangDocument) => void;
+  onEditBankPaymentVoucher?: (doc: BankPaymentVoucherDocument) => void;
+  onDuplicateBankPaymentVoucher?: (doc: BankPaymentVoucherDocument) => void;
   addToast: (type: ToastMessage['type'], title: string, message?: string) => void;
   currentUser?: UserAccount | null;
-  initialTypeFilter?: 'all' | 'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang';
+  initialTypeFilter?: 'all' | 'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang' | 'bank-voucher';
 }
 
 export const HistoryPage: React.FC<HistoryPageProps> = ({
@@ -108,6 +122,8 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   onDuplicateBeritaAcara,
   onEditPermitBarang,
   onDuplicatePermitBarang,
+  onEditBankPaymentVoucher,
+  onDuplicateBankPaymentVoucher,
   addToast,
   currentUser,
   initialTypeFilter = 'all',
@@ -117,10 +133,11 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   const [suratTugasList, setSuratTugasList] = useState<SuratTugasDocument[]>([]);
   const [beritaAcaraList, setBeritaAcaraList] = useState<BeritaAcaraDocument[]>([]);
   const [permitBarangList, setPermitBarangList] = useState<PermitBarangDocument[]>([]);
+  const [bankVoucherList, setBankVoucherList] = useState<BankPaymentVoucherDocument[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Filters & Search
-  const [typeFilter, setTypeFilter] = useState<'all' | 'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang'>(
+  const [typeFilter, setTypeFilter] = useState<'all' | 'rfo' | 'surat-tugas' | 'berita-acara' | 'permit-barang' | 'bank-voucher'>(
     initialTypeFilter
   );
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -133,6 +150,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   const [selectedSuratTugas, setSelectedSuratTugas] = useState<SuratTugasDocument | null>(null);
   const [selectedBeritaAcara, setSelectedBeritaAcara] = useState<BeritaAcaraDocument | null>(null);
   const [selectedPermitBarang, setSelectedPermitBarang] = useState<PermitBarangDocument | null>(null);
+  const [selectedBankPaymentVoucher, setSelectedBankPaymentVoucher] = useState<BankPaymentVoucherDocument | null>(null);
   const [baModalPageTab, setBaModalPageTab] = useState<'all' | number>('all');
   const [pmModalPageTab, setPmModalPageTab] = useState<'all' | 1 | 2>('all');
 
@@ -159,16 +177,18 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
   const loadAllDocuments = async () => {
     setLoading(true);
     try {
-      const [rfoDocs, stDocs, baDocs, pmDocs] = await Promise.all([
+      const [rfoDocs, stDocs, baDocs, pmDocs, bpvDocs] = await Promise.all([
         storageService.getAllRFOs().catch(() => []),
         suratTugasStorage.getAllSuratTugas().catch(() => []),
         beritaAcaraStorage.getAllBeritaAcara().catch(() => []),
         permitBarangStorage.getAllPermitBarang().catch(() => []),
+        bankPaymentVoucherStorage.getAllVouchers().catch(() => []),
       ]);
       setRfos(rfoDocs);
       setSuratTugasList(stDocs);
       setBeritaAcaraList(baDocs);
       setPermitBarangList(pmDocs);
+      setBankVoucherList(bpvDocs);
     } catch (e) {
       console.error('Failed to load documents:', e);
       addToast('error', 'Gagal Memuat Data', 'Tidak dapat mengambil arsip dokumen.');
@@ -264,13 +284,31 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
       });
     });
 
+    // 5. Process Bank Payment Voucher
+    bankVoucherList.forEach((bpv) => {
+      list.push({
+        id: bpv.id,
+        type: 'bank-voucher',
+        typeLabel: 'Payment Voucher',
+        number: bpv.voucherNumber,
+        title: `Payment Voucher — ${bpv.payTo}`,
+        subtitle: `Total: ${formatRupiahFull(bpv.totalAmount)} • ${bpv.items?.length || 0} Transaksi • Bank: ${bpv.bankName} (${bpv.bankAccount})`,
+        date: formatIndonesianDateOnly(bpv.voucherDate),
+        createdDate: bpv.voucherDate || (bpv.createdAt ? bpv.createdAt.slice(0, 10) : ''),
+        createdAt: bpv.createdAt || bpv.voucherDate || new Date().toISOString(),
+        creator: bpv.createdByName || bpv.preparedByName || 'Super Admin',
+        creatorRole: bpv.createdByRole || 'admin',
+        rawBankPaymentVoucher: bpv,
+      });
+    });
+
     // Sort
     return list.sort((a, b) => {
       const timeA = new Date(a.createdAt).getTime() || 0;
       const timeB = new Date(b.createdAt).getTime() || 0;
       return sortBy === 'newest' ? timeB - timeA : timeA - timeB;
     });
-  }, [rfos, suratTugasList, beritaAcaraList, permitBarangList, sortBy]);
+  }, [rfos, suratTugasList, beritaAcaraList, permitBarangList, bankVoucherList, sortBy]);
 
   // Distinct Creator Options
   const creatorOptions = useMemo(() => {
@@ -324,6 +362,9 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         if (item.type === 'permit-barang' && item.rawPermitBarang?.createdDate) {
           candidates.add(item.rawPermitBarang.createdDate.slice(0, 10));
         }
+        if (item.type === 'bank-voucher' && item.rawBankPaymentVoucher?.voucherDate) {
+          candidates.add(item.rawBankPaymentVoucher.voucherDate.slice(0, 10));
+        }
 
         if (item.createdAt) {
           candidates.add(item.createdAt.slice(0, 10));
@@ -360,8 +401,16 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
       suratTugas: suratTugasList.length,
       beritaAcara: beritaAcaraList.length,
       permitBarang: permitBarangList.length,
+      bankVoucher: bankVoucherList.length,
     };
-  }, [unifiedItems.length, rfos.length, suratTugasList.length, beritaAcaraList.length, permitBarangList.length]);
+  }, [
+    unifiedItems.length,
+    rfos.length,
+    suratTugasList.length,
+    beritaAcaraList.length,
+    permitBarangList.length,
+    bankVoucherList.length,
+  ]);
 
   // Reset Filters
   const handleResetFilters = () => {
@@ -388,6 +437,8 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
     } else if (item.type === 'permit-barang' && item.rawPermitBarang) {
       setSelectedPermitBarang(item.rawPermitBarang);
       setPmModalPageTab('all');
+    } else if (item.type === 'bank-voucher' && item.rawBankPaymentVoucher) {
+      setSelectedBankPaymentVoucher(item.rawBankPaymentVoucher);
     }
   };
 
@@ -543,10 +594,53 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             setExportingItem(null);
           }
         }, 300);
+      } else if (item.type === 'bank-voucher' && item.rawBankPaymentVoucher) {
+        addToast('info', 'Membuat PDF Voucher...', 'Sedang merender layout dokumen.');
+        const isModalOpen = selectedBankPaymentVoucher?.id === item.id;
+        if (!isModalOpen) {
+          setExportingItem(item);
+        }
+
+        setTimeout(async () => {
+          try {
+            const targetId = isModalOpen
+              ? 'history-bpv-modal-doc'
+              : 'direct-export-bpv-doc';
+            const element = document.getElementById(targetId);
+            if (!element) {
+              addToast('error', 'Gagal', 'Elemen dokumen tidak ditemukan.');
+              return;
+            }
+
+            const filename = generateBankPaymentVoucherFileName(item.rawBankPaymentVoucher!);
+            await PDFService.exportSinglePagePDF(element, filename);
+            addToast('success', 'PDF Terunduh', filename);
+          } catch (e) {
+            console.error('BPV PDF error:', e);
+            addToast('error', 'Gagal', 'Terjadi kesalahan saat mengekspor PDF.');
+          } finally {
+            setDownloadingId(null);
+            setExportingItem(null);
+          }
+        }, 250);
       }
     } catch {
       setDownloadingId(null);
       setExportingItem(null);
+    }
+  };
+
+  // Unduh Excel (.xlsx) untuk Bank Payment Voucher
+  const handleExportExcel = async (item: UnifiedDocumentItem) => {
+    if (item.type !== 'bank-voucher' || !item.rawBankPaymentVoucher) return;
+    try {
+      addToast('info', 'Membuat File Excel...', 'Sedang memproses berkas Excel...');
+      await downloadBankPaymentVoucherExcel(item.rawBankPaymentVoucher);
+      const filename = generateBankPaymentVoucherFileName(item.rawBankPaymentVoucher, 'xlsx');
+      addToast('success', 'Excel Terunduh', `${filename} berhasil digenerate persis sesuai template asli.`);
+    } catch (e) {
+      console.error('Excel download error:', e);
+      addToast('error', 'Gagal', 'Terjadi kesalahan saat memproses unduhan Excel.');
     }
   };
 
@@ -571,6 +665,8 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
           item.rawPermitBarang,
           permitBarangTemplate?.companyName || template.companyName
         );
+      } else if (item.type === 'bank-voucher' && item.rawBankPaymentVoucher) {
+        text = generateBankPaymentVoucherWhatsAppText(item.rawBankPaymentVoucher);
       }
 
       await navigator.clipboard.writeText(text);
@@ -594,6 +690,8 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
       onEditBeritaAcara(item.rawBeritaAcara);
     } else if (item.type === 'permit-barang' && item.rawPermitBarang) {
       onEditPermitBarang?.(item.rawPermitBarang);
+    } else if (item.type === 'bank-voucher' && item.rawBankPaymentVoucher) {
+      onEditBankPaymentVoucher?.(item.rawBankPaymentVoucher);
     }
   };
 
@@ -607,6 +705,8 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
       onDuplicateBeritaAcara(item.rawBeritaAcara);
     } else if (item.type === 'permit-barang' && item.rawPermitBarang) {
       onDuplicatePermitBarang?.(item.rawPermitBarang);
+    } else if (item.type === 'bank-voucher' && item.rawBankPaymentVoucher) {
+      onDuplicateBankPaymentVoucher?.(item.rawBankPaymentVoucher);
     }
   };
 
@@ -630,6 +730,10 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         await permitBarangStorage.deletePermitBarang(id);
         setPermitBarangList((prev) => prev.filter((pm) => pm.id !== id));
         success = true;
+      } else if (type === 'bank-voucher') {
+        await bankPaymentVoucherStorage.deleteVoucher(id);
+        setBankVoucherList((prev) => prev.filter((v) => v.id !== id));
+        success = true;
       }
 
       if (success) {
@@ -638,6 +742,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         if (selectedSuratTugas?.id === id) setSelectedSuratTugas(null);
         if (selectedBeritaAcara?.id === id) setSelectedBeritaAcara(null);
         if (selectedPermitBarang?.id === id) setSelectedPermitBarang(null);
+        if (selectedBankPaymentVoucher?.id === id) setSelectedBankPaymentVoucher(null);
       } else {
         addToast('error', 'Gagal', 'Dokumen tidak ditemukan.');
       }
@@ -680,6 +785,13 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             Permit Barang
           </span>
         );
+      case 'bank-voucher':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <CreditCard className="w-3 h-3 text-indigo-600" />
+            Payment Voucher
+          </span>
+        );
     }
   };
 
@@ -706,7 +818,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         </div>
 
         {/* 2. Interactive Document Type Filter Tabs */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
           <button
             onClick={() => setTypeFilter('all')}
             className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
@@ -814,6 +926,28 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
             </div>
             {typeFilter === 'permit-barang' && (
               <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0"></span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setTypeFilter('bank-voucher')}
+            className={`p-2.5 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+              typeFilter === 'bank-voucher'
+                ? 'bg-white border-indigo-600 shadow-xs ring-2 ring-indigo-500/20'
+                : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-xs'
+            }`}
+          >
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shrink-0">
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">Payment Voucher</p>
+                <p className="text-base sm:text-lg font-black text-indigo-700">{counts.bankVoucher}</p>
+              </div>
+            </div>
+            {typeFilter === 'bank-voucher' && (
+              <span className="w-2 h-2 rounded-full bg-indigo-600 shrink-0"></span>
             )}
           </button>
         </div>
@@ -1028,18 +1162,28 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                       <Eye className="w-4 h-4 text-blue-600" />
                     </button>
 
-                    <button
-                      onClick={() => handleDownloadPDF(item)}
-                      disabled={downloadingId === item.id}
-                      className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                      title="Unduh PDF Langsung"
-                    >
-                      {downloadingId === item.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                      ) : (
-                        <FileDown className="w-4 h-4 text-slate-700" />
-                      )}
-                    </button>
+                    {item.type !== 'bank-voucher' ? (
+                      <button
+                        onClick={() => handleDownloadPDF(item)}
+                        disabled={downloadingId === item.id}
+                        className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                        title="Unduh PDF Langsung"
+                      >
+                        {downloadingId === item.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                        ) : (
+                          <FileDown className="w-4 h-4 text-slate-700" />
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleExportExcel(item)}
+                        className="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-xs transition-colors cursor-pointer"
+                        title="Unduh Excel (.xlsx) Template Asli"
+                      >
+                        <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                      </button>
+                    )}
 
                     <button
                       onClick={() => handleCopyWhatsApp(item)}
@@ -1459,6 +1603,92 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
         </div>
       )}
 
+      {/* ================= MODAL PREVIEW BANK PAYMENT VOUCHER ================= */}
+      {selectedBankPaymentVoucher && (
+        <div className="print-modal fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 bg-slate-900/80 backdrop-blur-xs overflow-y-auto">
+          <div className="print-modal-container relative bg-white border border-slate-200 rounded-2xl w-full max-w-4xl max-h-[96vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+            {/* Modal Header */}
+            <div className="no-print px-3.5 py-2.5 sm:px-5 sm:py-4 border-b border-slate-200 flex items-center justify-between gap-2 bg-white shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
+                  Payment Voucher
+                </span>
+                <span className="font-mono text-xs sm:text-sm text-slate-900 font-bold truncate">
+                  {selectedBankPaymentVoucher.voucherNumber}
+                </span>
+                <span className="text-slate-400 hidden sm:inline">•</span>
+                <span className="text-xs text-slate-700 font-semibold truncate hidden sm:inline">
+                  {selectedBankPaymentVoucher.payTo}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <button
+                  onClick={() => setTimeout(() => window.print(), 100)}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-xs text-slate-700 border border-slate-200 font-medium shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  title="Cetak Voucher"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Cetak</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      addToast('info', 'Membuat Excel...', 'Sedang memproses berkas Excel...');
+                      await downloadBankPaymentVoucherExcel(selectedBankPaymentVoucher);
+                      const filename = generateBankPaymentVoucherFileName(selectedBankPaymentVoucher, 'xlsx');
+                      addToast('success', 'Excel Terunduh', `${filename} berhasil diunduh.`);
+                    } catch {
+                      addToast('error', 'Gagal', 'Terjadi kesalahan saat memproses Excel.');
+                    }
+                  }}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-xs text-white font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  title="Unduh Excel (.xlsx) Template Asli"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Ekspor Excel</span>
+                  <span className="sm:hidden font-semibold">Excel</span>
+                </button>
+                <button
+                  onClick={() => setSelectedBankPaymentVoucher(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer ml-0.5 sm:ml-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Subheader: Metadata Waktu Pembuatan & Total */}
+            <div className="no-print px-3.5 py-2 sm:px-5 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[11px] sm:text-xs text-slate-600 shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1.5 text-indigo-700 font-medium">
+                  <Clock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  <span>Dibuat: <strong className="text-slate-900 font-semibold">{formatCreationTimestamp(selectedBankPaymentVoucher.createdAt)}</strong></span>
+                </span>
+                <span className="text-slate-300 hidden sm:inline">•</span>
+                <span className="flex items-center gap-1.5 text-slate-600">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Disiapkan: <strong className="text-slate-900 font-semibold">{selectedBankPaymentVoucher.preparedByName || selectedBankPaymentVoucher.payTo}</strong></span>
+                </span>
+              </div>
+              <div className="font-mono font-bold text-indigo-900">
+                Total: {formatRupiahFull(selectedBankPaymentVoucher.totalAmount)}
+              </div>
+            </div>
+
+            {/* Modal Body: A4 Paper Document */}
+            <div className="print-modal-body p-2 sm:p-4 lg:p-8 overflow-auto bg-slate-100/70 flex justify-start sm:justify-center">
+              <div id="history-bpv-modal-doc" className="print-modal-doc-wrapper w-full max-w-[210mm] min-w-[210mm] sm:min-w-0 shadow-lg shadow-slate-300/60 rounded-sm">
+                <BankPaymentVoucherPaperDocument
+                  doc={selectedBankPaymentVoucher}
+                  id="bank-payment-voucher-paper-doc"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ================= DELETE CONFIRMATION MODAL ================= */}
       {deleteConfirmItem && (
         <div className="no-print fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
@@ -1554,6 +1784,15 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({
                 template={permitBarangTemplate}
                 id="direct-export-pm-paper"
                 previewPageFilter="all"
+              />
+            </div>
+          )}
+
+          {exportingItem.type === 'bank-voucher' && exportingItem.rawBankPaymentVoucher && (
+            <div id="direct-export-bpv-doc" className="w-[794px]">
+              <BankPaymentVoucherPaperDocument
+                doc={exportingItem.rawBankPaymentVoucher}
+                id="direct-export-bpv-paper"
               />
             </div>
           )}

@@ -120,6 +120,14 @@ export const Header: React.FC<HeaderProps> = ({
       title: 'Arsip Surat Permit Barang',
       subtitle: 'Pusat arsip terpadu untuk dokumen Surat Permit Masuk & Keluar Barang',
     },
+    'create-bpv': {
+      title: 'Generator Bank Payment Voucher',
+      subtitle: 'Penerbitan voucher pembayaran bank dengan perhitungan otomatis nominal & terbilang',
+    },
+    'history-bpv': {
+      title: 'Arsip Bank Payment Voucher',
+      subtitle: 'Pusat arsip dokumen Bank Payment Voucher yang telah diterbitkan',
+    },
     'templates-pm': {
       title: 'Template Permit Barang Configuration',
       subtitle: 'Pengaturan kop surat, penerima default, penandatangan, TTD, dan cap stempel',

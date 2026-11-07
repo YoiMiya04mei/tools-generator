@@ -344,9 +344,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             const isActive =
               item.id === 'create'
-                ? activeTab === 'create' || activeTab === 'create-st' || activeTab === 'create-ba' || activeTab === 'create-pm'
+                ? activeTab === 'create' || activeTab === 'create-st' || activeTab === 'create-ba' || activeTab === 'create-pm' || activeTab === 'create-bpv'
                 : item.id === 'history'
-                ? activeTab === 'history' || activeTab === 'history-st' || activeTab === 'history-ba' || activeTab === 'history-pm'
+                ? activeTab === 'history' || activeTab === 'history-st' || activeTab === 'history-ba' || activeTab === 'history-pm' || activeTab === 'history-bpv'
                 : activeTab === item.id;
             return (
               <React.Fragment key={item.id}>

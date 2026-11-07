@@ -28,6 +28,7 @@ import { beritaAcaraStorage } from './services/beritaAcaraStorage';
 import type { PermitBarangDocument, PermitBarangTemplate } from './types/permitBarang';
 import { DEFAULT_PERMIT_BARANG_TEMPLATE } from './types/permitBarang';
 import { permitBarangStorage } from './services/permitBarangStorage';
+import type { BankPaymentVoucherDocument } from './types/bankPaymentVoucher';
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => authService.getCurrentUser());
@@ -49,6 +50,7 @@ export function App() {
   const [editingSuratTugas, setEditingSuratTugas] = useState<SuratTugasDocument | null>(null);
   const [editingBeritaAcara, setEditingBeritaAcara] = useState<BeritaAcaraDocument | null>(null);
   const [editingPermitBarang, setEditingPermitBarang] = useState<PermitBarangDocument | null>(null);
+  const [editingBankPaymentVoucher, setEditingBankPaymentVoucher] = useState<BankPaymentVoucherDocument | null>(null);
   const [hasDraft, setHasDraft] = useState<boolean>(false);
 
   // Initialize template and check draft on startup
@@ -155,7 +157,8 @@ export function App() {
       (activeTab === 'create' ||
         activeTab === 'create-st' ||
         activeTab === 'create-ba' ||
-        activeTab === 'create-pm') &&
+        activeTab === 'create-pm' ||
+        activeTab === 'create-bpv') &&
       !canCreate
     ) {
       setActiveTab('history');
@@ -295,6 +298,36 @@ export function App() {
     setActiveTab('history');
   };
 
+  // Edit Bank Payment Voucher Handler
+  const handleEditBankPaymentVoucher = (doc: BankPaymentVoucherDocument) => {
+    setEditingBankPaymentVoucher(doc);
+    setActiveTab('create-bpv');
+    addToast('info', 'Mode Edit Payment Voucher', `Memuat voucher ${doc.voucherNumber} ke form.`);
+  };
+
+  const handleDuplicateBankPaymentVoucher = (doc: BankPaymentVoucherDocument) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const clone: BankPaymentVoucherDocument = {
+      ...doc,
+      id: '',
+      voucherDate: today,
+      voucherSequence: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: currentUser?.id,
+      createdByName: currentUser?.name || 'Super Admin',
+      createdByRole: currentUser?.role || 'admin',
+    };
+    setEditingBankPaymentVoucher(clone);
+    setActiveTab('create-bpv');
+    addToast('info', 'Duplikasi Payment Voucher', 'Data voucher disalin ke formulir baru.');
+  };
+
+  const handleBankPaymentVoucherSaved = () => {
+    setEditingBankPaymentVoucher(null);
+    setActiveTab('history');
+  };
+
   // If not logged in, render the Login Page
   if (!currentUser) {
     return (
@@ -375,7 +408,8 @@ export function App() {
           {(activeTab === 'create' ||
             activeTab === 'create-st' ||
             activeTab === 'create-ba' ||
-            activeTab === 'create-pm') && (
+            activeTab === 'create-pm' ||
+            activeTab === 'create-bpv') && (
             <CreateUnifiedDocumentPage
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -391,6 +425,8 @@ export function App() {
               permitBarangTemplate={permitBarangTemplate}
               editingPermitBarang={editingPermitBarang}
               onPermitBarangSaved={handlePermitBarangSaved}
+              editingBankPaymentVoucher={editingBankPaymentVoucher}
+              onBankPaymentVoucherSaved={handleBankPaymentVoucherSaved}
               addToast={addToast}
               currentUser={currentUser}
             />
@@ -399,7 +435,8 @@ export function App() {
           {(activeTab === 'history' ||
             activeTab === 'history-st' ||
             activeTab === 'history-ba' ||
-            activeTab === 'history-pm') && (
+            activeTab === 'history-pm' ||
+            activeTab === 'history-bpv') && (
             <HistoryPage
               template={template}
               suratTugasTemplate={suratTugasTemplate}
@@ -414,6 +451,8 @@ export function App() {
               onDuplicateBeritaAcara={handleDuplicateBeritaAcara}
               onEditPermitBarang={handleEditPermitBarang}
               onDuplicatePermitBarang={handleDuplicatePermitBarang}
+              onEditBankPaymentVoucher={handleEditBankPaymentVoucher}
+              onDuplicateBankPaymentVoucher={handleDuplicateBankPaymentVoucher}
               addToast={addToast}
               currentUser={currentUser}
               initialTypeFilter={
@@ -423,6 +462,8 @@ export function App() {
                   ? 'berita-acara'
                   : activeTab === 'history-pm'
                   ? 'permit-barang'
+                  : activeTab === 'history-bpv'
+                  ? 'bank-voucher'
                   : 'all'
               }
             />

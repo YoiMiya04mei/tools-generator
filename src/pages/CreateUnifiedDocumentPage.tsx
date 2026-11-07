@@ -1,9 +1,10 @@
 import React from 'react';
-import { AlertCircle, ClipboardList, FileText, UserCheck, Clock, PackageCheck } from 'lucide-react';
+import { AlertCircle, ClipboardList, FileText, UserCheck, Clock, PackageCheck, CreditCard } from 'lucide-react';
 import type { ActiveTab, RFODocument, RFOTemplate } from '../types/rfo';
 import type { SuratTugasDocument, SuratTugasTemplate } from '../types/suratTugas';
 import type { BeritaAcaraDocument, BeritaAcaraTemplate } from '../types/beritaAcara';
 import type { PermitBarangDocument, PermitBarangTemplate } from '../types/permitBarang';
+import type { BankPaymentVoucherDocument } from '../types/bankPaymentVoucher';
 import type { UserAccount } from '../types/auth';
 import type { ToastMessage } from '../components/Toast';
 import { formatIndonesianDateOnly } from '../utils/dateFormatter';
@@ -12,9 +13,10 @@ import { CreateRFOPage } from './CreateRFOPage';
 import { CreateSuratTugasPage } from './CreateSuratTugasPage';
 import { CreateBeritaAcaraPage } from './CreateBeritaAcaraPage';
 import { CreatePermitBarangPage } from './CreatePermitBarangPage';
+import { CreateBankPaymentVoucherPage } from './CreateBankPaymentVoucherPage';
 
 interface CreateUnifiedDocumentPageProps {
-  activeTab: 'create' | 'create-st' | 'create-ba' | 'create-pm';
+  activeTab: 'create' | 'create-st' | 'create-ba' | 'create-pm' | 'create-bpv';
   setActiveTab: (tab: ActiveTab) => void;
   // RFO Props
   template: RFOTemplate;
@@ -32,6 +34,9 @@ interface CreateUnifiedDocumentPageProps {
   permitBarangTemplate?: PermitBarangTemplate;
   editingPermitBarang?: PermitBarangDocument | null;
   onPermitBarangSaved?: () => void;
+  // Bank Payment Voucher Props
+  editingBankPaymentVoucher?: BankPaymentVoucherDocument | null;
+  onBankPaymentVoucherSaved?: () => void;
   // Common
   addToast: (type: ToastMessage['type'], title: string, message?: string) => void;
   currentUser: UserAccount | null;
@@ -52,6 +57,8 @@ export const CreateUnifiedDocumentPage: React.FC<CreateUnifiedDocumentPageProps>
   permitBarangTemplate,
   editingPermitBarang,
   onPermitBarangSaved,
+  editingBankPaymentVoucher,
+  onBankPaymentVoucherSaved,
   addToast,
   currentUser,
 }) => {
@@ -123,6 +130,21 @@ export const CreateUnifiedDocumentPage: React.FC<CreateUnifiedDocumentPageProps>
               <span className="sm:hidden">Permit Barang</span>
               <span className="hidden sm:inline">Permit Masuk & Keluar</span>
             </button>
+
+            {/* 5. Bank Payment Voucher Switcher (Semua User) */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('create-bpv')}
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 sm:gap-2 transition-all cursor-pointer shrink-0 ${
+                activeTab === 'create-bpv'
+                  ? 'bg-white text-indigo-700 border border-slate-200 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+            >
+              <CreditCard className={`w-3.5 h-3.5 ${activeTab === 'create-bpv' ? 'text-indigo-600' : 'text-slate-400'}`} />
+              <span className="sm:hidden">Payment Voucher</span>
+              <span className="hidden sm:inline">Payment Voucher</span>
+            </button>
           </div>
         </div>
 
@@ -180,6 +202,15 @@ export const CreateUnifiedDocumentPage: React.FC<CreateUnifiedDocumentPageProps>
             addToast={addToast}
             initialEditData={editingPermitBarang}
             onSaved={onPermitBarangSaved}
+            currentUser={currentUser}
+          />
+        )}
+
+        {activeTab === 'create-bpv' && currentUser?.role === 'admin' && (
+          <CreateBankPaymentVoucherPage
+            addToast={addToast}
+            initialEditData={editingBankPaymentVoucher}
+            onSaved={onBankPaymentVoucherSaved}
             currentUser={currentUser}
           />
         )}
